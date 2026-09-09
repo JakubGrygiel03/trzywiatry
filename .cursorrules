@@ -1,0 +1,435 @@
+# Cursor Context: Trzy Wiatry – Artisanal Ceramic & Wood Atelier, E-Commerce & Workshops (Brand Manual & ÅOOMI Standard)
+
+## 🎯 Project Overview
+
+**Goal:** Build a production-ready, high-converting, full-stack artisanal e-commerce and workshop booking platform for **Trzy Wiatry** (`trzywiatry.pl`). The application transitions the brand from a legacy WordPress/WooCommerce setup into a modern, high-performance Next.js App Router architecture. The platform merges the clean, tactile, organic aesthetic of **Trzy Wiatry** with the advanced e-commerce functionality inspired by **ÅOOMI STUDIO** (granular capacity filters, collections, announcement/vacation bar, upsell cart drawer, B2B zone) and a complete WordPress-equivalent admin suite.
+
+- **Brand Philosophy:** Slow craft, local natural materials, artisanal wood & ceramics, and educational pottery workshops.
+- **Sygnet & Brand Story:** Sygnet oparty na symbolu trzech wiatrów przelatujących przez otwarty dom[cite: 1].
+- **Pillars of Atelier:** Ceramika (kubki, czarki, formy matki), Drewno (rękodzieło drewniane, rzeźby), Warsztaty (stacjonarne sesje ceramiczne w pracowni)[cite: 1].
+
+---
+
+## 🎨 Official Brand Identity & Design System (Trzy Wiatry Księga Znaku)
+
+### Color Palette (Exact Brand Manual Values)
+- **Czerwony (Terracotta Clay):** `#9C644E` (RGB: 156, 100, 78 | CMYK: 29/59/63/25 | Pantone 1685 U)[cite: 1]
+- **Ceglany (Warm Ochre / Brick):** `#D39058` (RGB: 211, 144, 88 | CMYK: 25/47/69/4 | Pantone P 28-4 C)[cite: 1]
+- **Szary (Muted Stone):** `#AAA9A5` (RGB: 170, 169, 165 | CMYK: 35/27/31/7 | Pantone P 169-6 C)[cite: 1]
+- **Biały (Pure White Canvas):** `#FFFFFF` (RGB: 255, 255, 255 | CMYK: 0/0/0/0)[cite: 1]
+- **Czarny (Deep Fired Black):** `#010101` (RGB: 1, 1, 1 | CMYK: 90/78/62/97 | Pantone BLACK 6 C)[cite: 1]
+
+### Typography & Fonts
+- **Headings & Logo Accents:** `Botanika Mono` (Regular) – stosowany w nagłówkach, etykietach cenowych, akcentach technicznych i badge'ach[cite: 1].
+- **Body & Paragraphs:** `Botanika` (Regular) lub fallback `Geist Mono` / `Space Mono` dla nagłówków oraz neutralny sans-serif (`Geist Sans` / `Inter`) do długich bloków tekstu, zachowując czysty, monotypowy sznyt[cite: 1].
+
+### UI & Layout Conventions
+- **Logo Protection & Proportions:** Znak skalowany proporcjonalnie z zachowaniem pola ochronnego ($A$)[cite: 1]. Minimalny rozmiar logo dla web: **42 px** (wersja pionowa) lub **27 px** (wersja pozioma/sygnet)[cite: 1].
+- **Chmurki i obłe kształty ("Speech Bubbles"):** Zgodnie z księgą znaku, ceny, metki i nazwy produktów eksponowane są na zaokrąglonych, pigułkowych tłach (`rounded-full` lub `rounded-2xl`) z dużą ilością wolnej przestrzeni wokół (minimalizm fotograficzny)[cite: 1].
+- **Sub-marki & Symbole:** Dedykowane ikony domenowe w prawym górnym rogu lub w tagach: *Ceramika*, *Drewno*, *Warsztaty*[cite: 1].
+
+---
+
+## 🛠️ Tech Stack & Architecture
+
+- **Framework:** Next.js (App Router, React Server Components, Server Actions, Route Handlers)
+- **Language:** TypeScript (Strict Mode Enabled)
+- **Styling:** Tailwind CSS (Mobile-First approach, custom brand color tokens configured)
+- **UI Components:** Shadcn UI + Radix UI Primitives + Lucide React
+- **Client State:** Zustand (`persist` do `localStorage` dla stanu koszyka, wariantu pakowania i rekomendacji)
+- **Animations:** Framer Motion (subtelne mikrointerakcje, slide-in cart drawer, selektory wariantów)
+- **Database & Auth:** Supabase (PostgreSQL, Row Level Security, Storage Buckets dla zdjęć produktowych i plików, Auth dla Admina i Klientów)
+- **Payments:** Przelewy24 (P24) + Stripe API (BLIK, Apple Pay, Google Pay, karty płatnicze)
+- **Email & Automation:** Resend API (transakcyjne maile: zamówienia, bilety, wysyłki) + MailerLite API (newsletter z kodem rabatowym -15%)
+- **Validation:** React Hook Form + Zod (rygorystyczne schematy walidacji)
+- **Hosting & Cron:** Vercel
+
+---
+
+## 🏗️ Core Architecture & Features (ÅOOMI + Trzy Wiatry)
+
+### 1. E-Commerce & Katalog Produktów (`/sklep`)
+- **Filtrowanie pojemności (Standard ÅOOMI):**
+  - Kubki i czarki: `80 ml` (Espresso), `160–180 ml` (Flat White/Cappuccino), `250 ml`, `300 ml`, `350 ml`, `400 ml+`.
+  - Talerze i miski: *Miska, Breakfast Bowl, Talerzyk deserowy, Talerz obiadowy, Półmisek*.
+  - Linie produktowe i formy: *Ceramika użytkowa, Rzeźba i Drewno, Formy matki gipsowe, Zestawy prezentowe, Karty podarunkowe*.
+- **Kolekcje autorskie:** Przeglądanie według serii szkliw (np. *Dust, Mist, Sand, Raw Clay*).
+- **Etykiety dostępności:** Badge `Wyprzedane` (blokada dodania do koszyka), `Bestseller`, `Niski stan`.
+
+### 2. Pasek Ogłoszeń i Urlopów (`<AnnouncementBar />`)
+- **Konfigurowalny z poziomu panelu Admina:**
+  - Tryb Promocji: Wyświetlanie kodu rabatowego (np. `-15% na hasło WIOSNA`) i pasek progu darmowej dostawy (np. od 200 PLN).
+  - Tryb Urlopu: Komunikat z zakresem dat nieobecności i deklaracją wysyłki (`"Przerwa twórcza w pracowni: zamówienia złożone do 15.09 wyślemy 16.09"`).
+  - Integracja z koszykiem i e-mailami potwierdzającymi zamówienie.
+
+### 3. Zaawansowany Koszyk & Upsell (`<CartDrawer />`)
+- Wysuwany boczny drawer bez przeładowywania strony.
+- **Dynamiczny licznik darmowej dostawy:** Informacja w czasie rzeczywistym, ile brakuje do darmowej wysyłki.
+- **Pakowanie na prezent (Gift Wrap):** Checkbox dodający ozdobne pudełko, wstążkę i ceramiczny bilecik z polem na dedykację klienta.
+- **Rekomendacje ("Inni kupili również"):** Kontekstowy cross-sell zależny od zawartości koszyka.
+
+### 4. Moduł Warsztatów Ceramicznych (`/warsztaty`)
+- Harmonogram sesji stacjonarnych z dynamicznym licznikiem pozostałych miejsc.
+- Bezpośrednia rezerwacja z natychmiastową płatnością P24/BLIK i wysyłką cyfrowego biletu PDF/email via Resend.
+
+### 5. Strefa B2B & HoReCa (`/b2b`)
+- Dedykowany moduł dla kawiarni, restauracji i hoteli (personalizowana ceramika z logo, formy matki na zamówienie).
+- Formularz zapytania ofertowego z walidacją NIP i wolumenu zamówienia.
+
+### 6. Baza Wiedzy w Stopce (Footer Hub)
+- **Jak dbać o ceramikę? (`/poradnik-pielegnacji`):** Mycie w zmywarce, szok termiczny, użytkowanie form gipsowych.
+- **FAQ (`/faq`):** Czas realizacji zamówień, tolerancja wymiarowa rękodzieła, specyfika drewna i gliny.
+- **Dostawa i zwroty (`/dostawa-i-zwroty`):** Bezpieczne pakowanie "zero stłuczek", Paczkomaty InPost, kurier.
+- **O nas (`/o-nas`):** Historia pracowni Trzy Wiatry, rzemiosło, szacunek do surowca[cite: 1].
+
+### 7. Panel Administracyjny WordPress/WooCommerce Equivalent (`/admin`)
+- **Analityka:** Przychody, AOV, najpopularniejsze produkty/szkliwa, eksport CSV.
+- **Sklep & Magazyn:** Pełny CRUD produktów, zarządzanie wariantami i pojemnościami, stany magazynowe, biblioteka mediów (Supabase Storage).
+- **Zamówienia:** Zmiana statusów, etykiety wysyłkowe, wprowadzanie numerów śledzenia przesyłki.
+- **Warsztaty:** Zarządzanie terminami, lista uczestników, oznaczanie obecności.
+- **Blog & Baza Wiedzy (CMS):** Edytor artykułów o pielęgnacji ceramiki i aktualnościach z pracowni.
+- **Ustawienia Sklepu:** Treść bannera, włączanie trybu urlopowego, progi darmowej dostawy.
+
+---
+
+## 🗄️ Database Schema & Security (Supabase PostgreSQL)
+
+```sql
+create extension if not exists "uuid-ossp";
+
+-- Typy domenowe Trzy Wiatry
+create type product_domain as enum ('ceramika', 'drewno', 'warsztaty', 'formy');
+create type order_status as enum ('pending', 'paid', 'processing', 'shipped', 'completed', 'cancelled');
+create type banner_type as enum ('promo', 'vacation', 'hidden');
+create type post_status as enum ('draft', 'published', 'archived');
+
+-- Kolekcje / Linie wzornicze
+create table collections (
+  id uuid default gen_random_uuid() primary key,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  name text not null,
+  slug text unique not null,
+  description text,
+  image_url text
+);
+
+-- Tabela Produktów
+create table products (
+  id uuid default gen_random_uuid() primary key,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  name text not null,
+  slug text unique not null,
+  description text not null,
+  domain product_domain not null default 'ceramika',
+  category text not null, -- 'kubki', 'miski', 'talerze', 'rzezby', 'formy_matki'
+  sub_category text,      -- 'breakfast_bowl', 'flat_white_cup', etc.
+  capacity_ml int,         -- 80, 180, 250, 300, 350, 400
+  collection_id uuid references collections(id) on delete set null,
+  price_in_cents int not null,
+  is_published boolean default false not null,
+  is_bestseller boolean default false not null,
+  images text[] default '{}' not null,
+  care_instructions text,
+  low_stock_threshold int default 2,
+  meta_title text,
+  meta_description text
+);
+
+-- Warianty Produktu (Szkliwo, Wykończenie, Rozmiar)
+create table product_variants (
+  id uuid default gen_random_uuid() primary key,
+  product_id uuid references products(id) on delete cascade not null,
+  sku text unique not null,
+  title text not null, -- np. "Glina Ceglana / Szkliwo Szare 250ml"
+  price_in_cents int,
+  stock_quantity int default 0 not null,
+  is_available boolean default true not null
+);
+
+-- Ustawienia Pracowni i Banner Urlopowy
+create table studio_settings (
+  id int primary key default 1,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  announcement_type banner_type default 'promo' not null,
+  announcement_text text default 'Darmowa dostawa od 200 zł | Zapisz się i odbierz -15%' not null,
+  promo_code text,
+  vacation_start_date date,
+  vacation_end_date date,
+  vacation_dispatch_date date,
+  free_shipping_threshold_cents int default 20000 not null,
+  gift_wrap_price_cents int default 2000 not null
+);
+
+-- Zamówienia
+create table orders (
+  id uuid default gen_random_uuid() primary key,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  order_number text unique not null,
+  user_id uuid references auth.users(id) on delete set null,
+  customer_email text not null,
+  customer_name text not null,
+  customer_phone text not null,
+  shipping_address jsonb not null,
+  shipping_method text not null,
+  shipping_cost_in_cents int default 0 not null,
+  has_gift_wrapping boolean default false not null,
+  gift_message text,
+  gift_wrapping_cost_cents int default 0 not null,
+  total_amount_in_cents int not null,
+  discount_amount_cents int default 0 not null,
+  discount_code text,
+  status order_status default 'pending' not null,
+  tracking_number text,
+  tracking_url text,
+  payment_id text,
+  payment_provider text default 'p24'
+);
+
+-- Pozycje Zamówienia
+create table order_items (
+  id uuid default gen_random_uuid() primary key,
+  order_id uuid references orders(id) on delete cascade not null,
+  product_id uuid references products(id),
+  variant_id uuid references product_variants(id),
+  product_name text not null,
+  unit_price_in_cents int not null,
+  quantity int not null check (quantity > 0)
+);
+
+-- Warsztaty
+create table workshops (
+  id uuid default gen_random_uuid() primary key,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  title text not null,
+  slug text unique not null,
+  description text not null,
+  event_date timestamp with time zone not null,
+  duration_hours numeric(3,1) not null,
+  price_in_cents int not null,
+  max_attendees int not null,
+  is_published boolean default true not null
+);
+
+-- Rezerwacje na Warsztaty
+create table workshop_bookings (
+  id uuid default gen_random_uuid() primary key,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  workshop_id uuid references workshops(id) on delete cascade not null,
+  order_id uuid references orders(id) on delete set null,
+  attendee_name text not null,
+  attendee_email text not null,
+  attendee_phone text not null,
+  seats_count int default 1 not null check (seats_count > 0),
+  status text default 'confirmed' check (status in ('pending', 'confirmed', 'cancelled'))
+);
+
+-- Blog Posts & Baza Wiedzy (CMS)
+create table blog_posts (
+  id uuid default gen_random_uuid() primary key,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  title text not null,
+  slug text unique not null,
+  excerpt text,
+  content text not null,
+  cover_image text,
+  status post_status default 'draft' not null,
+  published_at timestamp with time zone,
+  meta_title text,
+  meta_description text
+);
+
+-- Subskrybenci Newslettera
+create table newsletter_subscribers (
+  id uuid default gen_random_uuid() primary key,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  email text unique not null,
+  source text default 'footer_discount_15'
+);
+
+-- Zapytania B2B
+create table b2b_inquiries (
+  id uuid default gen_random_uuid() primary key,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  company_name text not null,
+  nip text not null,
+  contact_person text not null,
+  email text not null,
+  phone text not null,
+  estimated_quantity text not null,
+  message text not null,
+  is_processed boolean default false not null
+);
+
+-- Row Level Security (RLS)
+alter table products enable row level security;
+alter table product_variants enable row level security;
+alter table collections enable row level security;
+alter table studio_settings enable row level security;
+alter table orders enable row level security;
+alter table order_items enable row level security;
+alter table workshops enable row level security;
+alter table workshop_bookings enable row level security;
+alter table blog_posts enable row level security;
+alter table newsletter_subscribers enable row level security;
+alter table b2b_inquiries enable row level security;
+
+-- Public Select Policies
+create policy "Public read published products" on products for select using (is_published = true);
+create policy "Public read variants" on product_variants for select using (is_available = true);
+create policy "Public read collections" on collections for select using (true);
+create policy "Public read settings" on studio_settings for select using (true);
+create policy "Public read published workshops" on workshops for select using (is_published = true);
+create policy "Public read published posts" on blog_posts for select using (status = 'published');
+
+-- Public Insert Policies
+create policy "Public insert newsletter" on newsletter_subscribers for insert with check (true);
+create policy "Public insert B2B inquiries" on b2b_inquiries for insert with check (true);
+
+-- User Authenticated Policies
+create policy "User read own orders" on orders for select using (auth.uid() = user_id);
+create policy "User read own order items" on order_items for select using (
+  exists (select 1 from orders where orders.id = order_items.order_id and orders.user_id = auth.uid())
+);
+
+-- Admin Full Access Policies
+create policy "Admin full access products" on products for all using ((auth.jwt() -> 'app_metadata' ->> 'is_admin')::boolean = true);
+create policy "Admin full access variants" on product_variants for all using ((auth.jwt() -> 'app_metadata' ->> 'is_admin')::boolean = true);
+create policy "Admin full access collections" on collections for all using ((auth.jwt() -> 'app_metadata' ->> 'is_admin')::boolean = true);
+create policy "Admin full access settings" on studio_settings for all using ((auth.jwt() -> 'app_metadata' ->> 'is_admin')::boolean = true);
+create policy "Admin full access orders" on orders for all using ((auth.jwt() -> 'app_metadata' ->> 'is_admin')::boolean = true);
+create policy "Admin full access workshops" on workshops for all using ((auth.jwt() -> 'app_metadata' ->> 'is_admin')::boolean = true);
+create policy "Admin full access blog" on blog_posts for all using ((auth.jwt() -> 'app_metadata' ->> 'is_admin')::boolean = true);
+create policy "Admin full access b2b" on b2b_inquiries for all using ((auth.jwt() -> 'app_metadata' ->> 'is_admin')::boolean = true);
+```
+
+---
+
+## Folder Structure
+```plaintext
+├── app/
+│   ├── layout.tsx                     # Global Root Layout: html, body, fonts, global CSS
+│   ├── not-found.tsx                  # Custom 404 with ceramic aesthetic
+│   ├── error.tsx                      # Global client error boundary
+│   ├── (public)/
+│   │   ├── layout.tsx                 # AnnouncementBar, Navbar with Cart Trigger, Footer
+│   │   ├── page.tsx                   # Atelier Landing (Hero, Three Pillars, Featured Drops)
+│   │   ├── sklep/
+│   │   │   ├── page.tsx               # Filterable catalog (Capacity, Domain, Collection)
+│   │   │   └── [slug]/page.tsx        # Product details (Capacity chips, Glaze variants, Cart CTA)
+│   │   ├── kolekcje/[slug]/page.tsx   # Glaze line showcase (Dust, Mist, Sand)
+│   │   ├── warsztaty/page.tsx         # Workshop schedule & ticket booking
+│   │   ├── b2b/page.tsx               # HoReCa & custom ceramic inquiry
+│   │   ├── koszyk/page.tsx            # Full cart page
+│   │   ├── zamowienie/page.tsx        # Checkout with InPost Paczkomat & P24
+│   │   ├── poradnik-pielegnacji/page.tsx # Knowledge base: ceramic & mold care
+│   │   ├── faq/page.tsx               # Frequently Asked Questions
+│   │   ├── dostawa-i-zwroty/page.tsx  # Packaging guarantees & returns
+│   │   ├── o-nas/page.tsx             # Trzy Wiatry craft story & values[cite: 1]
+│   │   └── kontakt/page.tsx           # Contact form & atelier physical location
+│   ├── (account)/
+│   │   └── konto/
+│   │       ├── page.tsx               # Customer dashboard: orders & workshop passes
+│   │       └── logowanie/page.tsx     # Magic Link / password login
+│   ├── admin/
+│   │   ├── layout.tsx                 # Admin dashboard shell, navigation & low-stock alerts
+│   │   ├── page.tsx                   # Sales metrics & KPI
+│   │   ├── analityka/page.tsx         # Revenue trends & CSV export
+│   │   ├── produkty/
+│   │   │   ├── page.tsx               # Product table with capacity, stock, and quick edit
+│   │   │   ├── nowy/page.tsx          # Multi-variant product creator
+│   │   │   └── [id]/page.tsx          # Edit product, gallery order, and SEO
+│   │   ├── zamowienia/
+│   │   │   ├── page.tsx               # Order pipeline & status management
+│   │   │   └── [id]/page.tsx          # Order details, gift wrap message, shipping labels
+│   │   ├── warsztaty/                 # Workshop schedule & attendee rosters
+│   │   ├── blog/                      # CMS: articles & care guide management
+│   │   └── ustawienia-sklepu/page.tsx # Banner message & vacation mode toggle
+│   ├── actions/
+│   │   ├── checkout.ts                # Server action: P24 session init & order creation
+│   │   ├── cart.ts                    # Stock availability verification
+│   │   ├── b2b.ts                     # B2B inquiry email dispatch
+│   │   ├── newsletter.ts              # MailerLite lead addition & -15% code delivery
+│   │   └── admin-products.ts          # Server actions for product & variant management
+│   └── api/
+│       └── webhooks/p24/route.ts      # Przelewy24 payment verification webhook
+├── components/
+│   ├── layout/
+│   │   ├── announcement-bar.tsx       # Vacation alert / Free shipping promo banner
+│   │   ├── navbar.tsx                 # Atelier header with official logo proportions[cite: 1]
+│   │   └── footer.tsx                 # 4-column footer hub with brand symbols[cite: 1]
+│   ├── shop/
+│   │   ├── capacity-filter.tsx        # 80ml - 400ml+ filter buttons
+│   │   ├── product-card.tsx           # Product card with price bubble badge[cite: 1]
+│   │   └── cross-sell-carousel.tsx    # "Inni kupili również" module
+│   ├── cart/
+│   │   ├── cart-drawer.tsx            # Slide-out cart
+│   │   ├── gift-wrapping-card.tsx     # Gift wrap upsell checkbox
+│   │   └── free-shipping-meter.tsx    # Dynamic progress bar
+│   ├── b2b/
+│   │   └── b2b-form.tsx               # Company quote request form with NIP validation
+│   └── ui/                            # Shadcn UI primitives styled with brand colors
+├── store/
+│   └── use-cart-store.ts              # Zustand store for cart items & gift wrap
+├── lib/
+│   ├── supabase/
+│   │   ├── client.ts                  # Client-side Supabase client
+│   │   ├── server.ts                  # Server Components & Server Actions Supabase client
+│   │   └── middleware.ts              # Session refresh and admin route protection
+│   ├── p24.ts                         # Przelewy24 API helper & checksum generator
+│   ├── mailerlite.ts                  # MailerLite subscriber API client
+│   ├── resend.ts                      # Transactional email templates
+│   └── validations/
+│       ├── checkout.ts                # Zod checkout schema
+│       └── b2b.ts                     # Zod B2B schema
+└── middleware.ts                      # Next.js route protection middleware
+```
+
+---
+
+## 🎓 Active Learning & Mentorship Protocol
+
+The AI acts as a **Senior Tech Lead & Engineering Mentor**. Always adhere to these interaction guidelines:
+
+- **Simple Polish Explanations:**
+  - Explain complex architectural patterns (e.g., Zustand state synchronization, optimistic UI updates, P24 webhook signatures, Supabase RLS policies) using clear Polish and intuitive analogies.
+
+- **Step-by-Step Intent:**
+  - Before generating or editing code, provide a 2–3 sentence summary in Polish detailing **WHAT** is being implemented and **WHY** this architectural choice fits modern Next.js conventions.
+
+- **Trade-off Analysis:**
+  - Always justify design patterns (e.g., why capacity filtering is indexed in PostgreSQL, why gift wrapping is modeled as an order modifier, or how vacation mode modifies automated email copy).
+
+- **Code Commenting Standards:**
+  - Provide concise English comments for complex e-commerce logic (e.g., currency cent calculations, webhook CRC verification, or variant stock locking).
+
+- **"💡 Mentor Notes":**
+  - Append short mentor notes highlighting modern Next.js best practices (e.g., `revalidatePath`, dynamic metadata for SEO, or atomic database operations).
+
+- **Active Comprehension Check:**
+  - At the end of non-trivial code modifications, ask **ONE** focused question to verify the developer's understanding.
+
+- **Highlight Common Pitfalls:**
+  - Identify 1 common developer error (e.g., *"Pamiętaj: jeśli sklep jest w trybie urlopowym, komponent kasy i e-mail potwierdzający z Resend muszą wyraźnie przypominać o opóźnionym terminie nadania"*).
+
+---
+
+## 🤖 AI Code Generation & Behavioral Rules
+
+- **Modular Code (Single Responsibility):**
+  - Keep files small and modular (target: 50–150 lines, maximum 200 lines).
+  - Break complex e-commerce views into granular child components.
+
+- **Server vs. Client Boundaries:**
+  - Keep page routes (`page.tsx`) and layouts (`layout.tsx`) as React Server Components (RSC).
+  - Restrict `"use client"` exclusively to interactive leaves (Cart Drawer, Filter toggles, Dialog modals, Forms).
+
+- **Financial & Data Accuracy:**
+  - Always store monetary values as **integers in cents/grosze** (`price_in_cents: integer`).
+  - Validate every form and Server Action payload using Zod schemas.
+  - Out-of-stock items (`stock_quantity <= 0`) must visually show `Wyprzedane` and disable the "Dodaj do koszyka" button both on the UI and in the backend Server Action.
+
+- **Brand Conformity:**
+  - UI colors must strictly adhere to the Trzy Wiatry palette (`#9C644E`, `#D39058`, `#AAA9A5`, `#FFFFFF`, `#010101`)[cite: 1].
+  - Ensure the logo maintains its required clear space and never falls below **42 px** (vertical) or **27 px** (horizontal) on web displays[cite: 1].
