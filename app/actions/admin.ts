@@ -19,7 +19,7 @@ import { newsletterCmsSchema } from "@/lib/validations/settings";
 import { notifyCustomerOrderStatus, sendAdminPasswordResetEmail } from "@/lib/resend";
 import { ORDER_STATUS_LABELS } from "@/lib/constants";
 
-export type AuthFormState = { ok: boolean; message: string };
+export type AuthFormState = { ok: boolean; message: string; demoResetUrl?: string };
 
 export async function logoutAdmin() {
   const store = await cookies();

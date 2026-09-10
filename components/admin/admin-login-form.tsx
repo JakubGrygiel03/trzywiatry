@@ -1,18 +1,6 @@
-"use client";
-
 import Link from "next/link";
-import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/field";
-
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending} className="w-full">
-      {pending ? "Sprawdzam…" : "Zaloguj do panelu"}
-    </Button>
-  );
-}
 
 const ERRORS: Record<string, string> = {
   dane: "Uzupełnij poprawny e-mail i hasło.",
@@ -59,7 +47,9 @@ export function AdminLoginForm({
           minLength={4}
         />
       </div>
-      <SubmitButton />
+      <Button type="submit" className="w-full">
+        Zaloguj do panelu
+      </Button>
       {error && ERRORS[error] ? <p className="text-sm text-czerwony">{ERRORS[error]}</p> : null}
     </form>
   );

@@ -3,12 +3,17 @@
 export const ADMIN_COOKIE = "tw-admin";
 export const ADMIN_COOKIE_MAX_AGE = 60 * 60 * 24 * 14;
 
-export function adminCookieOptions() {
+export function adminCookieOptions(request?: Request) {
+  const https =
+    request?.url.startsWith("https://") ||
+    process.env.NODE_ENV === "production" ||
+    process.env.VERCEL === "1";
+
   return {
     httpOnly: true,
     sameSite: "lax" as const,
     path: "/",
-    secure: process.env.NODE_ENV === "production",
+    secure: https,
     maxAge: ADMIN_COOKIE_MAX_AGE,
     expires: new Date(Date.now() + ADMIN_COOKIE_MAX_AGE * 1000),
   };

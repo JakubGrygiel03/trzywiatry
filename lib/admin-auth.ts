@@ -14,6 +14,8 @@ type AdminAuthFile = {
   resetExpiresAt?: string;
 };
 
+let memoryAuth: AdminAuthFile | null = null;
+
 function ensureDataDir() {
   if (!existsSync(DATA_DIR)) {
     mkdirSync(DATA_DIR, { recursive: true });
@@ -49,17 +51,24 @@ function defaultPassword() {
 }
 
 function readAuthFile(): AdminAuthFile | null {
-  if (!existsSync(AUTH_FILE)) return null;
   try {
-    return JSON.parse(readFileSync(AUTH_FILE, "utf8")) as AdminAuthFile;
+    if (existsSync(AUTH_FILE)) {
+      return JSON.parse(readFileSync(AUTH_FILE, "utf8")) as AdminAuthFile;
+    }
   } catch {
-    return null;
+    // Vercel / missing file — fall through to memory
   }
+  return memoryAuth;
 }
 
 function writeAuthFile(data: AdminAuthFile) {
-  ensureDataDir();
-  writeFileSync(AUTH_FILE, `${JSON.stringify(data, null, 2)}\n`, "utf8");
+  memoryAuth = data;
+  try {
+    ensureDataDir();
+    writeFileSync(AUTH_FILE, `${JSON.stringify(data, null, 2)}\n`, "utf8");
+  } catch {
+    // Read-only FS on Vercel — env password still verifies in this request.
+  }
 }
 
 /** Loads credentials; seeds from env on first run (like WP first install). */

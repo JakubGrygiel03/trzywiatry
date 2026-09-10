@@ -29,6 +29,10 @@ export function ensureOrdersHydrated() {
 }
 
 export function saveOrdersToDisk() {
-  if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
-  writeFileSync(ORDERS_FILE, `${JSON.stringify(runtimeStore.orders, null, 2)}\n`, "utf8");
+  try {
+    if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
+    writeFileSync(ORDERS_FILE, `${JSON.stringify(runtimeStore.orders, null, 2)}\n`, "utf8");
+  } catch {
+    // Vercel read-only FS — orders stay in memory for this instance.
+  }
 }
