@@ -15,7 +15,7 @@ export async function AnnouncementBar() {
 
   return (
     <div
-      className={`px-4 py-1.5 text-center ${isVacation ? "bg-czerwony" : "bg-czarny"}`}
+      className={`shrink-0 px-4 py-1.5 text-center ${isVacation ? "bg-czerwony" : "bg-czarny"}`}
       role="status"
     >
       <p className="mx-auto max-w-5xl font-heading text-[10px] uppercase leading-snug tracking-[0.08em] text-bialy/95 md:tracking-[0.16em]">

@@ -12,7 +12,7 @@ export async function Navbar() {
   const customer = await getCustomerSession();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-czarny/8 bg-nav">
+    <header className="border-b border-czarny/8 bg-nav">
       <div className="relative mx-auto flex h-14 max-w-7xl items-center justify-between px-6 md:h-[4.5rem] md:px-14 lg:px-16 xl:px-20">
         <Logo priority />
         <nav className="hidden items-center gap-8 md:flex lg:gap-11">

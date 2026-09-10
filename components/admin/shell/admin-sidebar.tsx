@@ -32,7 +32,7 @@ export function AdminSidebar({ badges, open, onClose }: AdminSidebarProps) {
       />
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-[260px] flex-col bg-czarny text-bialy transition-transform duration-200 md:static md:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 flex w-[260px] flex-col bg-czarny text-bialy transition-transform duration-200 md:sticky md:top-0 md:h-dvh md:translate-x-0 md:self-start",
           open ? "translate-x-0" : "-translate-x-full",
         )}
       >

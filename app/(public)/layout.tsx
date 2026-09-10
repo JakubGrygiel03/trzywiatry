@@ -1,9 +1,8 @@
 import type { ReactNode } from "react";
 import { connection } from "next/server";
-import { AnnouncementBar } from "@/components/layout/announcement-bar";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { Footer } from "@/components/layout/footer";
-import { Navbar } from "@/components/layout/navbar";
+import { SiteHeader } from "@/components/layout/site-header";
 import { getSettings } from "@/lib/data/queries";
 
 export default async function PublicLayout({ children }: { children: ReactNode }) {
@@ -15,8 +14,7 @@ export default async function PublicLayout({ children }: { children: ReactNode }
       className="site-shell flex min-h-screen flex-col"
       data-announcement={announcementHidden ? "off" : "on"}
     >
-      <AnnouncementBar />
-      <Navbar />
+      <SiteHeader />
       <main className="flex-1">{children}</main>
       <Footer />
       <CartDrawer />
