@@ -3,7 +3,7 @@ import { createProduct } from "@/app/actions/admin-products";
 import { ProductForm } from "@/components/admin/product-form";
 import { AdminAlert } from "@/components/admin/ui/admin-alert";
 import { AdminPageHeader } from "@/components/admin/ui/admin-page-header";
-import { getCollections } from "@/lib/data/queries";
+import { getAllProducts, getCollections } from "@/lib/data/queries";
 
 export default async function NewProductPage({
   searchParams,
@@ -12,6 +12,7 @@ export default async function NewProductPage({
 }) {
   const { blad } = await searchParams;
   const collections = getCollections();
+  const catalog = getAllProducts().map((item) => ({ id: item.id, name: item.name }));
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -34,6 +35,7 @@ export default async function NewProductPage({
         <ProductForm
           action={createProduct}
           collections={collections}
+          catalog={catalog}
           submitLabel="Dodaj produkt"
         />
       </div>

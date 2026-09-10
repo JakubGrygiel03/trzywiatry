@@ -54,6 +54,16 @@ if (!Array.isArray(runtimeStore.orders)) {
 
 if (!Array.isArray(runtimeStore.catalog) || runtimeStore.catalog.length === 0) {
   runtimeStore.catalog = structuredClone(seedProducts);
+} else {
+  // Colour-split Woo leftovers → one product with glaze variants
+  const drop = new Set(["p-wygodny-kubas-miodowy", "p-wygodny-kubas-zolty", "p-wygodny-kubas-lawendowy"]);
+  const merged = seedProducts.find((item) => item.id === "p-wygodny-kubas");
+  runtimeStore.catalog = runtimeStore.catalog.filter((item) => !drop.has(item.id));
+  if (merged) {
+    const index = runtimeStore.catalog.findIndex((item) => item.id === merged.id);
+    if (index >= 0) runtimeStore.catalog[index] = structuredClone(merged);
+    else runtimeStore.catalog.push(structuredClone(merged));
+  }
 }
 
 if (!Array.isArray(runtimeStore.blogPosts) || runtimeStore.blogPosts.length === 0) {
@@ -172,7 +182,9 @@ export function updateRuntimeSettings(patch: Partial<StudioSettings>) {
 let lastSeedIdSignature = "";
 
 function seedIdSignature() {
-  return seedProducts.map((product) => product.id).join("|");
+  return seedProducts
+    .map((product) => `${product.id}:${product.slug}:${product.variants.length}:${product.images[0] ?? ""}`)
+    .join("|");
 }
 
 /**

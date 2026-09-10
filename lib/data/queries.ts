@@ -39,8 +39,17 @@ export function getPublishedProducts() {
   );
 }
 
+/** Old Woo / colour-split slugs → one product with variants. */
+const PRODUCT_SLUG_ALIASES: Record<string, string> = {
+  "wygodny-kubas-granatowy": "wygodny-kubas",
+  "wygodny-kubas-miodowy": "wygodny-kubas",
+  "wygodny-kubas-zolty": "wygodny-kubas",
+  "wygodny-kubas-lawendowy": "wygodny-kubas",
+};
+
 export function getProductBySlug(slug: string) {
-  return getPublishedProducts().find((product) => product.slug === slug);
+  const canonical = PRODUCT_SLUG_ALIASES[slug] ?? slug;
+  return getPublishedProducts().find((product) => product.slug === canonical);
 }
 
 export function getProductById(id: string) {
@@ -134,21 +143,27 @@ export function filterCatalog(filters: {
   capacity?: number;
   domain?: ProductDomain;
   category?: string;
+  domains?: readonly ProductDomain[];
   minPriceCents?: number;
   maxPriceCents?: number;
 }) {
   return getPublishedProducts().filter((product) => {
+    if (filters.domains && !filters.domains.includes(product.domain)) return false;
     if (filters.domain && product.domain !== filters.domain) return false;
     if (filters.category && product.category !== filters.category) return false;
     if (filters.minPriceCents != null && product.priceInCents < filters.minPriceCents) return false;
     if (filters.maxPriceCents != null && product.priceInCents > filters.maxPriceCents) return false;
     if (filters.capacity) {
-      if (!product.capacityMl) return false;
-      if (filters.capacity === 400) return product.capacityMl >= 400;
-      if (filters.capacity === 180) {
-        return product.capacityMl >= 160 && product.capacityMl <= 180;
-      }
-      return product.capacityMl === filters.capacity;
+      const sizes = [
+        product.capacityMl,
+        ...product.variants.map((variant) => variant.capacityMl),
+      ].filter((ml): ml is number => typeof ml === "number");
+      if (sizes.length === 0) return false;
+      return sizes.some((ml) => {
+        if (filters.capacity === 400) return ml >= 400;
+        if (filters.capacity === 180) return ml >= 160 && ml <= 180;
+        return ml === filters.capacity;
+      });
     }
     return true;
   });
@@ -173,8 +188,10 @@ export function sortCatalog(products: Product[], sortId?: string | null) {
 }
 
 /** Catalog price bounds in grosze for the shop slider. */
-export function getCatalogPriceBounds() {
-  const products = getPublishedProducts();
+export function getCatalogPriceBounds(domains?: readonly ProductDomain[]) {
+  const products = getPublishedProducts().filter(
+    (product) => !domains || domains.includes(product.domain),
+  );
   if (products.length === 0) return { minCents: 0, maxCents: 10000 };
   const prices = products.map((product) => product.priceInCents);
   return {
@@ -184,8 +201,10 @@ export function getCatalogPriceBounds() {
 }
 
 /** Counts for hierarchical category sidebar. */
-export function getShopCategoryCounts() {
-  const products = getPublishedProducts();
+export function getShopCategoryCounts(domains?: readonly ProductDomain[]) {
+  const products = getPublishedProducts().filter(
+    (product) => !domains || domains.includes(product.domain),
+  );
   const byCategory = new Map<string, number>();
   const byDomain = new Map<string, number>();
 

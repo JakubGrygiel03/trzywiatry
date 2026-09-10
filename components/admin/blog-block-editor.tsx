@@ -17,6 +17,7 @@ import {
   Type,
 } from "lucide-react";
 import { useState } from "react";
+import { WordPasteField } from "@/components/admin/word-paste-field";
 import { AdminField, AdminInput, AdminTextarea } from "@/components/admin/ui/admin-field";
 import type { BlogBlockInput } from "@/lib/validations/blog";
 import { cn } from "@/lib/utils";
@@ -147,9 +148,21 @@ export function BlogBlockEditor({ initialBlocks }: { initialBlocks?: BlogBlockIn
     }
   }
 
+  function appendPasted(blocks: BlogBlockInput[]) {
+    setItems((prev) => {
+      const incoming = blocks.map((block) => ({ id: crypto.randomUUID(), block }));
+      const onlyEmpty =
+        prev.length === 1 &&
+        prev[0]?.block.type === "paragraph" &&
+        prev[0].block.text.trim() === "";
+      return onlyEmpty ? incoming : [...prev, ...incoming];
+    });
+  }
+
   return (
     <div className="space-y-4">
       <input type="hidden" name="blocks" value={JSON.stringify(items.map((item) => item.block))} />
+      <WordPasteField onPasteBlocks={appendPasted} />
 
       {items.map((item, index) => (
         <div key={item.id} className="rounded-xl border border-czarny/10 bg-krem/30 p-4">

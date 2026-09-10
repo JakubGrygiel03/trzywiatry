@@ -13,6 +13,9 @@ type DraftVariant = {
   stockQuantity: number;
   priceZl: string;
   outOfStock: boolean;
+  color: string;
+  colorHex: string;
+  capacityMl: string;
 };
 
 function toDraft(variant: ProductVariant): DraftVariant {
@@ -25,6 +28,9 @@ function toDraft(variant: ProductVariant): DraftVariant {
     stockQuantity: outOfStock ? 0 : variant.stockQuantity,
     priceZl: variant.priceInCents != null ? (variant.priceInCents / 100).toFixed(0) : "",
     outOfStock,
+    color: variant.color ?? "",
+    colorHex: variant.colorHex ?? "",
+    capacityMl: variant.capacityMl != null ? String(variant.capacityMl) : "",
   };
 }
 
@@ -36,6 +42,9 @@ function emptyDraft(): DraftVariant {
     stockQuantity: 1,
     priceZl: "",
     outOfStock: false,
+    color: "",
+    colorHex: "",
+    capacityMl: "",
   };
 }
 
@@ -66,6 +75,9 @@ export function ProductVariantsField({
       stockQuantity: stock,
       priceZl: variant.priceZl.trim() === "" ? undefined : Number(variant.priceZl),
       isAvailable: !variant.outOfStock && stock > 0,
+      color: variant.color.trim() || undefined,
+      colorHex: variant.colorHex.trim() || undefined,
+      capacityMl: variant.capacityMl.trim() === "" ? undefined : Number(variant.capacityMl),
     };
   });
 
@@ -106,6 +118,29 @@ export function ProductVariantsField({
                 onChange={(e) => update(variant.key, { sku: e.target.value })}
                 placeholder="TW-CUP-MIST-250"
                 required={index === 0}
+              />
+            </AdminField>
+            <AdminField label="Kolor" hint="Np. Sakura. Puste = wariant tylko po nazwie.">
+              <AdminInput
+                value={variant.color}
+                onChange={(e) => update(variant.key, { color: e.target.value })}
+                placeholder="Granatowy"
+              />
+            </AdminField>
+            <AdminField label="Próbka koloru (hex)">
+              <AdminInput
+                value={variant.colorHex}
+                onChange={(e) => update(variant.key, { colorHex: e.target.value })}
+                placeholder="#2c3d5a"
+              />
+            </AdminField>
+            <AdminField label="Pojemność (ml)" hint="Osobny chip na karcie produktu, jak u Fobe.">
+              <AdminInput
+                type="number"
+                min={1}
+                value={variant.capacityMl}
+                onChange={(e) => update(variant.key, { capacityMl: e.target.value })}
+                placeholder="250"
               />
             </AdminField>
             <AdminField

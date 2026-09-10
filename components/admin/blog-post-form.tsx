@@ -42,7 +42,10 @@ export function BlogPostForm({
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
         <div className="space-y-6">
-          <AdminFormSection title="Treść wpisu" description="Układaj artykuł blokami — jak w edytorze WordPressa.">
+          <AdminFormSection
+            title="Treść wpisu"
+            description="Wklej z Worda albo układaj blokami. Zdjęcia z Worda nie wchodzą — dodaj je osobno."
+          >
             <AdminField label="Tytuł" htmlFor="title" required>
               <AdminInput
                 id="title"

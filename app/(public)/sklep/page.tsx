@@ -4,6 +4,7 @@ import { CatalogPagination } from "@/components/shop/catalog-pagination";
 import { CatalogToolbar } from "@/components/shop/catalog-toolbar";
 import { ProductCard } from "@/components/shop/product-card";
 import { RecentlyViewed } from "@/components/shop/recently-viewed";
+import { ShopHub } from "@/components/shop/shop-hub";
 import { Container, SectionHeading } from "@/components/ui/badge";
 import {
   filterCatalog,
@@ -11,12 +12,13 @@ import {
   getShopCategoryCounts,
   sortCatalog,
 } from "@/lib/data/queries";
+import { isShopLane, laneForDomain, SHOP_LANES } from "@/lib/shop-lanes";
 import type { ProductDomain } from "@/lib/types";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Sklep",
-  description: "Katalog ceramiki i drewna Trzy Wiatry — filtr ceny, kategorie i pojemności.",
+  description: "Dwa katalogi Trzy Wiatry: ceramika użytkowa i półka dla pracowni ceramicznych.",
 };
 
 const PAGE_SIZE = 12;
@@ -32,16 +34,30 @@ export default async function ShopPage({
     cena_do?: string;
     sortuj?: string;
     strona?: string;
+    sklep?: string;
   }>;
 }) {
   const params = await searchParams;
+  const domain = params.domena as ProductDomain | undefined;
+  const lane = isShopLane(params.sklep)
+    ? params.sklep
+    : domain
+      ? laneForDomain(domain)
+      : params.kategoria || params.pojemnosc || params.cena_od || params.cena_do
+        ? "uzytkowa"
+        : null;
+
+  if (!lane) return <ShopHub />;
+
+  const laneMeta = SHOP_LANES[lane];
   const minZl = params.cena_od ? Number(params.cena_od) : undefined;
   const maxZl = params.cena_do ? Number(params.cena_do) : undefined;
 
   const filtered = filterCatalog({
     capacity: params.pojemnosc ? Number(params.pojemnosc) : undefined,
-    domain: params.domena as ProductDomain | undefined,
+    domain,
     category: params.kategoria,
+    domains: laneMeta.domains,
     minPriceCents: minZl != null && !Number.isNaN(minZl) ? minZl * 100 : undefined,
     maxPriceCents: maxZl != null && !Number.isNaN(maxZl) ? maxZl * 100 : undefined,
   });
@@ -59,8 +75,8 @@ export default async function ShopPage({
   const from = total === 0 ? 0 : start + 1;
   const to = Math.min(start + PAGE_SIZE, total);
 
-  const priceBounds = getCatalogPriceBounds();
-  const counts = getShopCategoryCounts();
+  const priceBounds = getCatalogPriceBounds(laneMeta.domains);
+  const counts = getShopCategoryCounts(laneMeta.domains);
   const categoryCounts = {
     byCategory: Object.fromEntries(counts.byCategory),
     byDomain: Object.fromEntries(counts.byDomain),
@@ -69,10 +85,18 @@ export default async function ShopPage({
   return (
     <div className="py-6 md:py-8">
       <Container className="space-y-5">
-        <SectionHeading eyebrow="Sklep pracowni" title="Naczynia i drewno" />
+        <SectionHeading
+          eyebrow={laneMeta.shortLabel}
+          title={laneMeta.label}
+          description={laneMeta.description}
+        />
         <div className="grid items-start gap-6 lg:grid-cols-[260px_1fr] lg:gap-8">
           <Suspense>
-            <CatalogFilters priceBounds={priceBounds} categoryCounts={categoryCounts} />
+            <CatalogFilters
+              priceBounds={priceBounds}
+              categoryCounts={categoryCounts}
+              lane={lane}
+            />
           </Suspense>
           <div>
             <Suspense>

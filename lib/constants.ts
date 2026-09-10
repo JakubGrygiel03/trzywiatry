@@ -42,6 +42,7 @@ export const CATEGORY_LABELS: Record<string, string> = {
   rzezby: "Rzeźba i drewno",
   formy_matki: "forma gipsowa",
   formy_master: "forma master",
+  narzedzia: "Narzędzia",
   zestawy: "Zestawy prezentowe",
   karty: "Karty podarunkowe",
 };
@@ -68,6 +69,7 @@ export const SHOP_CATEGORY_TREE = [
     children: [
       { id: "formy_matki", label: "forma gipsowa", category: "formy_matki" },
       { id: "formy_master", label: "forma master", category: "formy_master" },
+      { id: "narzedzia", label: "Narzędzia", category: "narzedzia" },
     ],
   },
   {
@@ -82,7 +84,7 @@ export const SHOP_CATEGORY_TREE = [
 export const CATEGORIES_BY_DOMAIN: Record<ProductDomain, string[]> = {
   ceramika: ["kubki", "czarki", "miski", "czajniczki", "talerze", "zestawy", "karty"],
   drewno: ["rzezby"],
-  formy: ["formy_matki", "formy_master"],
+  formy: ["formy_matki", "formy_master", "narzedzia"],
   warsztaty: ["kubki"],
 };
 

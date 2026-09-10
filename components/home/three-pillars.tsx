@@ -4,15 +4,15 @@ import { Container, SectionHeading } from "@/components/ui/badge";
 
 const basePillars = [
   {
-    href: "/sklep?domena=ceramika",
-    title: "Ceramika",
-    copy: "Kubki, czarki, miski i formy matki. Linie szkliw Dust, Mist, Sand i Raw Clay.",
+    href: "/sklep?sklep=uzytkowa",
+    title: "Ceramika użytkowa",
+    copy: "Kubki, czarki, miski i drewno — naczynia na codzienny stół.",
     mark: "01",
   },
   {
-    href: "/sklep?domena=drewno",
-    title: "Drewno",
-    copy: "Deski, rzeźby i narzędzia stołu. Lokalne drewno, olej lniany, ślad dłuta.",
+    href: "/sklep?sklep=pracownia",
+    title: "Dla pracowni",
+    copy: "Formy matki i, wkrótce, narzędzia. Półka dla ceramików i atelier.",
     mark: "02",
   },
 ];

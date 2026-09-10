@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { ProductImagesField } from "@/components/admin/product-images-field";
 import { ProductVariantsField } from "@/components/admin/product-variants-field";
+import { RelatedProductsField } from "@/components/admin/related-products-field";
 import { AdminField, AdminInput, AdminSelect, AdminTextarea } from "@/components/admin/ui/admin-field";
 import { AdminFormActions } from "@/components/admin/ui/admin-form-actions";
 import { AdminFormSection } from "@/components/admin/ui/admin-form-section";
@@ -27,11 +28,13 @@ export function ProductForm({
   action,
   product,
   collections,
+  catalog = [],
   submitLabel,
 }: {
   action: (formData: FormData) => void | Promise<void>;
   product?: Product;
   collections: Collection[];
+  catalog?: { id: string; name: string }[];
   submitLabel: string;
 }) {
   const [domain, setDomain] = useState<ProductDomain>(product?.domain ?? "ceramika");
@@ -140,6 +143,19 @@ export function ProductForm({
           >
             <ProductVariantsField initialVariants={product?.variants} />
           </AdminFormSection>
+
+          {catalog.length > 0 ? (
+            <AdminFormSection
+              title="Produkty pokrewne"
+              description="Pokazują się jako „często dobierane” — np. forma ucha przy formie czarki."
+            >
+              <RelatedProductsField
+                catalog={catalog}
+                currentId={product?.id}
+                initialIds={product?.relatedIds}
+              />
+            </AdminFormSection>
+          ) : null}
 
           <AdminFormSection title="SEO" description="Opcjonalnie — domyślnie bierzemy nazwę i opis.">
             <AdminField label="Meta title" htmlFor="metaTitle">

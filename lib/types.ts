@@ -24,6 +24,11 @@ export type ProductVariant = {
   priceInCents?: number;
   stockQuantity: number;
   isAvailable: boolean;
+  /** Structured options — colour / capacity like fobe.eu, optional image per glaze. */
+  color?: string;
+  colorHex?: string;
+  capacityMl?: number;
+  image?: string;
 };
 
 export type Product = {

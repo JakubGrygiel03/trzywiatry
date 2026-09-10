@@ -8,7 +8,7 @@ import { AdminAlert } from "@/components/admin/ui/admin-alert";
 import { AdminPageHeader } from "@/components/admin/ui/admin-page-header";
 import { PublishBadge } from "@/components/admin/ui/admin-status-badge";
 import { CATEGORY_LABELS, DOMAIN_LABELS } from "@/lib/constants";
-import { getCollections, getProductById } from "@/lib/data/queries";
+import { getAllProducts, getCollections, getProductById } from "@/lib/data/queries";
 import { formatPLN } from "@/lib/format";
 import { getProductPhoto } from "@/lib/media";
 
@@ -24,6 +24,7 @@ export default async function EditProductPage({
   const product = getProductById(id);
   if (!product) notFound();
   const collections = getCollections();
+  const catalog = getAllProducts().map((item) => ({ id: item.id, name: item.name }));
   const cover = getProductPhoto(product) ?? product.images[0];
 
   return (
@@ -72,6 +73,7 @@ export default async function EditProductPage({
           action={updateProduct}
           product={product}
           collections={collections}
+          catalog={catalog}
           submitLabel="Zapisz zmiany"
         />
 

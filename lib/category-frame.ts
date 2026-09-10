@@ -26,6 +26,7 @@ export function categoryFrame(category: string): { card: string; photo: string }
         card: "rounded-xl border border-ceglany/50",
         photo: "rounded-lg",
       };
+    case "narzedzia":
     case "formy_matki":
     case "formy_master":
       return {

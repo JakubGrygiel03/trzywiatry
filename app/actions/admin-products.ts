@@ -18,6 +18,9 @@ const variantDraftSchema = z.object({
   stockQuantity: z.coerce.number().int().min(0),
   priceZl: z.coerce.number().positive().optional(),
   isAvailable: z.boolean().optional(),
+  color: z.string().optional(),
+  colorHex: z.string().optional(),
+  capacityMl: z.coerce.number().int().positive().optional(),
 });
 
 const productSchema = z.object({
@@ -38,6 +41,7 @@ const productSchema = z.object({
   isPublished: z.boolean(),
   isBestseller: z.boolean(),
   variants: z.array(variantDraftSchema).min(1, "Dodaj co najmniej jeden wariant"),
+  relatedIds: z.array(z.string()).max(6).optional(),
 });
 
 function slugify(value: string) {
@@ -98,7 +102,19 @@ function parseForm(formData: FormData) {
     isPublished: formData.get("isPublished") === "true",
     isBestseller: formData.get("isBestseller") === "true",
     variants: parseVariants(formData),
+    relatedIds: parseRelatedIds(formData),
   });
+}
+
+function parseRelatedIds(formData: FormData) {
+  const raw = String(formData.get("relatedIdsJson") ?? "").trim();
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : [];
+  } catch {
+    return [];
+  }
 }
 
 function buildVariants(
@@ -127,6 +143,10 @@ function buildVariants(
         draft.priceZl != null && Number.isFinite(draft.priceZl)
           ? Math.round(draft.priceZl * 100)
           : undefined,
+      color: draft.color || previous?.color,
+      colorHex: draft.colorHex || previous?.colorHex,
+      capacityMl: draft.capacityMl ?? previous?.capacityMl,
+      image: previous?.image,
     });
   }
 
@@ -224,6 +244,7 @@ export async function createProduct(formData: FormData) {
     metaTitle: data.metaTitle ?? data.name,
     metaDescription: data.metaDescription ?? data.description.slice(0, 160),
     variants: built,
+    relatedIds: data.relatedIds,
   };
 
   upsertRuntimeProduct(product);
@@ -285,6 +306,7 @@ export async function updateProduct(formData: FormData) {
     metaTitle: data.metaTitle ?? data.name,
     metaDescription: data.metaDescription ?? data.description.slice(0, 160),
     variants: built,
+    relatedIds: data.relatedIds,
   };
 
   upsertRuntimeProduct(product);
