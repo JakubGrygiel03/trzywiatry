@@ -1,18 +1,33 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
-import { loginAdmin, type AuthFormState } from "@/app/actions/admin";
+import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/field";
 
-const initial: AuthFormState = { ok: false, message: "" };
-
-export function AdminLoginForm({ defaultEmail }: { defaultEmail: string }) {
-  const [state, action, pending] = useActionState(loginAdmin, initial);
-
+function SubmitButton() {
+  const { pending } = useFormStatus();
   return (
-    <form action={action} className="space-y-5">
+    <Button type="submit" disabled={pending} className="w-full">
+      {pending ? "Sprawdzam…" : "Zaloguj do panelu"}
+    </Button>
+  );
+}
+
+const ERRORS: Record<string, string> = {
+  dane: "Uzupełnij poprawny e-mail i hasło.",
+  haslo: "Nieprawidłowy e-mail lub hasło.",
+};
+
+export function AdminLoginForm({
+  defaultEmail,
+  error,
+}: {
+  defaultEmail: string;
+  error?: string;
+}) {
+  return (
+    <form action="/api/admin/login" method="post" className="space-y-5">
       <div className="space-y-2">
         <Label htmlFor="email">E-mail admina</Label>
         <Input
@@ -44,10 +59,8 @@ export function AdminLoginForm({ defaultEmail }: { defaultEmail: string }) {
           minLength={4}
         />
       </div>
-      <Button type="submit" disabled={pending} className="w-full">
-        {pending ? "Sprawdzam…" : "Zaloguj do panelu"}
-      </Button>
-      {state.message ? <p className="text-sm text-czerwony">{state.message}</p> : null}
+      <SubmitButton />
+      {error && ERRORS[error] ? <p className="text-sm text-czerwony">{ERRORS[error]}</p> : null}
     </form>
   );
 }

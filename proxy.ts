@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { ADMIN_COOKIE, isAdminCookieValue } from "@/lib/admin-session";
 import { CUSTOMER_COOKIE, verifyCustomerSessionCookie } from "@/lib/customer-session-token";
 import { updateSession } from "@/lib/supabase/middleware";
 
@@ -26,9 +27,15 @@ export async function proxy(request: NextRequest) {
   const response = await updateSession(request);
   const { pathname } = request.nextUrl;
 
+  if (pathname.startsWith("/admin")) {
+    response.headers.set("Cache-Control", "private, no-store");
+  }
+
   if (pathname.startsWith("/admin") && !isPublicAdminPath(pathname)) {
-    if (request.cookies.get("tw-admin")?.value !== "1") {
-      return NextResponse.redirect(new URL("/admin/logowanie", request.url));
+    if (!isAdminCookieValue(request.cookies.get(ADMIN_COOKIE)?.value)) {
+      const login = NextResponse.redirect(new URL("/admin/logowanie", request.url));
+      login.headers.set("Cache-Control", "private, no-store");
+      return login;
     }
   }
 

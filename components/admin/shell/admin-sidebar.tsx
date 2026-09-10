@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
-import { logoutAdmin } from "@/app/actions/admin";
 import {
   ADMIN_NAV_GROUPS,
   isAdminNavActive,
@@ -97,7 +96,7 @@ export function AdminSidebar({ badges, open, onClose }: AdminSidebarProps) {
         </nav>
 
         <div className="border-t border-white/10 p-3">
-          <form action={logoutAdmin}>
+          <form action="/api/admin/logout" method="post">
             <button
               type="submit"
               className="w-full rounded-lg px-2.5 py-2 text-left text-[13px] text-bialy/55 transition hover:bg-white/8 hover:text-bialy"

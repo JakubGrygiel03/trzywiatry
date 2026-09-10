@@ -1,9 +1,10 @@
 import { cookies } from "next/headers";
 import { getAdminBadges } from "@/lib/data/admin-metrics";
+import { ADMIN_COOKIE, isAdminCookieValue } from "@/lib/admin-session";
 
 export async function GET() {
   const store = await cookies();
-  if (store.get("tw-admin")?.value !== "1") {
+  if (!isAdminCookieValue(store.get(ADMIN_COOKIE)?.value)) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 

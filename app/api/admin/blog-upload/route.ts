@@ -1,9 +1,10 @@
 import { cookies } from "next/headers";
 import { saveBlogImageUpload } from "@/lib/admin-blog-images";
+import { ADMIN_COOKIE, isAdminCookieValue } from "@/lib/admin-session";
 
 export async function POST(request: Request) {
   const store = await cookies();
-  if (store.get("tw-admin")?.value !== "1") {
+  if (!isAdminCookieValue(store.get(ADMIN_COOKIE)?.value)) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 

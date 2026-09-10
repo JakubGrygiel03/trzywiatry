@@ -17,7 +17,12 @@ export function PwaRegister() {
     }
 
     const register = () => {
-      navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => undefined);
+      navigator.serviceWorker
+        .register("/sw.js", { scope: "/" })
+        .then((registration) => {
+          void registration.update();
+        })
+        .catch(() => undefined);
     };
 
     if (document.readyState === "complete") {

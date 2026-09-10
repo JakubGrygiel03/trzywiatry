@@ -1,13 +1,23 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { AdminLoginForm } from "@/components/admin/admin-login-form";
 import { getAdminEmail } from "@/lib/admin-auth";
+import { ADMIN_COOKIE, isAdminCookieValue } from "@/lib/admin-session";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminLoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ zresetowano?: string }>;
+  searchParams: Promise<{ zresetowano?: string; blad?: string }>;
 }) {
-  const { zresetowano } = await searchParams;
+  const store = await cookies();
+  if (isAdminCookieValue(store.get(ADMIN_COOKIE)?.value)) {
+    redirect("/admin");
+  }
+
+  const { zresetowano, blad } = await searchParams;
   const email = getAdminEmail();
 
   return (
@@ -23,7 +33,7 @@ export default async function AdminLoginPage({
             Hasło zmienione. Możesz się zalogować nowym hasłem.
           </p>
         ) : null}
-        <AdminLoginForm defaultEmail={email} />
+        <AdminLoginForm defaultEmail={email} error={blad} />
         <p className="mt-4 text-center text-xs text-czarny/45">
           Na telefonie lub laptopie wybierz w przeglądarce opcję instalacji aplikacji.
         </p>

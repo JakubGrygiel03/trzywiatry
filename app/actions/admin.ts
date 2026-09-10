@@ -8,57 +8,22 @@ import {
   getAdminEmail,
   getSiteBaseUrl,
   setPasswordWithResetToken,
-  verifyAdminCredentials,
 } from "@/lib/admin-auth";
+import { ADMIN_COOKIE } from "@/lib/admin-session";
 import { updateRuntimeSettings, updateOrderStatusInStore } from "@/lib/data/runtime-store";
 import { ensureOrdersHydrated, saveOrdersToDisk } from "@/lib/data/order-persist";
 import { defaultStudioSettings } from "@/lib/data/settings";
 import type { BannerType, HeroSlot, OrderStatus, StudioSettings } from "@/lib/types";
-import {
-  adminForgotPasswordSchema,
-  adminLoginSchema,
-  adminResetPasswordSchema,
-} from "@/lib/validations/forms";
+import { adminForgotPasswordSchema, adminResetPasswordSchema } from "@/lib/validations/forms";
 import { newsletterCmsSchema } from "@/lib/validations/settings";
 import { notifyCustomerOrderStatus, sendAdminPasswordResetEmail } from "@/lib/resend";
 import { ORDER_STATUS_LABELS } from "@/lib/constants";
 
-const COOKIE = "tw-admin";
-
-export type AuthFormState = {
-  ok: boolean;
-  message: string;
-  /** Dev-only: reset URL when Resend is not configured */
-  demoResetUrl?: string;
-};
-
-export async function loginAdmin(_: AuthFormState, formData: FormData): Promise<AuthFormState> {
-  const parsed = adminLoginSchema.safeParse({
-    email: formData.get("email"),
-    password: formData.get("password"),
-  });
-  if (!parsed.success) {
-    return { ok: false, message: parsed.error.issues[0]?.message ?? "Uzupełnij dane logowania." };
-  }
-
-  const valid = verifyAdminCredentials(parsed.data.email, parsed.data.password);
-  if (!valid) {
-    return { ok: false, message: "Nieprawidłowy e-mail lub hasło." };
-  }
-
-  const store = await cookies();
-  store.set(COOKIE, "1", {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    secure: process.env.NODE_ENV === "production",
-  });
-  redirect("/admin");
-}
+export type AuthFormState = { ok: boolean; message: string };
 
 export async function logoutAdmin() {
   const store = await cookies();
-  store.delete(COOKIE);
+  store.delete(ADMIN_COOKIE);
   redirect("/admin/logowanie");
 }
 
