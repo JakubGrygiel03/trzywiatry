@@ -5,8 +5,8 @@ import { useActionState, useEffect } from "react";
 import { createCheckoutSession } from "@/app/actions/checkout";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea } from "@/components/ui/field";
+import { useSiteSettings } from "@/components/cms/site-settings-provider";
 import { SHIPPING_METHODS } from "@/lib/constants";
-import { studioSettings } from "@/lib/data/settings";
 import { formatPLN } from "@/lib/format";
 import { cartGiftWrapCost, cartSubtotal, useCartStore } from "@/store/use-cart-store";
 
@@ -24,11 +24,12 @@ export function CheckoutForm({
   const giftMessage = useCartStore((state) => state.giftMessage);
   const clear = useCartStore((state) => state.clear);
   const [state, action, pending] = useActionState(createCheckoutSession, initial);
+  const settings = useSiteSettings();
   const subtotal = cartSubtotal(items);
-  const gift = cartGiftWrapCost(hasGiftWrapping);
-  const thresholdLabel = formatPLN(studioSettings.freeShippingThresholdCents);
+  const gift = cartGiftWrapCost(hasGiftWrapping, settings.giftWrapPriceCents);
+  const thresholdLabel = formatPLN(settings.freeShippingThresholdCents);
   const shippingHint =
-    subtotal >= studioSettings.freeShippingThresholdCents
+    subtotal >= settings.freeShippingThresholdCents
       ? `Darmowa dostawa od ${thresholdLabel} — kurier i InPost 0 zł.`
       : `Doliczymy koszt dostawy, jeśli nie osiągniesz ${thresholdLabel}.`;
 
@@ -63,7 +64,7 @@ export function CheckoutForm({
       <input type="hidden" name="hasGiftWrapping" value={String(hasGiftWrapping)} />
       <input type="hidden" name="giftMessage" value={giftMessage} />
       <div className="space-y-5">
-        <Field name="customerName" label="Imię i nazwisko" defaultValue={defaultName} />
+        <Field name="customerName" label="Imię i nazwisko / Full name" defaultValue={defaultName} />
         <div className="space-y-2">
           <Label htmlFor="customerEmail">
             E-mail <span className="text-czerwony">*</span>
@@ -75,7 +76,7 @@ export function CheckoutForm({
             autoComplete="email"
             required
             defaultValue={defaultEmail}
-            placeholder="np. anna@email.pl"
+            placeholder="you@email.com"
           />
           <p className="text-xs text-czarny/50">
             Na ten adres wyślemy potwierdzenie zamówienia
@@ -90,7 +91,7 @@ export function CheckoutForm({
             ) : null}
           </p>
         </div>
-        <Field name="customerPhone" label="Telefon" type="tel" />
+        <Field name="customerPhone" label="Telefon / Phone" type="tel" placeholder="+48 123 456 789" />
         <Field name="street" label="Ulica i numer" />
         <div className="grid gap-5 sm:grid-cols-2">
           <Field name="postalCode" label="Kod pocztowy" placeholder="80-000" />
@@ -113,7 +114,12 @@ export function CheckoutForm({
           <p className="text-xs text-szary">{shippingHint}</p>
         </div>
         <Field name="inpostLocker" label="Paczkomat InPost (opcjonalnie)" required={false} />
-        <Field name="discountCode" label="Kod rabatowy" placeholder="WIOSNA" required={false} />
+        <Field
+          name="discountCode"
+          label="Kod rabatowy"
+          placeholder={settings.promoCode?.trim() || "kod z maila"}
+          required={false}
+        />
         <div className="space-y-2">
           <Label htmlFor="notes">Uwagi</Label>
           <Textarea id="notes" name="notes" />

@@ -50,10 +50,12 @@ export function SectionHeading({
   eyebrow,
   title,
   description,
+  descriptionEn,
 }: {
   eyebrow?: string;
   title: string;
   description?: string;
+  descriptionEn?: string;
 }) {
   return (
     <div className="max-w-2xl space-y-2">
@@ -65,6 +67,11 @@ export function SectionHeading({
       </h2>
       {description ? (
         <p className="max-w-xl text-base leading-relaxed text-czarny">{description}</p>
+      ) : null}
+      {descriptionEn ? (
+        <p className="max-w-xl text-sm leading-relaxed text-czarny/55" lang="en">
+          {descriptionEn}
+        </p>
       ) : null}
     </div>
   );

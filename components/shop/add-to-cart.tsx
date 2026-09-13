@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { usePdpVariant } from "@/components/shop/pdp-variant";
 import { Button } from "@/components/ui/button";
 import { formatPLN } from "@/lib/format";
 import { variantStockLabel } from "@/lib/data/queries";
@@ -12,18 +13,11 @@ import { cn } from "@/lib/utils";
 
 export function AddToCart({ product }: { product: Product }) {
   const addItem = useCartStore((state) => state.addItem);
+  const { variant, color, capacityMl, setColor, setCapacityMl, setVariantId } = usePdpVariant();
   const colors = useMemo(() => variantColors(product), [product]);
   const capacities = useMemo(() => variantCapacities(product), [product]);
   const structured = colors.length > 0 || capacities.length > 1;
-
-  const [color, setColor] = useState(colors[0]?.name);
-  const [capacityMl, setCapacityMl] = useState(capacities[0]);
-  const [variantId, setVariantId] = useState(product.variants[0]?.id);
   const [error, setError] = useState<string | null>(null);
-
-  const variant = structured
-    ? findVariant(product, color, capacityMl)
-    : (product.variants.find((item) => item.id === variantId) ?? product.variants[0]);
 
   const price = variant?.priceInCents ?? product.priceInCents;
   const status = variantStockLabel(variant?.stockQuantity ?? 0, product.lowStockThreshold);

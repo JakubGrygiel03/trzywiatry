@@ -4,6 +4,7 @@ import { b2bSchema } from "@/lib/validations/b2b";
 import { SITE } from "@/lib/constants";
 import { runtimeStore } from "@/lib/data/runtime-store";
 import { sendEmail } from "@/lib/resend";
+import { escapeHtml } from "@/lib/validations/safe-input";
 
 export async function submitB2BInquiry(_: { ok: boolean; message: string }, formData: FormData) {
   const parsed = b2bSchema.safeParse({
@@ -17,7 +18,7 @@ export async function submitB2BInquiry(_: { ok: boolean; message: string }, form
   });
 
   if (!parsed.success) {
-    return { ok: false, message: parsed.error.issues[0]?.message ?? "Uzupełnij formularz." };
+    return { ok: false, message: parsed.error.issues[0]?.message ?? "Uzupełnij formularz. / Please complete the form." };
   }
 
   runtimeStore.b2b.push({
@@ -29,8 +30,12 @@ export async function submitB2BInquiry(_: { ok: boolean; message: string }, form
   await sendEmail({
     to: SITE.email,
     subject: `Zapytanie B2B · ${parsed.data.companyName}`,
-    html: `<p>${parsed.data.contactPerson} (${parsed.data.email}) · NIP ${parsed.data.nip}</p><p>${parsed.data.message}</p>`,
+    html: `<p>${escapeHtml(parsed.data.contactPerson)} (${escapeHtml(parsed.data.email)}) · NIP/VAT ${escapeHtml(parsed.data.nip || "—")}</p><p>${escapeHtml(parsed.data.message)}</p>`,
   });
 
-  return { ok: true, message: "Dziękujemy. Oddzwonimy z wyceną HoReCa w ciągu dwóch dni roboczych." };
+  return {
+    ok: true,
+    message:
+      "Dziękujemy. Oddzwonimy z wyceną HoReCa w ciągu dwóch dni roboczych. / Thank you — we will reply with a quote within two working days.",
+  };
 }

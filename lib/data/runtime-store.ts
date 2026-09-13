@@ -1,4 +1,7 @@
-import type { BlogPost, OrderStatus, Product, StoredOrder, StudioSettings, Workshop } from "@/lib/types";
+import type { ContentOverlayMap } from "@/lib/cms/content-pages";
+import type { HomeSection } from "@/lib/cms/home-layout";
+import type { BlogPost, Collection, OrderStatus, Product, StoredOrder, StudioSettings, Workshop } from "@/lib/types";
+import { collections as seedCollections } from "@/lib/data/collections";
 import { blogPosts as seedBlogPosts } from "@/lib/data/posts";
 import { products as seedProducts } from "@/lib/data/products";
 import { defaultStudioSettings } from "@/lib/data/settings";
@@ -24,6 +27,13 @@ type RuntimeStore = {
   blogPosts: BlogPost[];
   /** Mutable workshop schedule until Supabase. */
   workshops: Workshop[];
+  /** Admin overrides for transactional email copy. */
+  emailTemplates: Record<string, { subject: string; body: string }>;
+  /** Homepage section order + copy (Supabase page_layouts, memory fallback). */
+  homeLayout?: HomeSection[];
+  /** Overlay copy for B2B / O nas / Kontakt (same page_layouts table). */
+  contentPages?: Partial<ContentOverlayMap>;
+  collections?: Collection[];
 };
 
 const globalStore = globalThis as typeof globalThis & { __twStore?: RuntimeStore };
@@ -39,6 +49,10 @@ function createStore(): RuntimeStore {
     catalog: structuredClone(seedProducts),
     blogPosts: structuredClone(seedBlogPosts),
     workshops: structuredClone(seedWorkshops),
+    emailTemplates: {},
+    homeLayout: undefined,
+    contentPages: {},
+    collections: structuredClone(seedCollections),
   };
 }
 
@@ -48,6 +62,20 @@ if (!runtimeStore.settings) {
   runtimeStore.settings = { ...defaultStudioSettings };
 }
 
+if (!runtimeStore.emailTemplates) {
+  runtimeStore.emailTemplates = {};
+}
+
+if (!runtimeStore.contentPages) {
+  runtimeStore.contentPages = {};
+}
+
+// Old seed baked the campaign into the sentence — tokens + chip follow the admin field.
+const announcement = runtimeStore.settings.announcementText ?? "";
+if (announcement.includes("WIOSNA") || announcement.includes("hasło {code}")) {
+  runtimeStore.settings.announcementText = defaultStudioSettings.announcementText;
+}
+
 if (!Array.isArray(runtimeStore.orders)) {
   runtimeStore.orders = [];
 }
@@ -55,15 +83,14 @@ if (!Array.isArray(runtimeStore.orders)) {
 if (!Array.isArray(runtimeStore.catalog) || runtimeStore.catalog.length === 0) {
   runtimeStore.catalog = structuredClone(seedProducts);
 } else {
-  // Colour-split Woo leftovers → one product with glaze variants
-  const drop = new Set(["p-wygodny-kubas-miodowy", "p-wygodny-kubas-zolty", "p-wygodny-kubas-lawendowy"]);
-  const merged = seedProducts.find((item) => item.id === "p-wygodny-kubas");
+  // Drop leftover split SKUs and the duplicate form listing
+  const drop = new Set([
+    "p-wygodny-kubas-miodowy",
+    "p-wygodny-kubas-zolty",
+    "p-wygodny-kubas-lawendowy",
+    "p-formy-nieokielznane",
+  ]);
   runtimeStore.catalog = runtimeStore.catalog.filter((item) => !drop.has(item.id));
-  if (merged) {
-    const index = runtimeStore.catalog.findIndex((item) => item.id === merged.id);
-    if (index >= 0) runtimeStore.catalog[index] = structuredClone(merged);
-    else runtimeStore.catalog.push(structuredClone(merged));
-  }
 }
 
 if (!Array.isArray(runtimeStore.blogPosts) || runtimeStore.blogPosts.length === 0) {
@@ -184,6 +211,32 @@ export function getRuntimeSettings(): StudioSettings {
 export function updateRuntimeSettings(patch: Partial<StudioSettings>) {
   runtimeStore.settings = { ...getRuntimeSettings(), ...patch };
   return runtimeStore.settings;
+}
+
+export function getRuntimeCollections(): Collection[] {
+  if (!Array.isArray(runtimeStore.collections) || runtimeStore.collections.length === 0) {
+    runtimeStore.collections = structuredClone(seedCollections);
+  }
+  return runtimeStore.collections;
+}
+
+export function upsertCollectionsFromGlaze(
+  lines: { id: string; name: string; slug: string; description: string }[],
+) {
+  const list = getRuntimeCollections();
+  for (const line of lines) {
+    const index = list.findIndex((item) => item.id === line.id || item.slug === line.slug);
+    const imageUrl = list[index]?.imageUrl ?? "/brand/photos/ceramic-mugs.jpg";
+    const next: Collection = {
+      id: line.id,
+      name: line.name,
+      slug: line.slug,
+      description: line.description,
+      imageUrl,
+    };
+    if (index >= 0) list[index] = next;
+    else list.push(next);
+  }
 }
 
 let lastSeedIdSignature = "";

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { HeroProductGallery } from "@/components/home/hero-product-gallery";
 import { Button } from "@/components/ui/button";
+import { defaultHeroPayload, type HeroPayload } from "@/lib/cms/home-layout";
 import type { HeroGalleryItem } from "@/lib/data/queries";
 
 const heroBtnSize =
@@ -42,11 +43,14 @@ function MarqueeStrip({ labels, hidden }: { labels: string[]; hidden?: boolean }
 export function Hero({
   workshopsEnabled,
   galleryProducts,
+  payload = defaultHeroPayload(),
 }: {
   workshopsEnabled: boolean;
   galleryProducts: HeroGalleryItem[];
+  payload?: HeroPayload;
 }) {
   const labels = marqueeLabels(workshopsEnabled);
+  const secondary = workshopsEnabled ? payload.workshopCta : payload.aboutCta;
 
   return (
     <section className="hero-kadr">
@@ -54,40 +58,27 @@ export function Hero({
         <div className="hero-copy">
           <div className="hero-copy__stack">
             <p className="hero-copy__eyebrow font-heading uppercase tracking-[0.28em]">
-              {workshopsEnabled ? "Ceramika · Drewno · Warsztaty" : "Ceramika · Drewno"}
+              {workshopsEnabled ? payload.eyebrowWorkshops : payload.eyebrow}
             </p>
 
             <h1 className="hero-copy__title font-heading uppercase leading-[1.1] tracking-[0.06em]">
-              Trzy Wiatry
+              {payload.title}
             </h1>
 
-            <p className="hero-copy__lead max-w-[36ch] leading-[1.7]">
-              Slow craft z lokalnej gliny i drewna — toczone, wypalane i pakowane w pracowni.
-            </p>
+            <p className="hero-copy__lead max-w-[36ch] leading-[1.7]">{payload.lead}</p>
 
             <div className="flex flex-col gap-2.5 pt-1">
               <Button asChild size="lg" className={`${heroBtnSize} bg-bialy text-czarny hover:bg-krem`}>
-                <Link href="/sklep">Wejdź do sklepu</Link>
+                <Link href={payload.primaryCta.href}>{payload.primaryCta.label}</Link>
               </Button>
-              {workshopsEnabled ? (
-                <Button
-                  asChild
-                  size="lg"
-                  variant="outline"
-                  className={`${heroBtnSize} border-bialy bg-transparent text-bialy hover:bg-ceglany hover:text-czarny hover:border-ceglany`}
-                >
-                  <Link href="/warsztaty">Zarezerwuj warsztat</Link>
-                </Button>
-              ) : (
-                <Button
-                  asChild
-                  size="lg"
-                  variant="outline"
-                  className={`${heroBtnSize} border-bialy bg-transparent text-bialy hover:bg-ceglany hover:text-czarny hover:border-ceglany`}
-                >
-                  <Link href="/o-nas">Poznaj pracownię</Link>
-                </Button>
-              )}
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className={`${heroBtnSize} border-bialy bg-transparent text-bialy hover:bg-ceglany hover:text-czarny hover:border-ceglany`}
+              >
+                <Link href={secondary.href}>{secondary.label}</Link>
+              </Button>
             </div>
           </div>
         </div>

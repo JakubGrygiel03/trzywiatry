@@ -4,6 +4,7 @@ import Link from "next/link";
 import { CartLineItem } from "@/components/cart/cart-line-item";
 import { CartUpsell } from "@/components/cart/cart-upsell";
 import { FreeShippingMeter, GiftWrappingCard } from "@/components/cart/gift-and-shipping";
+import { useSiteSettings } from "@/components/cms/site-settings-provider";
 import { Button } from "@/components/ui/button";
 import { Container, SectionHeading } from "@/components/ui/badge";
 import { formatPLN } from "@/lib/format";
@@ -12,8 +13,9 @@ import { cartGiftWrapCost, cartSubtotal, useCartStore } from "@/store/use-cart-s
 export default function CartPage() {
   const items = useCartStore((state) => state.items);
   const hasGiftWrapping = useCartStore((state) => state.hasGiftWrapping);
+  const { giftWrapPriceCents } = useSiteSettings();
   const subtotal = cartSubtotal(items);
-  const gift = cartGiftWrapCost(hasGiftWrapping);
+  const gift = cartGiftWrapCost(hasGiftWrapping, giftWrapPriceCents);
 
   return (
     <div className="py-14 md:py-20">

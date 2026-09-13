@@ -1,18 +1,15 @@
 import { z } from "zod";
-
-const nip = z
-  .string()
-  .transform((value) => value.replace(/\s|-/g, ""))
-  .refine((value) => /^\d{10}$/.test(value), "NIP musi mieć 10 cyfr");
+import { bi } from "@/lib/i18n/public";
+import { emailSchema, phoneSchema, plainText, taxIdSchema } from "@/lib/validations/safe-input";
 
 export const b2bSchema = z.object({
-  companyName: z.string().min(2, "Podaj nazwę firmy"),
-  nip,
-  contactPerson: z.string().min(2, "Podaj osobę kontaktową"),
-  email: z.string().email("Nieprawidłowy e-mail"),
-  phone: z.string().min(9, "Podaj telefon"),
-  estimatedQuantity: z.string().min(1, "Podaj szacowaną ilość"),
-  message: z.string().min(10, "Opisz potrzeby pracowni lub lokalu"),
+  companyName: plainText(bi("Nazwa firmy", "Company"), 120, 2),
+  nip: taxIdSchema,
+  contactPerson: plainText(bi("Osoba kontaktowa", "Contact person"), 80, 2),
+  email: emailSchema,
+  phone: phoneSchema,
+  estimatedQuantity: plainText(bi("Szacowana ilość", "Estimated quantity"), 80, 1),
+  message: plainText(bi("Wiadomość", "Message"), 2000, 10),
 });
 
 export type B2BInput = z.infer<typeof b2bSchema>;

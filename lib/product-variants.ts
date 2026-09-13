@@ -1,3 +1,4 @@
+import { isUsableProductPhoto } from "@/lib/media";
 import type { Product, ProductVariant } from "@/lib/types";
 
 export function variantColors(product: Product) {
@@ -53,4 +54,19 @@ export function findVariant(
 
 export function variantPhoto(product: Product, variant?: ProductVariant) {
   return variant?.image ?? product.images[0];
+}
+
+function photoStem(src: string) {
+  return src.replace(/-\d+\.(jpe?g|png|webp|avif)$/i, "").toLowerCase();
+}
+
+/** Gallery for the selected glaze — cover first, then matching shots of that colour. */
+export function photosForVariant(product: Product, variant?: ProductVariant) {
+  const all = product.images.filter(isUsableProductPhoto);
+  const cover = variant?.image && isUsableProductPhoto(variant.image) ? variant.image : undefined;
+  if (!cover) return all;
+
+  const stem = photoStem(cover);
+  const matched = all.filter((src) => src === cover || photoStem(src) === stem);
+  return [cover, ...matched.filter((src) => src !== cover)];
 }

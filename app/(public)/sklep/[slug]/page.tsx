@@ -1,4 +1,5 @@
 import { AddToCart } from "@/components/shop/add-to-cart";
+import { PdpVariantProvider } from "@/components/shop/pdp-variant";
 import { CrossSell } from "@/components/shop/cross-sell";
 import { RecentlyViewed } from "@/components/shop/recently-viewed";
 import { TrackRecentlyViewed } from "@/components/shop/track-recently-viewed";
@@ -35,6 +36,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     <div className="py-10 md:py-14">
       <TrackRecentlyViewed product={product} />
       <Container className="space-y-12 md:space-y-16">
+        <PdpVariantProvider product={product}>
         <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-10">
           <div className="lg:sticky lg:top-24">
             <ProductGallery product={product} />
@@ -65,6 +67,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <AddToCart product={product} />
           </div>
         </div>
+        </PdpVariantProvider>
 
         <UpsellRail suggestions={upsells.slice(0, 2)} title="Często dobierane razem" />
 

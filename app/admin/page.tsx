@@ -36,7 +36,7 @@ export default function AdminHomePage() {
     <div className="mx-auto max-w-6xl space-y-6">
       <AdminPageHeader
         title="Pulpit"
-        description={`${todayLabel()} · skrót jak w WooCommerce: sprzedaż, magazyn i kolejka do spakowania.`}
+        description={`${todayLabel()} · sprzedaż, magazyn i kolejka do spakowania.`}
         actions={
           <>
             <Link
@@ -114,7 +114,7 @@ export default function AdminHomePage() {
             <AdminEmptyState
               icon={ShoppingBag}
               title="Brak zamówień w tej sesji"
-              description="Złóż testowe zamówienie w sklepie — pojawi się tu jak w WooCommerce → Zamówienia."
+              description="Złóż testowe zamówienie w sklepie — pojawi się na tej liście."
               action={
                 <Link href="/sklep" className="text-xs font-medium text-czerwony underline-offset-2 hover:underline">
                   Przejdź do sklepu
@@ -159,7 +159,7 @@ export default function AdminHomePage() {
         </AdminPanel>
 
         <div className="space-y-4">
-          <AdminPanel title="Kolejka statusów" description="Pipeline jak w Woo">
+          <AdminPanel title="Kolejka statusów" description="Ile zamówień jest na każdym etapie">
             <ul className="space-y-2">
               {PIPELINE.map((status) => {
                 const count = m.statusCounts[status] ?? 0;

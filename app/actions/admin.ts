@@ -13,9 +13,10 @@ import { ADMIN_COOKIE } from "@/lib/admin-session";
 import { updateRuntimeSettings, updateOrderStatusInStore } from "@/lib/data/runtime-store";
 import { ensureOrdersHydrated, saveOrdersToDisk } from "@/lib/data/order-persist";
 import { defaultStudioSettings } from "@/lib/data/settings";
-import type { BannerType, HeroSlot, OrderStatus, StudioSettings } from "@/lib/types";
+import type { OrderStatus } from "@/lib/types";
 import { adminForgotPasswordSchema, adminResetPasswordSchema } from "@/lib/validations/forms";
-import { newsletterCmsSchema } from "@/lib/validations/settings";
+import { firstZodMessage } from "@/lib/validations/safe-input";
+import { studioSettingsFormSchema } from "@/lib/validations/settings";
 import { notifyCustomerOrderStatus, sendAdminPasswordResetEmail } from "@/lib/resend";
 import { ORDER_STATUS_LABELS } from "@/lib/constants";
 
@@ -140,91 +141,41 @@ export async function updateOrderStatus(formData: FormData) {
   );
 }
 
-function parseNewsletterCms(formData: FormData): Pick<
-  StudioSettings,
-  | "newsletterEnabled"
-  | "newsletterEyebrow"
-  | "newsletterTitle"
-  | "newsletterBody"
-  | "newsletterFormLabel"
-  | "newsletterButtonLabel"
-> {
-  const parsed = newsletterCmsSchema.safeParse({
-    newsletterEnabled: formData.get("newsletterEnabled") === "true",
-    newsletterEyebrow: String(formData.get("newsletterEyebrow") ?? ""),
-    newsletterTitle: String(formData.get("newsletterTitle") ?? ""),
-    newsletterBody: String(formData.get("newsletterBody") ?? ""),
-    newsletterFormLabel: String(formData.get("newsletterFormLabel") ?? ""),
-    newsletterButtonLabel: String(formData.get("newsletterButtonLabel") ?? ""),
-  });
-  const seed = defaultStudioSettings;
-  const data = parsed.success ? parsed.data : seed;
-
-  return {
-    newsletterEnabled: data.newsletterEnabled,
-    newsletterEyebrow: data.newsletterEyebrow || seed.newsletterEyebrow,
-    newsletterTitle: data.newsletterTitle || seed.newsletterTitle,
-    newsletterBody: data.newsletterBody || seed.newsletterBody,
-    newsletterFormLabel: data.newsletterFormLabel || seed.newsletterFormLabel,
-    newsletterButtonLabel: data.newsletterButtonLabel || seed.newsletterButtonLabel,
-  };
-}
-
 function parseShopHubImage(raw: unknown, fallback: string) {
   const value = String(raw ?? "").trim();
   if (value.startsWith("/") && !value.includes("..") && value.length < 300) return value;
   return fallback;
 }
 
-function parseHeroSlots(raw: string): HeroSlot[] {
-  try {
-    const data: unknown = JSON.parse(raw);
-    if (!Array.isArray(data)) return [];
-    return data
-      .filter(
-        (item): item is HeroSlot =>
-          Boolean(item) &&
-          typeof item === "object" &&
-          typeof (item as HeroSlot).productId === "string" &&
-          typeof (item as HeroSlot).image === "string" &&
-          (item as HeroSlot).productId.length > 0 &&
-          (item as HeroSlot).image.startsWith("/"),
-      )
-      .slice(0, 12);
-  } catch {
-    return [];
-  }
-}
-
 export async function saveStudioSettings(formData: FormData) {
-  const announcementType = String(formData.get("announcementType") ?? "promo") as BannerType;
-  const announcementText = String(formData.get("announcementText") ?? "").trim();
-  const promoCode = String(formData.get("promoCode") ?? "").trim() || undefined;
-  const freeShipping = Number(formData.get("freeShipping"));
-  const vacationStartDate = String(formData.get("vacationStart") ?? "").trim() || undefined;
-  const vacationEndDate = String(formData.get("vacationEnd") ?? "").trim() || undefined;
-  const vacationDispatchDate = String(formData.get("vacationDispatch") ?? "").trim() || undefined;
-
-  const safeType: BannerType =
-    announcementType === "vacation" || announcementType === "hidden" || announcementType === "promo"
-      ? announcementType
-      : "promo";
-
-  updateRuntimeSettings({
-    announcementType: safeType,
-    announcementText:
-      announcementText ||
-      (safeType === "vacation"
-        ? "Piec musiał ochłonąć"
-        : "Darmowa dostawa od 300 zł  ·  Newsletter: −15% na hasło WIOSNA"),
-    promoCode,
-    vacationStartDate,
-    vacationEndDate,
-    vacationDispatchDate,
-    freeShippingThresholdCents:
-      Number.isFinite(freeShipping) && freeShipping > 0 ? freeShipping : 30000,
+  const parsed = studioSettingsFormSchema.safeParse({
+    announcementType: String(formData.get("announcementType") ?? "promo"),
+    announcementText: String(formData.get("announcementText") ?? ""),
+    promoCode: String(formData.get("promoCode") ?? ""),
+    vacationStart: String(formData.get("vacationStart") ?? ""),
+    vacationEnd: String(formData.get("vacationEnd") ?? ""),
+    vacationDispatch: String(formData.get("vacationDispatch") ?? ""),
+    freeShipping: formData.get("freeShipping"),
     workshopsEnabled: formData.get("workshopsEnabled") === "true",
-    heroSlots: parseHeroSlots(String(formData.get("heroSlots") ?? "")),
+  });
+  if (!parsed.success) {
+    redirect(`/admin/ustawienia-sklepu?blad=${encodeURIComponent(firstZodMessage(parsed.error))}`);
+  }
+
+  const data = parsed.data;
+  updateRuntimeSettings({
+    announcementType: data.announcementType,
+    announcementText:
+      data.announcementText ||
+      (data.announcementType === "vacation"
+        ? "Piec musiał ochłonąć"
+        : "Darmowa dostawa od {freeShipping}  ·  Newsletter: −15%"),
+    promoCode: data.promoCode || undefined,
+    vacationStartDate: data.vacationStart || undefined,
+    vacationEndDate: data.vacationEnd || undefined,
+    vacationDispatchDate: data.vacationDispatch || undefined,
+    freeShippingThresholdCents: data.freeShipping > 0 ? data.freeShipping : 30000,
+    workshopsEnabled: data.workshopsEnabled,
     shopHubUzytkowaImage: parseShopHubImage(
       formData.get("shopHubUzytkowaImage"),
       defaultStudioSettings.shopHubUzytkowaImage,
@@ -233,7 +184,6 @@ export async function saveStudioSettings(formData: FormData) {
       formData.get("shopHubPracowniaImage"),
       defaultStudioSettings.shopHubPracowniaImage,
     ),
-    ...parseNewsletterCms(formData),
   });
 
   revalidatePath("/", "layout");

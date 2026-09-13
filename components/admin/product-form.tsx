@@ -141,7 +141,10 @@ export function ProductForm({
             title="Warianty i magazyn"
             description="Tu ustawiasz ilość sztuk oraz zaznaczasz „Brak w magazynie” — to steruje nakładką w sklepie."
           >
-            <ProductVariantsField initialVariants={product?.variants} />
+            <ProductVariantsField
+              initialVariants={product?.variants}
+              imageOptions={product?.images ?? []}
+            />
           </AdminFormSection>
 
           {catalog.length > 0 ? (

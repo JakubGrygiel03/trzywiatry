@@ -15,11 +15,20 @@ function slotKey(slot: HeroSlot) {
 export function HeroPhotoPicker({
   options,
   initialSlots,
+  onChange,
+  hideInput,
 }: {
   options: HeroPhotoOption[];
   initialSlots: HeroSlot[];
+  onChange?: (slots: HeroSlot[]) => void;
+  hideInput?: boolean;
 }) {
   const [slots, setSlots] = useState<HeroSlot[]>(initialSlots);
+
+  function commit(next: HeroSlot[]) {
+    setSlots(next);
+    onChange?.(next);
+  }
 
   const grouped = useMemo(() => {
     const map = new Map<string, HeroPhotoOption[]>();
@@ -35,18 +44,19 @@ export function HeroPhotoPicker({
   }, [options]);
 
   function toggle(option: HeroPhotoOption) {
-    setSlots((current) => {
-      const key = slotKey(option);
-      const index = current.findIndex((slot) => slotKey(slot) === key);
-      if (index >= 0) return current.filter((_, i) => i !== index);
-      if (current.length >= MAX_SLOTS) return current;
-      return [...current, { productId: option.productId, image: option.image }];
-    });
+    const key = slotKey(option);
+    const index = slots.findIndex((slot) => slotKey(slot) === key);
+    if (index >= 0) {
+      commit(slots.filter((_, i) => i !== index));
+      return;
+    }
+    if (slots.length >= MAX_SLOTS) return;
+    commit([...slots, { productId: option.productId, image: option.image }]);
   }
 
   return (
     <div className="space-y-4">
-      <input type="hidden" name="heroSlots" value={JSON.stringify(slots)} />
+      {hideInput ? null : <input type="hidden" name="heroSlots" value={JSON.stringify(slots)} />}
       <p className="text-sm text-czarny">
         Zaznaczone: <strong>{slots.length}</strong> / {MAX_SLOTS}. Pierwsze trzy kadry stoją od lewej. Kolejne
         wchodzą w rotację.

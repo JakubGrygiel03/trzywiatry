@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { connection } from "next/server";
+import { interpolateStudioCopy } from "@/lib/data/settings";
 import { getSettings } from "@/lib/data/queries";
 import { buildVacationBannerMessage } from "@/lib/vacation-message";
 
@@ -11,7 +12,9 @@ export async function AnnouncementBar() {
   if (settings.announcementType === "hidden") return null;
 
   const isVacation = settings.announcementType === "vacation";
-  const message = isVacation ? buildVacationBannerMessage(settings) : settings.announcementText;
+  const message = isVacation
+    ? buildVacationBannerMessage(settings)
+    : interpolateStudioCopy(settings.announcementText, settings);
 
   return (
     <div

@@ -24,7 +24,7 @@ export function NewsletterForm({
           name="email"
           type="email"
           required
-          placeholder="twój@email.pl"
+          placeholder="you@email.com"
           className={cn(
             "bg-bialy",
             tone === "dark" &&

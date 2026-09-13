@@ -10,7 +10,7 @@ export default function AdminB2BPage() {
     <div className="mx-auto max-w-6xl">
       <AdminPageHeader
         title="Zapytania B2B"
-        description="Skrzynka HoReCa — jak formularze kontaktowe w WordPressie, tylko z NIP i wolumenem."
+        description="Zapytania z formularza B2B — NIP, wolumen i wiadomość od lokalu."
       />
 
       {inquiries.length === 0 ? (
@@ -18,7 +18,7 @@ export default function AdminB2BPage() {
           <AdminEmptyState
             icon={Building2}
             title="Brak zapytań w tej sesji"
-            description="Formularz /b2b zapisuje zgłoszenia tutaj na czas działania serwera deweloperskiego."
+            description="Gdy ktoś wyśle formularz na /b2b, zapytanie pojawi się na tej liście."
           />
         </div>
       ) : (

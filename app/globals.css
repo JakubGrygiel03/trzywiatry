@@ -167,6 +167,8 @@ h4 {
 .hero-mosaic__tile img {
   object-fit: cover;
   object-position: center;
+  /* Keep both layers on the GPU so the swap is a fade, not a layout jump. */
+  transform: translateZ(0);
 }
 
 .hero-marquee {

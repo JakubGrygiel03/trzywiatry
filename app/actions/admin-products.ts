@@ -21,13 +21,14 @@ const variantDraftSchema = z.object({
   color: z.string().optional(),
   colorHex: z.string().optional(),
   capacityMl: z.coerce.number().int().positive().optional(),
+  image: z.string().optional(),
 });
 
 const productSchema = z.object({
   id: z.string().optional(),
-  name: z.string().min(2, "Podaj nazwę produktu"),
-  slug: z.string().min(2, "Podaj slug"),
-  description: z.string().min(10, "Opis min. 10 znaków"),
+  name: z.string().trim().min(2, "Podaj nazwę produktu").max(80, "Nazwa: max 80 znaków.").refine((v) => !/[<>]/.test(v), "Nazwa bez HTML."),
+  slug: z.string().trim().min(2, "Podaj slug").max(80).regex(/^[a-z0-9-]+$/, "Slug: małe litery, cyfry i myślnik."),
+  description: z.string().trim().min(10, "Opis min. 10 znaków").max(4000, "Opis jest za długi."),
   domain: z.enum(domains),
   category: z.string().min(1),
   subCategory: z.string().optional(),
@@ -146,7 +147,7 @@ function buildVariants(
       color: draft.color || previous?.color,
       colorHex: draft.colorHex || previous?.colorHex,
       capacityMl: draft.capacityMl ?? previous?.capacityMl,
-      image: previous?.image,
+      image: draft.image || previous?.image,
     });
   }
 

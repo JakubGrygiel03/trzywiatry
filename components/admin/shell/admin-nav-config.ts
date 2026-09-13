@@ -4,6 +4,9 @@ import {
   Building2,
   CalendarDays,
   LayoutDashboard,
+  FileText,
+  LayoutTemplate,
+  Mail,
   Newspaper,
   Package,
   Settings,
@@ -54,7 +57,12 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   {
     id: "content",
     label: "Treści",
-    items: [{ href: "/admin/blog", label: "Blog i poradniki", icon: Newspaper }],
+    items: [
+      { href: "/admin/strona-glowna", label: "Strona główna", icon: LayoutTemplate },
+      { href: "/admin/strony", label: "B2B, O nas, Kontakt", icon: FileText },
+      { href: "/admin/blog", label: "Blog i poradniki", icon: Newspaper },
+      { href: "/admin/emaile", label: "E-maile do klientów", icon: Mail },
+    ],
   },
   {
     id: "system",

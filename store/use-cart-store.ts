@@ -2,8 +2,8 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { defaultStudioSettings } from "@/lib/data/settings";
 import type { CartItem } from "@/lib/types";
-import { studioSettings } from "@/lib/data/settings";
 
 type CartState = {
   items: CartItem[];
@@ -71,8 +71,11 @@ export function cartSubtotal(items: CartItem[]) {
   return items.reduce((sum, item) => sum + item.unitPriceInCents * item.quantity, 0);
 }
 
-export function cartGiftWrapCost(hasGiftWrapping: boolean) {
-  return hasGiftWrapping ? studioSettings.giftWrapPriceCents : 0;
+export function cartGiftWrapCost(
+  hasGiftWrapping: boolean,
+  giftWrapPriceCents = defaultStudioSettings.giftWrapPriceCents,
+) {
+  return hasGiftWrapping ? giftWrapPriceCents : 0;
 }
 
 export function cartCount(items: CartItem[]) {

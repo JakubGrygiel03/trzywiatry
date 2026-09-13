@@ -1,26 +1,35 @@
 import { B2BForm } from "@/components/b2b/b2b-form";
 import { Container, SectionHeading } from "@/components/ui/badge";
 import { AtelierFrame } from "@/components/visual/atelier-frame";
+import { getContentPage } from "@/lib/data/content-pages";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "B2B",
-  description: "Ceramika na zamówienie dla kawiarni, restauracji i hoteli — logo, formy matki, wolumeny.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const page = await getContentPage("b2b");
+  return { title: page.metaTitle, description: page.metaDescription };
+}
 
-export default function B2BPage() {
+export default async function B2BPage() {
+  const page = await getContentPage("b2b");
+
   return (
     <div className="pt-8 pb-16 md:pt-10 md:pb-20">
       <Container className="grid items-start gap-14 lg:grid-cols-[0.9fr_1.1fr]">
         <div className="space-y-8">
           <SectionHeading
-            eyebrow="Strefa B2B"
-            title="Ceramika dla lokali"
-            description="Kubki z logo, powtarzalne profile z form matki, zestawy śniadaniowe. Od próbek po nakłady sezonowe."
+            eyebrow={page.eyebrow}
+            title={page.title}
+            description={page.description}
+            descriptionEn={page.descriptionEn}
           />
-          <AtelierFrame kind="set" glaze="dust" className="hidden aspect-[4/3] min-h-[16rem] lg:block" caption="B2B" />
+          <AtelierFrame
+            kind="set"
+            glaze="dust"
+            className="hidden aspect-[4/3] min-h-[16rem] lg:block"
+            caption={page.frameCaption || "B2B"}
+          />
         </div>
-        <B2BForm />
+        <B2BForm intro={page.formIntro} />
       </Container>
     </div>
   );

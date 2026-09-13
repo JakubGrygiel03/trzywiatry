@@ -4,7 +4,9 @@ import { contactSchema, workshopBookingSchema } from "@/lib/validations/forms";
 import { SITE } from "@/lib/constants";
 import { getWorkshopById, getWorkshopBySlug, remainingSeats } from "@/lib/data/queries";
 import { runtimeStore } from "@/lib/data/runtime-store";
+import { renderEmailTemplate } from "@/lib/email/render";
 import { sendEmail } from "@/lib/resend";
+import { escapeHtml } from "@/lib/validations/safe-input";
 
 export async function submitContact(_: { ok: boolean; message: string }, formData: FormData) {
   const parsed = contactSchema.safeParse({
@@ -15,7 +17,7 @@ export async function submitContact(_: { ok: boolean; message: string }, formDat
   });
 
   if (!parsed.success) {
-    return { ok: false, message: parsed.error.issues[0]?.message ?? "Uzupełnij wiadomość." };
+    return { ok: false, message: parsed.error.issues[0]?.message ?? "Uzupełnij wiadomość. / Please complete the message." };
   }
 
   runtimeStore.contacts.push({
@@ -27,12 +29,16 @@ export async function submitContact(_: { ok: boolean; message: string }, formDat
   await sendEmail({
     to: SITE.email,
     subject: `Kontakt · ${parsed.data.name}`,
-    html: `<p><strong>${parsed.data.name}</strong></p>
-      <p>${parsed.data.email}${parsed.data.phone ? ` · ${parsed.data.phone}` : ""}</p>
-      <p>${parsed.data.message}</p>`,
+    html: `<p><strong>${escapeHtml(parsed.data.name)}</strong></p>
+      <p>${escapeHtml(parsed.data.email)}${parsed.data.phone ? ` · ${escapeHtml(parsed.data.phone)}` : ""}</p>
+      <p>${escapeHtml(parsed.data.message)}</p>`,
   });
 
-  return { ok: true, message: "Wiadomość poszła do pracowni. Odpowiemy jak tylko zejdziemy od koła." };
+  return {
+    ok: true,
+    message:
+      "Wiadomość poszła do pracowni. Odpowiemy jak tylko zejdziemy od koła. / Message received — we will reply as soon as we step away from the wheel.",
+  };
 }
 
 export async function bookWorkshop(_: { ok: boolean; message: string }, formData: FormData) {
@@ -45,7 +51,7 @@ export async function bookWorkshop(_: { ok: boolean; message: string }, formData
   });
 
   if (!parsed.success) {
-    return { ok: false, message: parsed.error.issues[0]?.message ?? "Sprawdź dane rezerwacji." };
+    return { ok: false, message: parsed.error.issues[0]?.message ?? "Sprawdź dane rezerwacji. / Check the booking details." };
   }
 
   const workshop = getWorkshopById(parsed.data.workshopId);
@@ -64,10 +70,14 @@ export async function bookWorkshop(_: { ok: boolean; message: string }, formData
     payload: parsed.data,
   });
 
+  const ticket = renderEmailTemplate("workshop_ticket", {
+    workshopTitle: workshop.title,
+    seatsCount: String(parsed.data.seatsCount),
+  });
   await sendEmail({
     to: parsed.data.attendeeEmail,
-    subject: `Bilet · ${workshop.title}`,
-    html: `<p>Rezerwacja potwierdzona: ${workshop.title}. Liczba miejsc: ${parsed.data.seatsCount}.</p>`,
+    subject: ticket.subject,
+    html: ticket.html,
   });
 
   return {

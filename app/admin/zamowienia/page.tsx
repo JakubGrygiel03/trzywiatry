@@ -17,7 +17,7 @@ export default function AdminOrdersPage() {
     <div className="mx-auto max-w-6xl">
       <AdminPageHeader
         title="Zamówienia"
-        description="Zmiana statusu może wysłać e-mail do klienta — jak powiadomienia WooCommerce."
+        description="Zmiana statusu może wysłać e-mail do klienta."
       />
 
       {orders.length === 0 ? (

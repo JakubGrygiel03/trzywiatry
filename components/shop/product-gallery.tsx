@@ -1,10 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { Search } from "lucide-react";
 import { AtelierFrame } from "@/components/visual/atelier-frame";
-import { getProductPhoto } from "@/lib/media";
+import { usePdpVariant } from "@/components/shop/pdp-variant";
 import type { Product } from "@/lib/types";
 import type { VesselView } from "@/lib/visual";
 import { cn } from "@/lib/utils";
@@ -73,9 +73,14 @@ function ZoomablePhoto({
 }
 
 export function ProductGallery({ product }: { product: Product }) {
-  const photos = product.images.filter((src) => Boolean(getProductPhoto({ images: [src] })));
+  const { photos } = usePdpVariant();
   const [activePhoto, setActivePhoto] = useState(0);
   const [activeView, setActiveView] = useState<VesselView>("profil");
+  const cover = photos[0] ?? "";
+
+  useEffect(() => {
+    setActivePhoto(0);
+  }, [cover]);
 
   if (photos.length > 0) {
     return (

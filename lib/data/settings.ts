@@ -1,8 +1,9 @@
+import { interpolateComponentCopy } from "@/lib/cms/site-components";
 import type { StudioSettings } from "@/lib/types";
 
 export const defaultStudioSettings: StudioSettings = {
   announcementType: "promo",
-  announcementText: "Darmowa dostawa od 300 zł  ·  Newsletter: −15% na hasło WIOSNA",
+  announcementText: "Darmowa dostawa od {freeShipping}  ·  Newsletter: −15%",
   promoCode: "WIOSNA",
   /** Align with shop regulamin §5 — free shipping above 300 PLN in Poland. */
   freeShippingThresholdCents: 30000,
@@ -25,5 +26,12 @@ export const defaultStudioSettings: StudioSettings = {
 export const studioSettings = defaultStudioSettings;
 
 export function interpolatePromoCode(text: string, code?: string) {
-  return text.replaceAll("{code}", (code ?? "").trim() || "WIOSNA");
+  return interpolateComponentCopy(text, { code });
+}
+
+export function interpolateStudioCopy(text: string, settings: StudioSettings) {
+  return interpolateComponentCopy(text, {
+    code: settings.promoCode,
+    freeShippingThresholdCents: settings.freeShippingThresholdCents,
+  });
 }

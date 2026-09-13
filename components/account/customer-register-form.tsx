@@ -14,7 +14,7 @@ export function CustomerRegisterForm() {
   return (
     <form action={action} className="space-y-5">
       <div className="space-y-2">
-        <Label htmlFor="name">Imię i nazwisko</Label>
+        <Label htmlFor="name">Imię i nazwisko / Full name</Label>
         <Input id="name" name="name" autoComplete="name" required minLength={2} />
       </div>
       <div className="space-y-2">

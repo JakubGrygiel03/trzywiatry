@@ -16,6 +16,7 @@ type DraftVariant = {
   color: string;
   colorHex: string;
   capacityMl: string;
+  image: string;
 };
 
 function toDraft(variant: ProductVariant): DraftVariant {
@@ -31,6 +32,7 @@ function toDraft(variant: ProductVariant): DraftVariant {
     color: variant.color ?? "",
     colorHex: variant.colorHex ?? "",
     capacityMl: variant.capacityMl != null ? String(variant.capacityMl) : "",
+    image: variant.image ?? "",
   };
 }
 
@@ -45,14 +47,17 @@ function emptyDraft(): DraftVariant {
     color: "",
     colorHex: "",
     capacityMl: "",
+    image: "",
   };
 }
 
 /** Multi-variant editor — stock qty + „brak w magazynie” for the shop overlay. */
 export function ProductVariantsField({
   initialVariants,
+  imageOptions = [],
 }: {
   initialVariants?: ProductVariant[];
+  imageOptions?: string[];
 }) {
   const [variants, setVariants] = useState<DraftVariant[]>(
     initialVariants?.length ? initialVariants.map(toDraft) : [emptyDraft()],
@@ -78,6 +83,7 @@ export function ProductVariantsField({
       color: variant.color.trim() || undefined,
       colorHex: variant.colorHex.trim() || undefined,
       capacityMl: variant.capacityMl.trim() === "" ? undefined : Number(variant.capacityMl),
+      image: variant.image.trim() || undefined,
     };
   });
 
@@ -133,6 +139,26 @@ export function ProductVariantsField({
                 onChange={(e) => update(variant.key, { colorHex: e.target.value })}
                 placeholder="#2c3d5a"
               />
+            </AdminField>
+            <AdminField
+              label="Zdjęcie koloru"
+              hint="Kadr, który wskakuje po wyborze tego szkliwa. Lista z galerii produktu."
+            >
+              <select
+                value={variant.image}
+                onChange={(e) => update(variant.key, { image: e.target.value })}
+                className="h-11 w-full rounded-lg border border-czarny/12 bg-bialy px-3 text-sm"
+              >
+                <option value="">Jak pierwsze zdjęcie produktu</option>
+                {imageOptions.map((url) => (
+                  <option key={url} value={url}>
+                    {url.split("/").pop()}
+                  </option>
+                ))}
+                {variant.image && !imageOptions.includes(variant.image) ? (
+                  <option value={variant.image}>{variant.image.split("/").pop()}</option>
+                ) : null}
+              </select>
             </AdminField>
             <AdminField label="Pojemność (ml)" hint="Osobny chip na karcie produktu, jak u Fobe.">
               <AdminInput

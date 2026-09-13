@@ -37,12 +37,12 @@ export function ContactDirect() {
             {SITE.email}
           </a>
         </Detail>
-        <Detail icon={<Phone className="size-4" strokeWidth={1.5} />} label="Telefon">
+        <Detail icon={<Phone className="size-4" strokeWidth={1.5} />} label="Telefon / Phone">
           <a href={SITE.phoneHref} className="underline-offset-4 hover:text-czerwony hover:underline">
             {SITE.phone}
           </a>
         </Detail>
-        <Detail icon={<MapPin className="size-4" strokeWidth={1.5} />} label="Adres">
+        <Detail icon={<MapPin className="size-4" strokeWidth={1.5} />} label="Adres / Studio">
           <p>
             {SITE.owner} · NIP {SITE.nip}
           </p>

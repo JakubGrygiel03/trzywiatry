@@ -1,5 +1,6 @@
 -- Trzy Wiatry — schema for Supabase PostgreSQL
--- Run in the SQL editor after creating the project.
+-- Fresh project: run this whole file.
+-- Tables already exist (you ran an older version): run supabase/migrate-component-settings.sql instead.
 
 create extension if not exists "uuid-ossp";
 
@@ -36,7 +37,8 @@ create table products (
   care_instructions text,
   low_stock_threshold int default 2,
   meta_title text,
-  meta_description text
+  meta_description text,
+  related_ids text[] default '{}' not null
 );
 
 create table product_variants (
@@ -46,21 +48,43 @@ create table product_variants (
   title text not null,
   price_in_cents int,
   stock_quantity int default 0 not null,
-  is_available boolean default true not null
+  is_available boolean default true not null,
+  color text,
+  color_hex text,
+  capacity_ml int,
+  image text
 );
 
 create table studio_settings (
   id int primary key default 1,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
   announcement_type banner_type default 'promo' not null,
-  announcement_text text default 'Darmowa dostawa od 400 zł | Zapisz się i odbierz -15%' not null,
+  announcement_text text default 'Darmowa dostawa od {freeShipping}  ·  Newsletter: −15%' not null,
   promo_code text,
   vacation_start_date date,
   vacation_end_date date,
   vacation_dispatch_date date,
-  free_shipping_threshold_cents int default 40000 not null,
+  free_shipping_threshold_cents int default 30000 not null,
   gift_wrap_price_cents int default 2000 not null,
-  workshops_enabled boolean default false not null
+  workshops_enabled boolean default false not null,
+  hero_slots jsonb default '[]'::jsonb not null,
+  shop_hub_uzytkowa_image text,
+  shop_hub_pracownia_image text,
+  newsletter_enabled boolean default true not null,
+  newsletter_eyebrow text default 'Newsletter' not null,
+  newsletter_title text default '−15% na pierwsze naczynie' not null,
+  newsletter_body text default 'Kod {code} przychodzi mailem.' not null,
+  newsletter_form_label text default 'Podaj e-mail' not null,
+  newsletter_button_label text default 'Odbierz −15%' not null
+);
+
+-- One row per UI component. Admin edits payload; the app reads by key.
+create table site_components (
+  key text primary key,
+  label text not null,
+  payload jsonb not null default '{}'::jsonb,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  constraint site_components_key_format check (key ~ '^[a-z][a-z0-9_]*$')
 );
 
 create table orders (
@@ -107,6 +131,9 @@ create table workshops (
   duration_hours numeric(3,1) not null,
   price_in_cents int not null,
   max_attendees int not null,
+  booked_seats int default 0 not null,
+  location text,
+  image_url text,
   is_published boolean default true not null
 );
 
@@ -131,6 +158,11 @@ create table blog_posts (
   excerpt text,
   content text not null,
   cover_image text,
+  cover_backdrop text check (cover_backdrop in ('bialy', 'krem', 'krem-ciemny')),
+  author text,
+  subtitle text,
+  category text,
+  blocks jsonb,
   status post_status default 'draft' not null,
   published_at timestamp with time zone,
   meta_title text,
@@ -157,10 +189,27 @@ create table b2b_inquiries (
   is_processed boolean default false not null
 );
 
+create table email_templates (
+  key text primary key,
+  label text not null,
+  trigger text not null,
+  subject text not null,
+  body text not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+create table page_layouts (
+  page_key text primary key,
+  sections jsonb not null default '[]'::jsonb,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  constraint page_layouts_key_format check (page_key ~ '^[a-z][a-z0-9_-]*$')
+);
+
 alter table products enable row level security;
 alter table product_variants enable row level security;
 alter table collections enable row level security;
 alter table studio_settings enable row level security;
+alter table site_components enable row level security;
 alter table orders enable row level security;
 alter table order_items enable row level security;
 alter table workshops enable row level security;
@@ -168,11 +217,14 @@ alter table workshop_bookings enable row level security;
 alter table blog_posts enable row level security;
 alter table newsletter_subscribers enable row level security;
 alter table b2b_inquiries enable row level security;
+alter table email_templates enable row level security;
+alter table page_layouts enable row level security;
 
 create policy "Public read published products" on products for select using (is_published = true);
 create policy "Public read variants" on product_variants for select using (is_available = true);
 create policy "Public read collections" on collections for select using (true);
 create policy "Public read settings" on studio_settings for select using (true);
+create policy "Public read site components" on site_components for select using (true);
 create policy "Public read published workshops" on workshops for select using (is_published = true);
 create policy "Public read published posts" on blog_posts for select using (status = 'published');
 create policy "Public insert newsletter" on newsletter_subscribers for insert with check (true);
@@ -185,9 +237,63 @@ create policy "Admin full access products" on products for all using ((auth.jwt(
 create policy "Admin full access variants" on product_variants for all using ((auth.jwt() -> 'app_metadata' ->> 'is_admin')::boolean = true);
 create policy "Admin full access collections" on collections for all using ((auth.jwt() -> 'app_metadata' ->> 'is_admin')::boolean = true);
 create policy "Admin full access settings" on studio_settings for all using ((auth.jwt() -> 'app_metadata' ->> 'is_admin')::boolean = true);
+create policy "Admin full access site components" on site_components for all using ((auth.jwt() -> 'app_metadata' ->> 'is_admin')::boolean = true);
 create policy "Admin full access orders" on orders for all using ((auth.jwt() -> 'app_metadata' ->> 'is_admin')::boolean = true);
 create policy "Admin full access workshops" on workshops for all using ((auth.jwt() -> 'app_metadata' ->> 'is_admin')::boolean = true);
 create policy "Admin full access blog" on blog_posts for all using ((auth.jwt() -> 'app_metadata' ->> 'is_admin')::boolean = true);
 create policy "Admin full access b2b" on b2b_inquiries for all using ((auth.jwt() -> 'app_metadata' ->> 'is_admin')::boolean = true);
+create policy "Admin full access email templates" on email_templates for all using ((auth.jwt() -> 'app_metadata' ->> 'is_admin')::boolean = true);
+create policy "Public read page layouts" on page_layouts for select using (true);
+create policy "Admin full access page layouts" on page_layouts for all using ((auth.jwt() -> 'app_metadata' ->> 'is_admin')::boolean = true);
 
-insert into studio_settings (id, promo_code) values (1, 'WIOSNA') on conflict (id) do nothing;
+insert into studio_settings (id) values (1) on conflict (id) do nothing;
+
+insert into site_components (key, label, payload) values
+  (
+    'announcement_bar',
+    'Pasek ogłoszeń',
+    jsonb_build_object(
+      'type', 'promo',
+      'text', 'Darmowa dostawa od {freeShipping}  ·  Newsletter: −15%'
+    )
+  ),
+  (
+    'newsletter_cta',
+    'Belka newslettera',
+    jsonb_build_object(
+      'enabled', true,
+      'eyebrow', 'Newsletter',
+      'title', '−15% na pierwsze naczynie',
+      'body', 'Kod {code} przychodzi mailem. Zero spamu — nowe wypusty, kolekcje i przerwy twórcze.',
+      'formLabel', 'Podaj e-mail',
+      'buttonLabel', 'Odbierz −15%'
+    )
+  ),
+  (
+    'shop_hub',
+    'Wejście do sklepu',
+    jsonb_build_object(
+      'uzytkowaImage', '/brand/photos/products/woo/czajniczek-w-kropki-zestaw-03.jpg',
+      'pracowniaImage', '/brand/photos/products/woo/forma-gipsowa-c1-06.jpg'
+    )
+  ),
+  (
+    'home_hero',
+    'Hero na stronie głównej',
+    jsonb_build_object('slots', '[]'::jsonb)
+  ),
+  (
+    'checkout',
+    'Kasa i koszyk',
+    jsonb_build_object(
+      'promoCode', null,
+      'freeShippingThresholdCents', 30000,
+      'giftWrapPriceCents', 2000
+    )
+  ),
+  (
+    'workshops',
+    'Moduł warsztatów',
+    jsonb_build_object('enabled', false)
+  )
+on conflict (key) do nothing;

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { CartLineItem } from "@/components/cart/cart-line-item";
 import { CartUpsell } from "@/components/cart/cart-upsell";
 import { FreeShippingMeter, GiftWrappingCard } from "@/components/cart/gift-and-shipping";
+import { useSiteSettings } from "@/components/cms/site-settings-provider";
 import { AtelierFrame } from "@/components/visual/atelier-frame";
 import { drawerTransition, fadeTransition } from "@/lib/motion";
 import { formatPLN } from "@/lib/format";
@@ -16,8 +17,9 @@ export function CartDrawer() {
   const isOpen = useCartStore((state) => state.isOpen);
   const closeCart = useCartStore((state) => state.closeCart);
   const hasGiftWrapping = useCartStore((state) => state.hasGiftWrapping);
+  const { giftWrapPriceCents } = useSiteSettings();
   const subtotal = cartSubtotal(items);
-  const gift = cartGiftWrapCost(hasGiftWrapping);
+  const gift = cartGiftWrapCost(hasGiftWrapping, giftWrapPriceCents);
   const reduceMotion = useReducedMotion();
 
   return (

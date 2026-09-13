@@ -1,17 +1,23 @@
 import { z } from "zod";
+import { emailSchema, phoneSchema, plainText } from "@/lib/validations/safe-input";
 
 export const checkoutSchema = z.object({
-  customerName: z.string().min(2, "Podaj imię i nazwisko"),
-  customerEmail: z.string().email("Nieprawidłowy e-mail"),
-  customerPhone: z.string().min(9, "Podaj numer telefonu"),
-  street: z.string().min(3, "Podaj ulicę"),
-  postalCode: z.string().regex(/^\d{2}-\d{3}$/, "Format: 00-000"),
-  city: z.string().min(2, "Podaj miasto"),
+  customerName: plainText("Imię i nazwisko / Full name", 80, 2),
+  customerEmail: emailSchema,
+  customerPhone: phoneSchema,
+  street: plainText("Ulica", 120, 3),
+  postalCode: z.string().trim().regex(/^\d{2}-\d{3}$/, "Kod pocztowy: 00-000"),
+  city: plainText("Miasto", 60, 2),
   shippingMethod: z.enum(["inpost", "kurier", "odbior"]),
-  inpostLocker: z.string().optional(),
-  giftMessage: z.string().max(280).optional(),
-  discountCode: z.string().optional(),
-  notes: z.string().max(500).optional(),
+  inpostLocker: z.string().trim().max(80).optional(),
+  giftMessage: plainText("Dedykacja", 280).optional(),
+  discountCode: z
+    .string()
+    .trim()
+    .max(24)
+    .refine((value) => value === "" || /^[A-Za-z0-9-]+$/.test(value), "Kod rabatowy: litery, cyfry i myślnik.")
+    .optional(),
+  notes: plainText("Uwagi", 500).optional(),
 });
 
 export type CheckoutInput = z.infer<typeof checkoutSchema>;

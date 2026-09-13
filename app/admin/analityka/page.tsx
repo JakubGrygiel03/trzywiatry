@@ -30,7 +30,7 @@ export default function AnalyticsPage() {
     <div className="mx-auto max-w-6xl space-y-6">
       <AdminPageHeader
         title="Analityka"
-        description="Podsumowanie sesji. Wykresy 30 dni dojdą po podpięciu Supabase — jak raporty WooCommerce."
+        description="Przychód, zamówienia i eksport CSV z tej sesji."
       />
 
       <div className="grid gap-3 sm:grid-cols-3">

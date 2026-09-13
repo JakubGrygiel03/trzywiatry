@@ -1,9 +1,9 @@
 import { cache } from "react";
-import { collections } from "@/lib/data/collections";
 import { getProductUpsells } from "@/lib/data/recommendations";
 import {
   getRuntimeBlogPosts,
   getRuntimeCatalog,
+  getRuntimeCollections,
   getRuntimeSettings,
   getRuntimeWorkshopById,
   getRuntimeWorkshops,
@@ -25,11 +25,11 @@ export function getSettings() {
 }
 
 export function getCollections() {
-  return collections;
+  return getRuntimeCollections();
 }
 
 export function getCollectionBySlug(slug: string) {
-  return collections.find((item) => item.slug === slug);
+  return getCollections().find((item) => item.slug === slug);
 }
 
 export const getAllProducts = cache(() => getRuntimeCatalog());
@@ -43,9 +43,12 @@ export function getPublishedProducts() {
 /** Old Woo / colour-split slugs → one product with variants. */
 const PRODUCT_SLUG_ALIASES: Record<string, string> = {
   "wygodny-kubas-granatowy": "wygodny-kubas",
+  "wygodny-kubas-niebieski": "wygodny-kubas",
   "wygodny-kubas-miodowy": "wygodny-kubas",
-  "wygodny-kubas-zolty": "wygodny-kubas",
-  "wygodny-kubas-lawendowy": "wygodny-kubas",
+  "wygodny-wiegas-miodowy": "wygodny-wiegas",
+  "wygodny-wielgas-niebieiski": "wygodny-wiegas",
+  "wygodny-wiegas-niebieski": "wygodny-wiegas",
+  "formy-nieokielznane": "formy-nieidealne",
 };
 
 export function getProductBySlug(slug: string) {
@@ -92,7 +95,7 @@ export function getShopHubPhotoOptions(lane: ShopLaneId): HeroPhotoOption[] {
 }
 
 function slotsToGallery(slots: HeroSlot[]): HeroGalleryItem[] {
-  const collectionName = Object.fromEntries(collections.map((c) => [c.id, c.name]));
+  const collectionName = Object.fromEntries(getCollections().map((c) => [c.id, c.name]));
 
   return slots.flatMap((slot) => {
     const product = getProductById(slot.productId);
@@ -115,11 +118,11 @@ function isHeroPiece(product: Product) {
 }
 
 /** Home hero mosaic — admin curation first, then bestsellers. */
-export function getHeroGalleryProducts(limit = 12): HeroGalleryItem[] {
-  const curated = slotsToGallery(getSettings().heroSlots ?? []);
+export function getHeroGalleryProducts(limit = 12, slots?: HeroSlot[]): HeroGalleryItem[] {
+  const curated = slotsToGallery(slots ?? getSettings().heroSlots ?? []);
   if (curated.length > 0) return curated.slice(0, limit);
 
-  const collectionName = Object.fromEntries(collections.map((c) => [c.id, c.name]));
+  const collectionName = Object.fromEntries(getCollections().map((c) => [c.id, c.name]));
   const published = getPublishedProducts().filter(isHeroPiece);
   const pool =
     published.length > 0

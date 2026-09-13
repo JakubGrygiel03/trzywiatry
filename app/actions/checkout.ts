@@ -6,7 +6,7 @@ import { addRuntimeOrder, nextOrderNumber, getRuntimeSettings } from "@/lib/data
 import { ensureOrdersHydrated, saveOrdersToDisk } from "@/lib/data/order-persist";
 import { getAllProducts } from "@/lib/data/queries";
 import { getCustomerSession } from "@/lib/customer-session";
-import { orderPlacedAndStartedHtml, sendEmail } from "@/lib/resend";
+import { orderPlacedEmail, sendEmail } from "@/lib/resend";
 import { buildP24Session } from "@/lib/p24";
 import { getVacationCheckoutNote } from "@/lib/vacation-message";
 import type { ShippingMethod, StoredOrder, StoredOrderItem } from "@/lib/types";
@@ -85,8 +85,9 @@ export async function createCheckoutSession(
       ? 0
       : (shipping?.priceInCents ?? 0);
   const giftCost = giftWrap ? settings.giftWrapPriceCents : 0;
+  const promo = (settings.promoCode ?? "").trim().toUpperCase();
   const discount =
-    parsed.data.discountCode?.trim().toUpperCase() === settings.promoCode
+    promo && parsed.data.discountCode?.trim().toUpperCase() === promo
       ? Math.round(goods * 0.15)
       : 0;
   const total = goods + shippingCost + giftCost - discount;
@@ -142,10 +143,11 @@ export async function createCheckoutSession(
   revalidatePath("/admin/zamowienia");
 
   const vacationNote = getVacationCheckoutNote(settings) ?? undefined;
+  const placed = orderPlacedEmail(order, vacationNote);
   await sendEmail({
     to: order.customerEmail,
-    subject: `Zamówienie ${orderNumber} · przyjęte i w realizacji`,
-    html: orderPlacedAndStartedHtml(order, vacationNote),
+    subject: placed.subject,
+    html: placed.html,
   });
 
   const p24 = buildP24Session({

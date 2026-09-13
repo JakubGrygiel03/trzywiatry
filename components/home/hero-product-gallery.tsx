@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { HeroTile } from "@/components/home/hero-tile";
 import type { HeroGalleryItem } from "@/lib/data/queries";
 
 const INTERVAL_MS = 5500;
@@ -77,14 +77,7 @@ export function HeroProductGallery({ products }: { products: HeroGalleryItem[] }
           className="hero-mosaic__tile"
           aria-label={product.name}
         >
-          <Image
-            src={product.image}
-            alt={product.name}
-            fill
-            priority
-            sizes="(max-width: 768px) 33vw, 26vw"
-            className="object-cover object-center"
-          />
+          <HeroTile product={product} priority={index === 0} />
         </Link>
       ))}
     </div>

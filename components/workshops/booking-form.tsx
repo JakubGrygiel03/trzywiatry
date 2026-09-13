@@ -20,11 +20,14 @@ export function BookingForm({ workshop }: { workshop: Workshop }) {
       <p className="font-heading text-sm uppercase tracking-[0.14em]">
         {soldOut ? "Brak miejsc" : `Zostało ${seats} z ${workshop.maxAttendees} miejsc`}
       </p>
-      <Field name="attendeeName" label="Imię i nazwisko" />
+      <p className="text-xs leading-relaxed text-czarny/50" lang="en">
+        English welcome — Polish characters are not required.
+      </p>
+      <Field name="attendeeName" label="Imię i nazwisko / Full name" />
       <Field name="attendeeEmail" label="E-mail" type="email" />
-      <Field name="attendeePhone" label="Telefon" />
+      <Field name="attendeePhone" label="Telefon / Phone" />
       <div className="space-y-2">
-        <Label htmlFor="seatsCount">Liczba miejsc</Label>
+        <Label htmlFor="seatsCount">Liczba miejsc / Seats</Label>
         <Input id="seatsCount" name="seatsCount" type="number" min={1} max={seats || 1} defaultValue={1} required />
       </div>
       <Button type="submit" disabled={pending || soldOut} className="w-full">

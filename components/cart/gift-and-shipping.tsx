@@ -1,11 +1,11 @@
 "use client";
 
+import { useSiteSettings } from "@/components/cms/site-settings-provider";
 import { useCartStore } from "@/store/use-cart-store";
 import { formatPLN } from "@/lib/format";
-import { studioSettings } from "@/lib/data/settings";
 
 export function FreeShippingMeter({ subtotal }: { subtotal: number }) {
-  const threshold = studioSettings.freeShippingThresholdCents;
+  const { freeShippingThresholdCents: threshold } = useSiteSettings();
   const remaining = Math.max(0, threshold - subtotal);
   const progress = Math.min(100, Math.round((subtotal / threshold) * 100));
 
@@ -37,7 +37,7 @@ export function GiftWrappingCard() {
   const giftMessage = useCartStore((state) => state.giftMessage);
   const setGiftWrapping = useCartStore((state) => state.setGiftWrapping);
   const setGiftMessage = useCartStore((state) => state.setGiftMessage);
-  const price = studioSettings.giftWrapPriceCents;
+  const { giftWrapPriceCents: price } = useSiteSettings();
 
   return (
     <div className="space-y-3 rounded-2xl border border-czarny/10 p-4">
