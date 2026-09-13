@@ -304,6 +304,7 @@ export const blogPosts: BlogPost[] = [
     content:
       "Ozdoby świąteczne z płatów gliny, bolące nadgarstki i pomysł na własną walcarkę ze sklejki oraz rur PVC wypełnionych cementem.",
     coverImage: "/brand/photos/blog/walcarka-szkic-rama.png",
+    coverBackdrop: "bialy",
     status: "published",
     publishedAt: "2025-10-27T10:00:00+01:00",
     blocks: [

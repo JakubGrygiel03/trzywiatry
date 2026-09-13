@@ -42,6 +42,7 @@ next-env.d.ts
 
 # local admin credentials + reset tokens (never commit)
 .data/
+tmp-brand-extract/
 
 # brand source (keep crops in public/, ignore heavy PDF originals)
 /brand/*.pdf

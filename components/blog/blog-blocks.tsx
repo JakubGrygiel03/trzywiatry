@@ -18,14 +18,14 @@ function RichText({ text }: { text: string }) {
 
 export function BlogBlocks({ blocks }: { blocks: BlogBlock[] }) {
   return (
-    <div className="space-y-5 text-[15px] leading-relaxed text-czarny/75 md:text-base md:leading-[1.75]">
+    <div className="space-y-5 text-base leading-[1.75] text-czarny/85 md:text-[1.05rem] md:leading-[1.8]">
       {blocks.map((block, index) => {
         switch (block.type) {
           case "heading":
             return (
               <h2
                 key={index}
-                className="pt-4 font-heading text-lg uppercase tracking-[0.1em] text-czarny md:text-xl"
+                className="pt-4 text-xl font-medium tracking-tight text-czarny md:text-2xl"
               >
                 {block.text}
               </h2>

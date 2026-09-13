@@ -60,11 +60,7 @@ export function ProductCard({ product, framed = false }: { product: Product; fra
           {colors.length > 1 ? (
             <p className="text-xs text-szary">{colors.length} kolory</p>
           ) : null}
-          {framed ? (
-            <PriceBubble>{formatPLN(product.priceInCents)}</PriceBubble>
-          ) : (
-            <p className="text-sm font-medium text-czarny">{formatPLN(product.priceInCents)}</p>
-          )}
+          <PriceBubble>{formatPLN(product.priceInCents)}</PriceBubble>
         </div>
       </Link>
       {status !== "sold_out" ? <ProductCardCartButton product={product} /> : null}

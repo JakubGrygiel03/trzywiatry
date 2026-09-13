@@ -3,9 +3,11 @@
 import Image from "next/image";
 import { useState } from "react";
 import { BlogBlockEditor } from "@/components/admin/blog-block-editor";
+import { CoverBackdropField } from "@/components/admin/cover-backdrop-field";
 import { AdminField, AdminInput, AdminSelect, AdminTextarea } from "@/components/admin/ui/admin-field";
 import { AdminFormActions } from "@/components/admin/ui/admin-form-actions";
 import { AdminFormSection } from "@/components/admin/ui/admin-form-section";
+import { coverBackdropClass, DEFAULT_BLOG_COVER_BACKDROP, isBlogCoverBackdrop } from "@/lib/blog-cover";
 import type { BlogPost } from "@/lib/types";
 import type { BlogBlockInput } from "@/lib/validations/blog";
 
@@ -32,6 +34,9 @@ export function BlogPostForm({
   const [slug, setSlug] = useState(post?.slug ?? "");
   const [slugTouched, setSlugTouched] = useState(Boolean(post));
   const [coverImage, setCoverImage] = useState(post?.coverImage ?? "");
+  const [coverBackdrop, setCoverBackdrop] = useState(
+    isBlogCoverBackdrop(post?.coverBackdrop) ? post.coverBackdrop : DEFAULT_BLOG_COVER_BACKDROP,
+  );
 
   const initialBlocks = (post?.blocks ?? []) as BlogBlockInput[];
 
@@ -104,12 +109,15 @@ export function BlogPostForm({
             </AdminField>
           </AdminFormSection>
 
-          <AdminFormSection title="Okładka" description="Miniatura na liście /blog.">
+          <AdminFormSection title="Okładka" description="Miniatura na liście /blog. Tło widać wokół zdjęcia.">
             {coverImage ? (
-              <div className="relative mb-3 aspect-[16/10] overflow-hidden rounded-lg border border-czarny/10 bg-krem">
-                <Image src={coverImage} alt="" fill className="object-cover" sizes="300px" unoptimized />
+              <div
+                className={`relative mb-3 aspect-[16/10] overflow-hidden rounded-lg border border-czarny/10 ${coverBackdropClass(coverBackdrop)}`}
+              >
+                <Image src={coverImage} alt="" fill className="object-contain p-3" sizes="300px" unoptimized />
               </div>
             ) : null}
+            <CoverBackdropField value={coverBackdrop} onChange={setCoverBackdrop} />
             <AdminField label="Wgraj okładkę" htmlFor="coverFile">
               <AdminInput
                 id="coverFile"

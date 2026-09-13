@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { BrandChmurka } from "@/components/brand/brand-chmurka";
+import type { ChmurkaColor } from "@/lib/brand-assets";
 import { cn } from "@/lib/utils";
 
 export function Badge({
@@ -30,12 +32,14 @@ export function Badge({
   );
 }
 
-export function PriceBubble({ children }: { children: ReactNode }) {
-  return (
-    <span className="inline-flex rounded-full bg-czerwony px-3.5 py-1.5 font-heading text-[11px] uppercase tracking-[0.12em] text-bialy shadow-sm">
-      {children}
-    </span>
-  );
+export function PriceBubble({
+  children,
+  color = "czerwona",
+}: {
+  children: ReactNode;
+  color?: ChmurkaColor;
+}) {
+  return <BrandChmurka color={color}>{children}</BrandChmurka>;
 }
 
 export function Container({ children, className }: { children: ReactNode; className?: string }) {

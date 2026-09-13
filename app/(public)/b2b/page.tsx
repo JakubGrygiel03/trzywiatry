@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function B2BPage() {
   return (
-    <div className="py-16 md:py-24">
+    <div className="pt-8 pb-16 md:pt-10 md:pb-20">
       <Container className="grid items-start gap-14 lg:grid-cols-[0.9fr_1.1fr]">
         <div className="space-y-8">
           <SectionHeading

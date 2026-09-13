@@ -40,17 +40,17 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
   return (
     <article className="py-12 md:py-16">
-      <Container className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_240px] lg:gap-12">
+      <Container className="grid gap-10 rounded-2xl border border-szary bg-bialy px-5 py-8 md:px-8 md:py-10 lg:grid-cols-[minmax(0,1fr)_240px] lg:gap-12 lg:px-10">
         <div className="min-w-0 space-y-6">
-          <p className="text-sm text-ceglany">
+          <p className="text-sm text-czerwony">
             {formatPostDate(post.publishedAt)}
-            {post.author ? ` • Przez ${post.author}` : null}
+            {post.author ? ` · ${post.author}` : null}
           </p>
-          <h1 className="font-heading text-3xl uppercase tracking-[0.08em] text-czarny md:text-4xl">
+          <h1 className="text-3xl font-medium leading-tight tracking-tight text-czarny md:text-4xl">
             {post.title}
           </h1>
           {post.subtitle ? (
-            <p className="text-base italic text-czarny/55">{post.subtitle}</p>
+            <p className="text-lg leading-relaxed text-czarny/75">{post.subtitle}</p>
           ) : null}
 
           <BlogBlocks blocks={blocks} />

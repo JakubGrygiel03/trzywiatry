@@ -203,24 +203,33 @@ h4 {
   }
 }
 
-/* Wide desktop only: clay + mosaic side by side. Copy still cannot shrink. */
-@media (min-width: 1200px) {
+/* Laptop / desktop: clay card + mosaic side by side, same row height. */
+@media (min-width: 1024px) {
   .hero-kadr {
-    padding-inline: 5rem;
+    padding-inline: 3.5rem;
   }
 
   .hero-stage {
-    grid-template-columns: minmax(22rem, 34%) minmax(0, 1fr);
+    grid-template-columns: minmax(20rem, 34%) minmax(0, 1fr);
+    align-items: stretch;
     gap: 0.85rem;
   }
 
   .hero-copy {
+    height: auto;
+    align-self: stretch;
     justify-content: center;
     padding: 1.75rem 1.7rem;
   }
 
   .hero-mosaic__tile {
     aspect-ratio: 4 / 5;
+  }
+}
+
+@media (min-width: 1200px) {
+  .hero-kadr {
+    padding-inline: 5rem;
   }
 }
 

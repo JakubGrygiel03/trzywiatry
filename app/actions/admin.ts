@@ -170,6 +170,12 @@ function parseNewsletterCms(formData: FormData): Pick<
   };
 }
 
+function parseShopHubImage(raw: unknown, fallback: string) {
+  const value = String(raw ?? "").trim();
+  if (value.startsWith("/") && !value.includes("..") && value.length < 300) return value;
+  return fallback;
+}
+
 function parseHeroSlots(raw: string): HeroSlot[] {
   try {
     const data: unknown = JSON.parse(raw);
@@ -219,10 +225,19 @@ export async function saveStudioSettings(formData: FormData) {
       Number.isFinite(freeShipping) && freeShipping > 0 ? freeShipping : 30000,
     workshopsEnabled: formData.get("workshopsEnabled") === "true",
     heroSlots: parseHeroSlots(String(formData.get("heroSlots") ?? "")),
+    shopHubUzytkowaImage: parseShopHubImage(
+      formData.get("shopHubUzytkowaImage"),
+      defaultStudioSettings.shopHubUzytkowaImage,
+    ),
+    shopHubPracowniaImage: parseShopHubImage(
+      formData.get("shopHubPracowniaImage"),
+      defaultStudioSettings.shopHubPracowniaImage,
+    ),
     ...parseNewsletterCms(formData),
   });
 
   revalidatePath("/", "layout");
+  revalidatePath("/sklep");
   revalidatePath("/admin/ustawienia-sklepu");
   revalidatePath("/zamowienie");
   revalidatePath("/warsztaty");

@@ -48,6 +48,7 @@ async function parseBlogForm(formData: FormData) {
     author: String(formData.get("author") ?? "").trim() || undefined,
     category: String(formData.get("category") ?? "").trim() || undefined,
     coverImage,
+    coverBackdrop: String(formData.get("coverBackdrop") ?? "").trim() || undefined,
     status: formData.get("status"),
     blocks,
   });
@@ -83,6 +84,7 @@ export async function createBlogPost(formData: FormData) {
     content: plainContentFromBlocks(data.blocks) || data.excerpt,
     blocks: data.blocks,
     coverImage: data.coverImage,
+    coverBackdrop: data.coverBackdrop ?? "krem",
     status: data.status,
     publishedAt: data.status === "published" ? now : now,
   };
@@ -121,6 +123,7 @@ export async function updateBlogPost(formData: FormData) {
     content: plainContentFromBlocks(data.blocks) || data.excerpt,
     blocks: data.blocks,
     coverImage: data.coverImage,
+    coverBackdrop: data.coverBackdrop ?? existing.coverBackdrop ?? "krem",
     status: data.status,
     publishedAt: nowPublished && !wasPublished ? new Date().toISOString() : existing.publishedAt,
   };

@@ -72,6 +72,9 @@ export type StudioSettings = {
   workshopsEnabled: boolean;
   /** Ordered photos for the home hero. Empty = automatic bestsellers. */
   heroSlots?: HeroSlot[];
+  /** Cover photos for the /sklep two-lane hub. */
+  shopHubUzytkowaImage: string;
+  shopHubPracowniaImage: string;
   /** Homepage newsletter band — edited in admin shop settings. */
   newsletterEnabled: boolean;
   newsletterEyebrow: string;
@@ -117,6 +120,8 @@ export type BlogPost = {
   /** Rich body for article page */
   blocks?: BlogBlock[];
   coverImage: string;
+  /** Mat behind the cover on /blog tiles (brand neutrals). */
+  coverBackdrop?: "bialy" | "krem" | "krem-ciemny";
   status: PostStatus;
   publishedAt: string;
   author?: string;

@@ -9,6 +9,7 @@ import {
   getRuntimeWorkshops,
 } from "@/lib/data/runtime-store";
 import { getProductPhoto, isUsableProductPhoto } from "@/lib/media";
+import { productInLane, type ShopLaneId } from "@/lib/shop-lanes";
 import type { HeroSlot, Product, ProductDomain } from "@/lib/types";
 
 export type HeroGalleryItem = {
@@ -75,6 +76,19 @@ export function getHeroPhotoOptions(): HeroPhotoOption[] {
       image,
     })),
   );
+}
+
+/** Usable photos from one shop lane — covers for the /sklep hub tiles. */
+export function getShopHubPhotoOptions(lane: ShopLaneId): HeroPhotoOption[] {
+  return getAllProducts()
+    .filter((product) => productInLane(product, lane))
+    .flatMap((product) =>
+      product.images.filter(isUsableProductPhoto).map((image) => ({
+        productId: product.id,
+        name: product.name,
+        image,
+      })),
+    );
 }
 
 function slotsToGallery(slots: HeroSlot[]): HeroGalleryItem[] {

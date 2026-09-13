@@ -14,9 +14,9 @@ export function NewsletterCta() {
       <div
         className="pointer-events-none absolute inset-0"
         style={{
-          backgroundImage: "url(/brand/patterns/tile-split.png)",
+          backgroundImage: "url(/brand/wzory/b.png)",
           backgroundRepeat: "repeat",
-          backgroundSize: "110px 110px",
+          backgroundSize: "280px auto",
           backgroundPosition: "50% 50%",
           opacity: 0.28,
           WebkitMaskImage: "linear-gradient(to right, transparent 0%, transparent 50%, black 64%)",

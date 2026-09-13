@@ -41,6 +41,7 @@ export const blogPostSchema = z.object({
   author: z.string().optional(),
   category: z.string().optional(),
   coverImage: z.string().min(1, "Dodaj zdjęcie okładki"),
+  coverBackdrop: z.enum(["bialy", "krem", "krem-ciemny"]).optional(),
   status: z.enum(["draft", "published", "archived"]),
   blocks: z.array(blogBlockSchema).min(1, "Dodaj co najmniej jeden blok treści"),
 });

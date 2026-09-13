@@ -12,8 +12,17 @@ export function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="footer-frame border-t border-czarny/10 bg-bialy">
-      <div className="mx-auto grid max-w-7xl items-center gap-4 px-6 py-5 md:grid-cols-3 md:gap-5 md:px-14 md:py-6 lg:px-16 xl:px-20">
+    <footer className="footer-frame relative overflow-hidden border-t border-czarny/10 bg-bialy">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.07]"
+        style={{
+          backgroundImage: "url(/brand/wzory/a.png)",
+          backgroundRepeat: "repeat",
+          backgroundSize: "360px auto",
+        }}
+      />
+      <div className="relative mx-auto grid max-w-7xl items-center gap-4 px-6 py-5 md:grid-cols-3 md:gap-5 md:px-14 md:py-6 lg:px-16 xl:px-20">
         <nav className="space-y-1 text-left text-sm leading-snug tracking-wide text-czarny md:justify-self-start">
           <div className="flex flex-wrap gap-x-4 gap-y-1">
             {navLinks.map((link) => (

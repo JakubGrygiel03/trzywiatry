@@ -1,11 +1,12 @@
 import { saveStudioSettings } from "@/app/actions/admin";
 import { HeroPhotoPicker } from "@/components/admin/hero-photo-picker";
+import { ShopHubPhotoPicker } from "@/components/admin/shop-hub-photo-picker";
 import { AdminAlert } from "@/components/admin/ui/admin-alert";
 import { AdminField, AdminInput, AdminSelect, AdminTextarea } from "@/components/admin/ui/admin-field";
 import { AdminFormActions } from "@/components/admin/ui/admin-form-actions";
 import { AdminFormSection } from "@/components/admin/ui/admin-form-section";
 import { AdminPageHeader } from "@/components/admin/ui/admin-page-header";
-import { getHeroPhotoOptions, getSettings } from "@/lib/data/queries";
+import { getHeroPhotoOptions, getSettings, getShopHubPhotoOptions } from "@/lib/data/queries";
 import { buildVacationBannerMessage } from "@/lib/vacation-message";
 
 export default async function ShopSettingsPage({
@@ -28,7 +29,7 @@ export default async function ShopSettingsPage({
     <div className="mx-auto max-w-4xl">
       <AdminPageHeader
         title="Ustawienia sklepu"
-        description="Banner, newsletter, zdjęcia w hero, urlop, darmowa dostawa i widoczność warsztatów."
+        description="Banner, newsletter, zdjęcia w hero i na wejściu do sklepu, urlop, darmowa dostawa i warsztaty."
       />
 
       {zapisano ? (
@@ -152,6 +153,18 @@ export default async function ShopSettingsPage({
               defaultValue={settings.freeShippingThresholdCents}
             />
           </AdminField>
+        </AdminFormSection>
+
+        <AdminFormSection
+          title="Zdjęcia na wejściu do sklepu"
+          description="Kafelki „dwa sklepy” na /sklep. Wybierz jedno zdjęcie z katalogu danej półki."
+        >
+          <ShopHubPhotoPicker
+            uzytkowaOptions={getShopHubPhotoOptions("uzytkowa")}
+            pracowniaOptions={getShopHubPhotoOptions("pracownia")}
+            initialUzytkowa={settings.shopHubUzytkowaImage}
+            initialPracownia={settings.shopHubPracowniaImage}
+          />
         </AdminFormSection>
 
         <AdminFormSection

@@ -95,6 +95,13 @@ export function getRuntimeBlogPosts(): BlogPost[] {
     lastMergedBlogSeedCount = seedBlogPosts.length;
   }
 
+  const seedById = new Map(seedBlogPosts.map((item) => [item.id, item]));
+  for (const post of runtimeStore.blogPosts) {
+    if (post.coverBackdrop) continue;
+    const seed = seedById.get(post.id);
+    if (seed?.coverBackdrop) post.coverBackdrop = seed.coverBackdrop;
+  }
+
   return runtimeStore.blogPosts;
 }
 
