@@ -48,6 +48,68 @@
 
 html {
   scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(156 100 78 / 0.45) transparent;
+}
+
+html::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html::-webkit-scrollbar-thumb {
+  background: rgb(156 100 78 / 0.4);
+  border-radius: 999px;
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background: var(--czerwony);
+}
+
+.tw-scroll,
+.tw-scroll-dark {
+  scrollbar-width: thin;
+}
+
+.tw-scroll {
+  scrollbar-color: rgb(156 100 78 / 0.45) transparent;
+}
+
+.tw-scroll-dark {
+  scrollbar-color: rgb(211 144 88 / 0.5) transparent;
+}
+
+.tw-scroll::-webkit-scrollbar,
+.tw-scroll-dark::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.tw-scroll::-webkit-scrollbar-track,
+.tw-scroll-dark::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tw-scroll::-webkit-scrollbar-thumb {
+  background: rgb(156 100 78 / 0.4);
+  border-radius: 999px;
+}
+
+.tw-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--czerwony);
+}
+
+.tw-scroll-dark::-webkit-scrollbar-thumb {
+  background: rgb(255 255 255 / 0.2);
+  border-radius: 999px;
+}
+
+.tw-scroll-dark::-webkit-scrollbar-thumb:hover {
+  background: var(--ceglany);
 }
 
 body {

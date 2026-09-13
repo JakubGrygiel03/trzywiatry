@@ -50,7 +50,7 @@ export function AdminSidebar({ badges, open, onClose }: AdminSidebarProps) {
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 py-4">
+        <nav className="tw-scroll-dark flex-1 overflow-y-auto px-3 py-4">
           {ADMIN_NAV_GROUPS.map((group) => (
             <div key={group.id} className="mb-5">
               <p className="mb-1.5 px-2 text-[10px] font-medium uppercase tracking-[0.16em] text-bialy/35">
