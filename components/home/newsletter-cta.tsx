@@ -28,7 +28,7 @@ export function NewsletterCta({ payload }: { payload?: NewsletterPayload }) {
               backgroundRepeat: "repeat",
               backgroundSize: "280px auto",
               backgroundPosition: "50% 50%",
-              opacity: 0.28,
+              opacity: 0.16,
               WebkitMaskImage: "linear-gradient(to right, transparent 0%, transparent 50%, black 64%)",
               maskImage: "linear-gradient(to right, transparent 0%, transparent 50%, black 64%)",
             }}
@@ -38,7 +38,7 @@ export function NewsletterCta({ payload }: { payload?: NewsletterPayload }) {
             <div className="relative text-bialy">
               <div className="grid gap-4 px-5 py-5 md:grid-cols-[1.15fr_0.85fr] md:items-center md:gap-8 md:px-7 md:py-6">
                 <div className="max-w-xl space-y-1.5">
-                  <p className="font-heading text-[11px] uppercase tracking-[0.2em] text-ceglany">{copy.eyebrow}</p>
+                  <p className="font-heading text-[11px] uppercase tracking-[0.2em] text-bialy/70">{copy.eyebrow}</p>
                   <h2 className="font-heading text-xl uppercase leading-snug tracking-[0.06em] text-bialy md:text-2xl">
                     {copy.title}
                   </h2>
@@ -46,7 +46,7 @@ export function NewsletterCta({ payload }: { payload?: NewsletterPayload }) {
                     {interpolateStudioCopy(copy.body, settings)}
                   </p>
                 </div>
-                <div className="rounded-2xl bg-krem px-3.5 py-3.5 text-czarny shadow-sm md:px-4 md:py-4">
+                <div className="rounded-2xl bg-bialy px-3.5 py-3.5 text-czarny shadow-sm md:px-4 md:py-4">
                   <p className="mb-2 font-heading text-[11px] uppercase tracking-[0.16em] text-czerwony">
                     {copy.formLabel}
                   </p>

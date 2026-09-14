@@ -11,7 +11,16 @@ import { variantStockLabel } from "@/lib/data/queries";
 import type { Product } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-export function ProductCard({ product, framed = false }: { product: Product; framed?: boolean }) {
+export function ProductCard({
+  product,
+  framed = false,
+  /** Cream on white home panels; white on cream shop canvas. */
+  tone = "paper",
+}: {
+  product: Product;
+  framed?: boolean;
+  tone?: "paper" | "cream";
+}) {
   const stock = product.variants.reduce((sum, variant) => {
     if (!variant.isAvailable) return sum;
     return sum + variant.stockQuantity;
@@ -21,11 +30,13 @@ export function ProductCard({ product, framed = false }: { product: Product; fra
   const categoryLabel = CATEGORY_LABELS[product.category] ?? DOMAIN_LABELS[product.domain];
   const frame = categoryFrame(product.category);
   const colors = variantColors(product);
+  const ground = tone === "cream" ? "bg-krem" : "bg-bialy";
 
   return (
     <article
       className={cn(
-        "group relative space-y-2 bg-krem p-2.5",
+        "group relative space-y-2 p-2.5",
+        ground,
         frame.card,
       )}
     >

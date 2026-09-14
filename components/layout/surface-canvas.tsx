@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/** Warm patterned canvas used on public subpages (not home / legal / CMS). */
+/** One cream canvas + quiet pattern — avoids stacking near-identical beiges. */
 export function SurfaceCanvas({
   children,
   className,
@@ -10,10 +10,10 @@ export function SurfaceCanvas({
   className?: string;
 }) {
   return (
-    <div className={cn("relative min-h-full bg-krem-ciemny", className)}>
+    <div className={cn("relative min-h-full bg-krem", className)}>
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.09]"
+        className="pointer-events-none absolute inset-0 opacity-[0.045]"
         style={{
           backgroundImage: "url(/brand/wzory/a.png)",
           backgroundRepeat: "repeat",

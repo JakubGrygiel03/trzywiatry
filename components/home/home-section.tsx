@@ -18,7 +18,7 @@ export function HomeSection({
   return (
     <section className={cn("py-4 md:py-5", className)}>
       <Container>
-        <SurfaceTile tone={tone} className="shadow-[0_22px_50px_-32px_rgb(1_1_1_/_0.55)]">
+        <SurfaceTile tone={tone} className="shadow-[0_14px_36px_-30px_rgb(1_1_1_/_0.4)]">
           <SurfaceTileBody className={cn("space-y-7 sm:py-8 md:space-y-8", bodyClassName)}>
             {children}
           </SurfaceTileBody>

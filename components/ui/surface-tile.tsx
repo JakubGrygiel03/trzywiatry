@@ -5,12 +5,11 @@ const TILE_BASE =
   "overflow-hidden rounded-[28px] border shadow-[0_18px_48px_-36px_rgb(1_1_1_/_0.45)]";
 
 const TILE_TONES = {
-  /** Readable white card for content pages */
+  /** White content panel — the only “card” ground besides cream page */
   paper: "border-czarny/10 bg-bialy",
-  /** Warm clay panel — use only when contrast with canvas is enough */
-  clay: "border-czarny/12 bg-krem",
-  /** Soft parchment between paper and clay */
-  mist: "border-czarny/10 bg-papier",
+  /** Alias kept for older callers; same as paper to reduce beige stacking */
+  clay: "border-czarny/10 bg-bialy",
+  mist: "border-czarny/10 bg-bialy",
 } as const;
 
 export type SurfaceTileTone = keyof typeof TILE_TONES;
@@ -39,7 +38,7 @@ export function SurfaceTileHeader({
   end?: ReactNode;
 }) {
   return (
-    <div className="flex items-start justify-between gap-3 border-b border-czarny/8 bg-krem-ciemny/35 px-5 py-4 sm:px-7">
+    <div className="flex items-start justify-between gap-3 border-b border-czarny/8 px-5 py-4 sm:px-7">
       <div className="min-w-0">
         {eyebrow ? (
           <p className="font-heading text-[11px] uppercase tracking-[0.2em] text-czerwony">{eyebrow}</p>

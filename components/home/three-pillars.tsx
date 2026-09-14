@@ -25,9 +25,9 @@ export function ThreePillars({
           <Reveal key={`${pillar.title}-${pillar.href}`} delay={index * 0.06}>
             <Link
               href={pillar.href}
-              className="group relative block overflow-hidden rounded-2xl border border-czarny/12 bg-krem p-6 transition-colors duration-300 hover:border-czerwony hover:bg-krem-ciemny/50 md:p-7"
+              className="group relative block overflow-hidden rounded-2xl border border-czarny/10 bg-bialy p-6 transition-colors duration-300 hover:border-czerwony md:p-7"
             >
-              <p className="font-heading text-[11px] uppercase tracking-[0.2em] text-ceglany">{pillar.mark}</p>
+              <p className="font-heading text-[11px] uppercase tracking-[0.2em] text-czerwony">{pillar.mark}</p>
               <h3 className="mt-4 font-heading text-xl uppercase tracking-[0.08em] text-czarny">{pillar.title}</h3>
               <p className="mt-3 max-w-[32ch] text-base leading-relaxed text-czarny">{pillar.copy}</p>
               <span className="mt-5 inline-flex font-heading text-[11px] uppercase tracking-[0.16em] text-czerwony">
