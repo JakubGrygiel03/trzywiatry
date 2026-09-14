@@ -1,7 +1,6 @@
 import { ORDER_STATUS_LABELS, SITE } from "@/lib/constants";
 import { renderEmailTemplate, resetButtonHtml, wrapEmail, emailButtonHtml } from "@/lib/email/render";
 import { formatPLN } from "@/lib/format";
-import { escapeHtml } from "@/lib/validations/safe-input";
 import type { OrderStatus, StoredOrder } from "@/lib/types";
 import type { EmailTemplateKey } from "@/lib/email/catalog";
 
@@ -17,54 +16,34 @@ export type SendEmailResult = {
   error?: string;
 };
 
-/** Resend sandbox sender (resend.dev) until trzywiatry.pl is verified in DNS. */
+/** Shared Resend sender while trzywiatry.pl DNS is still unverified. */
 const ONBOARDING_FROM = `Trzy Wiatry <onboarding@${["resend", "dev"].join(".")}>`;
 
-function resendDomainVerified() {
-  return process.env.RESEND_DOMAIN_VERIFIED === "true";
-}
-
-function resendFrom() {
-  if (!resendDomainVerified()) return ONBOARDING_FROM;
+function productionFrom() {
   return process.env.NEWSLETTER_FROM_EMAIL?.trim() || `Trzy Wiatry <${SITE.email}>`;
 }
 
-function resendTestInbox() {
-  // Resend sandbox only delivers to the email on the Resend account — not the shop inbox.
-  return process.env.RESEND_TEST_TO?.trim() || "";
+function domainLooksVerified() {
+  return process.env.RESEND_DOMAIN_VERIFIED === "true";
 }
 
-function resolveRecipient(intended: string): { to: string; intended: string; rerouted: boolean; blocked?: boolean } {
-  if (resendDomainVerified()) return { to: intended, intended, rerouted: false };
-  const inbox = resendTestInbox();
-  if (!inbox) {
-    return { to: "", intended, rerouted: true, blocked: true };
-  }
-  return { to: inbox, intended, rerouted: inbox.toLowerCase() !== intended.toLowerCase() };
+function fromCandidates() {
+  const shop = productionFrom();
+  if (domainLooksVerified()) return [shop];
+  return shop.toLowerCase().includes("resend.dev") ? [shop] : [shop, ONBOARDING_FROM];
 }
 
-function withTestBanner(html: string, intended: string) {
-  return `<p style="font-size:12px;color:#9C644E;margin:0 0 16px">Tryb testowy Resend (domena jeszcze niepotwierdzona). Docelowy adres: <strong>${escapeHtml(intended)}</strong></p>${html}`;
+function isUnverifiedFromError(status: number, error: string) {
+  if (status !== 403 && status !== 422) return false;
+  const text = error.toLowerCase();
+  return text.includes("not verified") || text.includes("invalid `from`") || text.includes("invalid from");
 }
 
-/** Live Resend send. Missing key or API error never look like success. */
-export async function sendEmail(message: TransactionalEmail): Promise<SendEmailResult> {
-  const key = process.env.RESEND_API_KEY?.trim();
-  if (!key) {
-    console.warn("[resend] brak RESEND_API_KEY — mail nie wyszedł:", message.subject, "→", message.to);
-    return { ok: false, demo: true, error: "missing-key" };
-  }
-
-  const recipient = resolveRecipient(message.to);
-  if (recipient.blocked) {
-    console.error("[resend] sandbox: brak RESEND_TEST_TO — nie piszę na adres klienta:", recipient.intended);
-    return { ok: false, demo: true, error: "sandbox-blocked" };
-  }
-
-  const sandbox = !resendDomainVerified();
-  const subject = sandbox ? `[test → ${recipient.intended}] ${message.subject}` : message.subject;
-  const html = sandbox ? withTestBanner(message.html, recipient.intended) : message.html;
-
+async function postResend(
+  key: string,
+  from: string,
+  message: TransactionalEmail,
+): Promise<SendEmailResult & { status?: number }> {
   let response: Response;
   try {
     response = await fetch("https://api.resend.com/emails", {
@@ -74,11 +53,11 @@ export async function sendEmail(message: TransactionalEmail): Promise<SendEmailR
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: resendFrom(),
-        to: [recipient.to],
+        from,
+        to: [message.to],
         reply_to: SITE.email,
-        subject,
-        html,
+        subject: message.subject,
+        html: message.html,
       }),
     });
   } catch (error) {
@@ -89,18 +68,33 @@ export async function sendEmail(message: TransactionalEmail): Promise<SendEmailR
   const payload = (await response.json().catch(() => null)) as { message?: string; name?: string } | null;
   if (!response.ok) {
     const error = payload?.message ?? payload?.name ?? `HTTP ${response.status}`;
-    console.error("[resend]", response.status, error, "→", recipient.to, recipient.rerouted ? `(dla ${recipient.intended})` : "");
-    if (response.status === 403 && !resendDomainVerified()) {
-      console.error("[resend] sandbox: ustaw RESEND_TEST_TO na e-mail logowania do Resend (nie na skrzynkę sklepu).");
-    }
-    return { ok: false, demo: false, error };
-  }
-
-  if (recipient.rerouted) {
-    console.info("[resend] sandbox: wysłano na", recipient.to, "zamiast", recipient.intended);
+    console.error("[resend]", response.status, error, "→", message.to);
+    return { ok: false, demo: false, error, status: response.status };
   }
 
   return { ok: true, demo: false };
+}
+
+/** Always delivers to the address from the form — same path as a live domain. */
+export async function sendEmail(message: TransactionalEmail): Promise<SendEmailResult> {
+  const key = process.env.RESEND_API_KEY?.trim();
+  if (!key) {
+    console.warn("[resend] brak RESEND_API_KEY — mail nie wyszedł:", message.subject, "→", message.to);
+    return { ok: false, demo: true, error: "missing-key" };
+  }
+
+  const candidates = fromCandidates();
+  let last: SendEmailResult & { status?: number } = { ok: false, demo: false, error: "no-from" };
+
+  for (let i = 0; i < candidates.length; i += 1) {
+    const from = candidates[i]!;
+    last = await postResend(key, from, message);
+    if (last.ok) return last;
+    const canRetry = i < candidates.length - 1 && isUnverifiedFromError(last.status ?? 0, last.error ?? "");
+    if (!canRetry) return last;
+  }
+
+  return last;
 }
 
 function itemsList(order: StoredOrder) {
