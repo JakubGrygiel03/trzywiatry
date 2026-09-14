@@ -78,7 +78,7 @@ export async function registerP24Transaction(session: ReturnType<typeof buildP24
     } | null;
     const token = json?.data?.token;
     if (!token) {
-      console.error("[p24] register failed", response.status, json?.error ?? json?.message ?? "no-token");
+      console.error("[p24] register failed", response.status, JSON.stringify(json));
       return { ok: false as const, reason: "register-failed" as const };
     }
     return { ok: true as const, redirectUrl: `${p24Host()}/trnRequest/${token}` };

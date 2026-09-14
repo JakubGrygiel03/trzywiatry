@@ -10,7 +10,7 @@ export const checkoutSchema = z
     postalCode: z.string().trim().regex(/^\d{2}-\d{3}$/, "Kod pocztowy: 00-000"),
     city: plainText("Miasto", 60, 2),
     shippingMethod: z.enum(["inpost", "kurier", "odbior"]),
-    inpostLocker: z.string().trim().max(80).optional(),
+    inpostLocker: z.string().trim().max(180).optional(),
     giftMessage: plainText("Dedykacja", 280).optional(),
     discountCode: z
       .string()
@@ -25,7 +25,7 @@ export const checkoutSchema = z
       ctx.addIssue({
         code: "custom",
         path: ["inpostLocker"],
-        message: "Podaj numer paczkomatu InPost.",
+        message: "Wybierz paczkomat InPost na mapie.",
       });
     }
   });

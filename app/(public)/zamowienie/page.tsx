@@ -25,7 +25,7 @@ export default async function CheckoutPage() {
           title="Dostawa i płatność"
           description={
             hasP24Credentials()
-              ? "Podaj e-mail i dane dostawy. Płatność P24 / BLIK — potwierdzenie przyjdzie mailem."
+              ? "Wybierz paczkomat na mapie albo kuriera. Płatność BLIK / karta przez Przelewy24 — potwierdzenie przyjdzie mailem."
               : "Podaj e-mail i dane dostawy. Zamówienie zapisujemy; o płatności damy znać mailem."
           }
         />

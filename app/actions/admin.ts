@@ -18,7 +18,7 @@ import type { OrderStatus } from "@/lib/types";
 import { adminForgotPasswordSchema, adminResetPasswordSchema } from "@/lib/validations/forms";
 import { firstZodMessage } from "@/lib/validations/safe-input";
 import { studioSettingsFormSchema } from "@/lib/validations/settings";
-import { notifyCustomerOrderStatus, sendAdminPasswordResetEmail } from "@/lib/resend";
+import { notifyCustomerOrderStatus, sendAdminPasswordResetEmail, customerMailFailureMessage } from "@/lib/resend";
 import { getRequestOrigin } from "@/lib/request-origin";
 import { ORDER_STATUS_LABELS } from "@/lib/constants";
 
@@ -138,9 +138,11 @@ export async function updateOrderStatus(formData: FormData) {
   await flushAtelierSave();
 
   let mailed = false;
+  let mailReason = "";
   if (notify) {
     const result = await notifyCustomerOrderStatus(updated);
     mailed = Boolean(result.ok);
+    mailReason = result.error ?? "";
   }
 
   revalidatePath("/admin/zamowienia");
@@ -148,9 +150,15 @@ export async function updateOrderStatus(formData: FormData) {
   revalidatePath("/konto");
   revalidatePath(`/konto/zamowienia/${id}`);
   const mailFlag = notify ? (mailed ? "1" : "0") : "off";
-  redirect(
-    `/admin/zamowienia/${id}?zapisano=1&mail=${mailFlag}&label=${encodeURIComponent(ORDER_STATUS_LABELS[statusRaw as OrderStatus])}`,
-  );
+  const params = new URLSearchParams({
+    zapisano: "1",
+    mail: mailFlag,
+    label: ORDER_STATUS_LABELS[statusRaw as OrderStatus],
+  });
+  if (!mailed && notify && mailReason) {
+    params.set("powod", customerMailFailureMessage(mailReason).slice(0, 220));
+  }
+  redirect(`/admin/zamowienia/${id}?${params}`);
 }
 
 function parseShopHubImage(raw: unknown, fallback: string) {

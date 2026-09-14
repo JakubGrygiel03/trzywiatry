@@ -423,3 +423,22 @@ h4 {
 input:-webkit-autofill {
   -webkit-box-shadow: 0 0 0 1000px var(--bialy) inset;
 }
+
+.leaflet-div-icon.inpost-pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--czerwony);
+  border: 2px solid var(--bialy);
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgb(1 1 1 / 0.28);
+}
+
+.leaflet-div-icon.inpost-pin.is-selected {
+  background: var(--ceglany);
+}
+
+.leaflet-container {
+  font-family: inherit;
+  z-index: 0;
+}

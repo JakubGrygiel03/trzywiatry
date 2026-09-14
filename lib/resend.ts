@@ -1,6 +1,7 @@
 import { ORDER_STATUS_LABELS, SITE } from "@/lib/constants";
 import { renderEmailTemplate, resetButtonHtml, wrapEmail, emailButtonHtml } from "@/lib/email/render";
 import { formatPLN } from "@/lib/format";
+import { sendViaSmtp } from "@/lib/smtp-mailer";
 import type { OrderStatus, StoredOrder } from "@/lib/types";
 import type { EmailTemplateKey } from "@/lib/email/catalog";
 
@@ -77,26 +78,45 @@ async function postResend(
   return { ok: true, demo: false };
 }
 
+export function customerMailFailureMessage(error?: string) {
+  const text = (error ?? "").toLowerCase();
+  if (text.includes("only send testing") || text.includes("your own email") || text.includes("missing-smtp")) {
+    return "Mail do klienta nie wyszedł: Resend jest w trybie testowym (tylko skrzynka pracowni). Ustaw SMTP_PASS (hasło aplikacji Gmail) albo zweryfikuj domenę send.trzywiatry.pl w Resend.";
+  }
+  if (text.includes("smtp-failed")) {
+    return "SMTP odrzucił wysyłkę. Sprawdź hasło aplikacji Gmail (SMTP_PASS).";
+  }
+  return "Nie udało się wysłać maila. Spróbuj później albo napisz do pracowni.";
+}
+
 /** Always delivers to the address from the form — same path as a live domain. */
 export async function sendEmail(message: TransactionalEmail): Promise<SendEmailResult> {
   const key = process.env.RESEND_API_KEY?.trim();
-  if (!key) {
-    console.warn("[resend] brak RESEND_API_KEY — mail nie wyszedł:", message.subject, "→", message.to);
-    return { ok: false, demo: true, error: "missing-key" };
-  }
-
-  const candidates = fromCandidates();
   let last: SendEmailResult & { status?: number } = { ok: false, demo: false, error: "no-from" };
 
-  for (let i = 0; i < candidates.length; i += 1) {
-    const from = candidates[i]!;
-    last = await postResend(key, from, message);
-    if (last.ok) return last;
-    const canRetry = i < candidates.length - 1 && isUnverifiedFromError(last.status ?? 0, last.error ?? "");
-    if (!canRetry) return last;
+  if (key) {
+    const candidates = fromCandidates();
+    for (let i = 0; i < candidates.length; i += 1) {
+      const from = candidates[i]!;
+      last = await postResend(key, from, message);
+      if (last.ok) return last;
+      const canRetry = i < candidates.length - 1 && isUnverifiedFromError(last.status ?? 0, last.error ?? "");
+      if (!canRetry) break;
+    }
+  } else {
+    console.warn("[resend] brak RESEND_API_KEY — próbuję SMTP:", message.subject, "→", message.to);
+    last = { ok: false, demo: true, error: "missing-key" };
   }
 
-  return last;
+  const smtp = await sendViaSmtp(message);
+  if (smtp.ok) {
+    console.info("[mail] sent via SMTP →", message.to);
+    return smtp;
+  }
+
+  return last.error === "missing-key" && smtp.error === "missing-smtp"
+    ? last
+    : { ok: false, demo: false, error: last.error ?? smtp.error };
 }
 
 function itemsList(order: StoredOrder) {

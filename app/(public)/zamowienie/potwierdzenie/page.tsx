@@ -1,7 +1,8 @@
 import Link from "next/link";
+import { OrderNextStep } from "@/components/checkout/order-next-step";
 import { ClearCartOnMount } from "@/components/checkout/clear-cart-on-mount";
 import { Container, SectionHeading } from "@/components/ui/badge";
-import { ORDER_STATUS_HINTS, ORDER_STATUS_LABELS, SITE } from "@/lib/constants";
+import { ORDER_STATUS_HINTS, ORDER_STATUS_LABELS } from "@/lib/constants";
 import { ensureOrdersHydrated } from "@/lib/data/order-persist";
 import { getOrderByNumber } from "@/lib/data/runtime-store";
 import { formatPLN } from "@/lib/format";
@@ -17,9 +18,9 @@ export const metadata: Metadata = {
 export default async function OrderConfirmationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ order?: string; k?: string; mail?: string }>;
+  searchParams: Promise<{ order?: string; k?: string; mail?: string; pay?: string }>;
 }) {
-  const { order: orderNumber, k, mail } = await searchParams;
+  const { order: orderNumber, k, mail, pay } = await searchParams;
   await ensureOrdersHydrated();
   const record = orderNumber ? getOrderByNumber(orderNumber) : null;
   const order = record && k && record.id === k ? record : null;
@@ -58,23 +59,14 @@ export default async function OrderConfirmationPage({
                 <span className="font-heading">{formatPLN(order.totalAmountInCents)}</span>
               </p>
             </div>
-            <p className="text-sm text-czarny/60">
-              {mail === "0" ? (
-                <>
-                  Zamówienie jest zapisane, ale potwierdzenie e-mail nie wyszło. Napisz na{" "}
-                  <a href={`mailto:${SITE.email}`} className="text-czerwony underline-offset-2 hover:underline">
-                    {SITE.email}
-                  </a>{" "}
-                  — albo sprawdź w{" "}
-                </>
-              ) : (
-                <>Potwierdzenie poszło na {order.customerEmail}. Status śledzisz też w </>
-              )}
-              <Link href="/konto" className="text-czerwony underline-offset-2 hover:underline">
-                koncie
-              </Link>
-              .
-            </p>
+            <OrderNextStep
+              orderNumber={order.orderNumber}
+              orderId={order.id}
+              status={order.status}
+              customerEmail={order.customerEmail}
+              mailFailed={mail === "0"}
+              payFailed={pay === "0"}
+            />
           </>
         ) : (
           <Link href="/sklep" className="text-sm text-czerwony underline-offset-2 hover:underline">

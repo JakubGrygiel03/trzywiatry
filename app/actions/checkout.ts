@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { checkoutSchema } from "@/lib/validations/checkout";
 import { SHIPPING_METHODS, SITE } from "@/lib/constants";
-import { absoluteUrl } from "@/lib/site-url";
 import {
   addRuntimeOrder,
   applyVariantStockDelta,
@@ -18,6 +17,7 @@ import { orderPlacedEmail, sendEmail } from "@/lib/resend";
 import { notifyStudioNewOrder } from "@/lib/studio-notify";
 import { buildP24Session, hasP24Credentials, registerP24Transaction } from "@/lib/p24";
 import { getVacationCheckoutNote } from "@/lib/vacation-message";
+import { getRequestOrigin } from "@/lib/request-origin";
 import type { ShippingMethod, StoredOrder, StoredOrderItem } from "@/lib/types";
 import { formatPLN } from "@/lib/format";
 
@@ -176,14 +176,20 @@ export async function createCheckoutSession(
     notifyStudioNewOrder(order),
   ]);
 
-  const confirmPath = `/zamowienie/potwierdzenie?order=${encodeURIComponent(orderNumber)}&k=${encodeURIComponent(order.id)}${mailed.ok ? "" : "&mail=0"}`;
+  const origin = await getRequestOrigin();
+  const confirmQuery = new URLSearchParams({
+    order: orderNumber,
+    k: order.id,
+  });
+  if (!mailed.ok) confirmQuery.set("mail", "0");
+  const confirmPath = `/zamowienie/potwierdzenie?${confirmQuery}`;
   const p24 = buildP24Session({
     sessionId: orderNumber,
     amountInCents: total,
     email: order.customerEmail,
     description: `Trzy Wiatry ${orderNumber}`,
-    urlReturn: absoluteUrl(confirmPath),
-    urlStatus: absoluteUrl("/api/webhooks/p24"),
+    urlReturn: `${origin}${confirmPath}`,
+    urlStatus: `${origin}/api/webhooks/p24`,
   });
 
   if (hasP24Credentials()) {
@@ -196,13 +202,16 @@ export async function createCheckoutSession(
         message: `Zamówienie ${orderNumber} zapisane. Przekierowujemy do płatności…`,
       };
     }
+    confirmQuery.set("pay", "0");
     return {
       ok: true,
       orderNumber,
-      redirectTo: confirmPath,
+      redirectTo: `/zamowienie/potwierdzenie?${confirmQuery}`,
       message: `Zamówienie ${orderNumber} zapisane, ale płatność P24 nie wystartowała. Spróbuj jeszcze raz albo napisz na ${SITE.email}.`,
     };
   }
+
+  console.warn("[p24] checkout skipped — missing credentials");
 
   return {
     ok: true,

@@ -1,14 +1,17 @@
 "use client";
 
-import Link from "next/link";
+import { CheckoutField } from "@/components/checkout/checkout-field";
+import { CheckoutPayBox } from "@/components/checkout/checkout-pay-box";
+import { CheckoutShipping } from "@/components/checkout/checkout-shipping";
+import { InpostLockerPicker } from "@/components/checkout/inpost-locker-picker";
+import { Label, Textarea } from "@/components/ui/field";
 import { useActionState, useEffect, useState } from "react";
 import { createCheckoutSession, type CheckoutState } from "@/app/actions/checkout";
-import { Button } from "@/components/ui/button";
-import { Input, Label, Textarea } from "@/components/ui/field";
 import { useSiteSettings } from "@/components/cms/site-settings-provider";
 import { SHIPPING_METHODS } from "@/lib/constants";
 import { formatPLN } from "@/lib/format";
 import { cartGiftWrapCost, cartSubtotal, useCartStore } from "@/store/use-cart-store";
+import Link from "next/link";
 
 const initial: CheckoutState = { ok: false, message: "" };
 
@@ -27,6 +30,9 @@ export function CheckoutForm({
   const clear = useCartStore((state) => state.clear);
   const [state, action, pending] = useActionState(createCheckoutSession, initial);
   const [shippingMethod, setShippingMethod] = useState<(typeof SHIPPING_METHODS)[number]["id"]>("inpost");
+  const [postalCode, setPostalCode] = useState("");
+  const [city, setCity] = useState("");
+  const [locker, setLocker] = useState("");
   const settings = useSiteSettings();
   const subtotal = cartSubtotal(items);
   const gift = cartGiftWrapCost(hasGiftWrapping, settings.giftWrapPriceCents);
@@ -65,17 +71,13 @@ export function CheckoutForm({
       <input type="hidden" name="hasGiftWrapping" value={String(hasGiftWrapping)} />
       <input type="hidden" name="giftMessage" value={giftMessage} />
       <div className="space-y-5">
-        <Field name="customerName" label="Imię i nazwisko / Full name" defaultValue={defaultName} />
+        <CheckoutField name="customerName" label="Imię i nazwisko / Full name" defaultValue={defaultName} />
         <div className="space-y-2">
-          <Label htmlFor="customerEmail">
-            E-mail <span className="text-czerwony">*</span>
-          </Label>
-          <Input
-            id="customerEmail"
+          <CheckoutField
             name="customerEmail"
+            label="E-mail"
             type="email"
             autoComplete="email"
-            required
             defaultValue={defaultEmail}
             placeholder="you@email.com"
           />
@@ -92,102 +94,40 @@ export function CheckoutForm({
             ) : null}
           </p>
         </div>
-        <Field name="customerPhone" label="Telefon / Phone" type="tel" placeholder="+48 123 456 789" />
-        <Field name="street" label="Ulica i numer" />
+        <CheckoutField name="customerPhone" label="Telefon / Phone" type="tel" placeholder="+48 123 456 789" />
+        <CheckoutField name="street" label="Ulica i numer" />
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field name="postalCode" label="Kod pocztowy" placeholder="80-000" />
-          <Field name="city" label="Miasto" />
+          <CheckoutField
+            name="postalCode"
+            label="Kod pocztowy"
+            placeholder="80-000"
+            value={postalCode}
+            onChange={setPostalCode}
+          />
+          <CheckoutField name="city" label="Miasto" value={city} onChange={setCity} />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="shippingMethod">Dostawa</Label>
-          <select
-            id="shippingMethod"
-            name="shippingMethod"
-            value={shippingMethod}
-            onChange={(event) =>
-              setShippingMethod(event.target.value as (typeof SHIPPING_METHODS)[number]["id"])
-            }
-            className="h-11 w-full rounded-2xl border border-czarny/10 bg-bialy px-4 text-sm"
-          >
-            {SHIPPING_METHODS.map((method) => (
-              <option key={method.id} value={method.id}>
-                {method.label} · {formatPLN(method.priceInCents)}
-              </option>
-            ))}
-          </select>
-          <p className="text-xs text-szary">{shippingHint}</p>
-        </div>
+        <CheckoutShipping value={shippingMethod} onChange={setShippingMethod} hint={shippingHint} />
         {shippingMethod === "inpost" ? (
-          <Field name="inpostLocker" label="Paczkomat InPost (numer / nazwa)" />
+          <InpostLockerPicker postalCode={postalCode} city={city} value={locker} onChange={setLocker} />
         ) : null}
-        <Field
-          name="discountCode"
-          label="Kod rabatowy"
-          placeholder={settings.promoCode?.trim() || "kod z maila"}
-          required={false}
-        />
         <div className="space-y-2">
           <Label htmlFor="notes">Uwagi</Label>
           <Textarea id="notes" name="notes" />
         </div>
+        <CheckoutField
+          name="discountCode"
+          label="Kod rabatowy (opcjonalnie)"
+          hint="Tylko jeśli masz kod z maila — nie jest wymagany."
+          required={false}
+        />
       </div>
-      <aside className="h-fit space-y-4 rounded-[28px] bg-krem p-6">
-        {items.map((item) => (
-          <div key={item.variantId} className="flex justify-between gap-3 text-sm">
-            <span>
-              {item.name} × {item.quantity}
-            </span>
-            <span className="font-heading">{formatPLN(item.unitPriceInCents * item.quantity)}</span>
-          </div>
-        ))}
-        {hasGiftWrapping ? (
-          <div className="flex justify-between text-sm">
-            <span>Pakowanie prezentowe</span>
-            <span className="font-heading">{formatPLN(gift)}</span>
-          </div>
-        ) : null}
-        <Button type="submit" disabled={pending} className="w-full">
-          {pending
-            ? "Składam zamówienie…"
-            : paymentsLive
-              ? "Zamawiam i płacę (P24 / BLIK)"
-              : "Zamawiam"}
-        </Button>
-        {state.message ? <p className="text-sm text-czerwony">{state.message}</p> : null}
-      </aside>
-    </form>
-  );
-}
-
-function Field({
-  name,
-  label,
-  type = "text",
-  placeholder,
-  defaultValue,
-  required = true,
-}: {
-  name: string;
-  label: string;
-  type?: string;
-  placeholder?: string;
-  defaultValue?: string;
-  required?: boolean;
-}) {
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={name}>
-        {label}
-        {required ? <span className="text-czerwony"> *</span> : null}
-      </Label>
-      <Input
-        id={name}
-        name={name}
-        type={type}
-        placeholder={placeholder}
-        required={required}
-        defaultValue={defaultValue}
+      <CheckoutPayBox
+        items={items}
+        giftCents={gift}
+        pending={pending}
+        paymentsLive={paymentsLive}
+        message={state.message}
       />
-    </div>
+    </form>
   );
 }

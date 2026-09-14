@@ -23,7 +23,7 @@ function redirectToRegister(request: Request, blad: string) {
 
 function redirectToCheckEmail(request: Request, email: string, mailed: boolean) {
   const url = new URL("/konto/sprawdz-email", request.url);
-  if (email) url.searchParams.set("email", email);
+  url.searchParams.set("email", email);
   if (!mailed) url.searchParams.set("mail", "0");
   const response = NextResponse.redirect(url, 303);
   response.headers.set("Cache-Control", "private, no-store");
@@ -55,10 +55,10 @@ export async function POST(request: Request) {
   }
 
   const parsed = customerRegisterSchema.safeParse({
-    name: formData.get("name"),
-    email: formData.get("email"),
-    password: formData.get("password"),
-    passwordConfirm: formData.get("passwordConfirm"),
+    name: String(formData.get("name") ?? ""),
+    email: String(formData.get("email") ?? ""),
+    password: String(formData.get("password") ?? ""),
+    passwordConfirm: String(formData.get("passwordConfirm") ?? ""),
   });
   if (!parsed.success) {
     return redirectToRegister(request, parsed.error.issues[0]?.message ?? "dane");

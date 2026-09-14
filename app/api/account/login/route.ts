@@ -41,7 +41,9 @@ export async function POST(request: Request) {
     return redirectToLogin(request, "haslo");
   }
   if (!isCustomerEmailVerified(user)) {
-    const response = NextResponse.redirect(new URL("/konto/sprawdz-email", request.url), 303);
+    const url = new URL("/konto/sprawdz-email", request.url);
+    url.searchParams.set("email", user.email);
+    const response = NextResponse.redirect(url, 303);
     response.headers.set("Cache-Control", "private, no-store");
     return response;
   }

@@ -8,12 +8,22 @@ import { Input, Label } from "@/components/ui/field";
 
 const initial: AccountFormState = { ok: false, message: "" };
 
-export function CustomerResendConfirmForm({ defaultEmail = "" }: { defaultEmail?: string }) {
+export function CustomerResendConfirmForm({
+  defaultEmail = "",
+  firstMailFailed = false,
+}: {
+  defaultEmail?: string;
+  firstMailFailed?: boolean;
+}) {
   const [state, action, pending] = useActionState(requestCustomerEmailConfirm, initial);
 
   return (
     <form action={action} className="space-y-5">
-      <p className="text-sm text-czarny/70">Nie ma maila? Wyślij link potwierdzający ponownie.</p>
+      {firstMailFailed ? (
+        <p className="rounded-xl bg-czerwony/10 px-4 py-3 text-sm text-czarny">
+          Pierwszy mail nie wyszedł. Kliknij poniżej, wyślemy link jeszcze raz.
+        </p>
+      ) : null}
       <div className="space-y-2">
         <Label htmlFor="email">E-mail z rejestracji</Label>
         <Input
@@ -26,7 +36,7 @@ export function CustomerResendConfirmForm({ defaultEmail = "" }: { defaultEmail?
         />
       </div>
       <Button type="submit" disabled={pending} className="w-full">
-        {pending ? "Wysyłam…" : "Wyślij link ponownie"}
+        {pending ? "Wysyłam…" : "Nie dostałem maila — wyślij ponownie"}
       </Button>
       {state.message ? (
         <p className={`text-sm ${state.ok ? "text-czarny/70" : "text-czerwony"}`}>{state.message}</p>

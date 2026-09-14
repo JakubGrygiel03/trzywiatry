@@ -11,6 +11,12 @@ const ERRORS: Record<string, string> = {
   wygasl: "Link wygasł. Wyślij nowy — ważny 24 godziny.",
 };
 
+function safeEmail(raw?: string) {
+  const value = (raw ?? "").trim().toLowerCase();
+  if (!value || value.length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "";
+  return value;
+}
+
 export default async function CheckEmailPage({
   searchParams,
 }: {
@@ -19,7 +25,7 @@ export default async function CheckEmailPage({
   const user = await getCustomerSession();
   if (user) redirect("/konto");
   const { blad, email, mail } = await searchParams;
-  const defaultEmail = email?.includes("@") ? email : "";
+  const defaultEmail = safeEmail(email);
 
   return (
     <div>
@@ -27,15 +33,10 @@ export default async function CheckEmailPage({
         <SectionHeading
           eyebrow="Konto"
           title="Sprawdź skrzynkę"
-          description="Wysłaliśmy link potwierdzający. Kliknij w nim, żeby aktywować konto — to zabezpieczenie przed spamem. Link ważny 24 godziny."
+          description="Konto czeka na klik w mailu. Jeśli wiadomość nie doszła — wyślij link ponownie poniżej."
         />
         {blad && ERRORS[blad] ? <p className="text-sm text-czerwony">{ERRORS[blad]}</p> : null}
-        {mail === "0" ? (
-          <p className="text-sm text-czerwony">
-            Pierwszy mail nie wyszedł. Sprawdź adres i wyślij link ponownie.
-          </p>
-        ) : null}
-        <CustomerResendConfirmForm defaultEmail={defaultEmail} />
+        <CustomerResendConfirmForm defaultEmail={defaultEmail} firstMailFailed={mail === "0"} />
       </Container>
     </div>
   );

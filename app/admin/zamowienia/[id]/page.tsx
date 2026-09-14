@@ -15,7 +15,7 @@ export default async function AdminOrderDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ zapisano?: string; status?: string; mail?: string; label?: string }>;
+  searchParams: Promise<{ zapisano?: string; status?: string; mail?: string; label?: string; powod?: string }>;
 }) {
   const { id } = await params;
   const query = await searchParams;
@@ -46,7 +46,11 @@ export default async function AdminOrderDetailPage({
             : query.mail === "off"
               ? " E-mail do klienta wyłączony przy tym zapisie."
               : query.mail === "0"
-                ? " Status zapisany, ale e-mail do klienta nie wyszedł (sprawdź logi serwera i domenę nadawcy w Resend)."
+                ? ` Status zapisany, ale e-mail do klienta nie wyszedł. ${
+                    query.powod
+                      ? query.powod
+                      : "Resend w trybie testowym wysyła tylko na skrzynkę pracowni — ustaw SMTP_PASS albo zweryfikuj send.trzywiatry.pl."
+                  }`
                 : ""}
         </p>
       ) : null}
