@@ -23,6 +23,11 @@ import { formatPLN } from "@/lib/format";
 
 type CartPayload = { variantId: string; quantity: number };
 
+function formText(formData: FormData, name: string) {
+  const value = formData.get(name);
+  return typeof value === "string" ? value : "";
+}
+
 export type CheckoutState = {
   ok: boolean;
   message: string;
@@ -39,17 +44,17 @@ export async function createCheckoutSession(
   formData: FormData,
 ): Promise<CheckoutState> {
   const parsed = checkoutSchema.safeParse({
-    customerName: formData.get("customerName"),
-    customerEmail: formData.get("customerEmail"),
-    customerPhone: formData.get("customerPhone"),
-    street: formData.get("street"),
-    postalCode: formData.get("postalCode"),
-    city: formData.get("city"),
-    shippingMethod: formData.get("shippingMethod"),
-    inpostLocker: formData.get("inpostLocker"),
-    giftMessage: formData.get("giftMessage"),
-    discountCode: formData.get("discountCode"),
-    notes: formData.get("notes"),
+    customerName: formText(formData, "customerName"),
+    customerEmail: formText(formData, "customerEmail"),
+    customerPhone: formText(formData, "customerPhone"),
+    street: formText(formData, "street"),
+    postalCode: formText(formData, "postalCode"),
+    city: formText(formData, "city"),
+    shippingMethod: formText(formData, "shippingMethod"),
+    inpostLocker: formText(formData, "inpostLocker"),
+    giftMessage: formText(formData, "giftMessage"),
+    discountCode: formText(formData, "discountCode"),
+    notes: formText(formData, "notes"),
   });
 
   if (!parsed.success) {
