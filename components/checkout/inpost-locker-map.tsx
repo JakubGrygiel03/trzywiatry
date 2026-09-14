@@ -29,7 +29,9 @@ export function InpostLockerMap({
       const L = leaflet.default ?? leaflet;
       if (cancelled || !containerRef.current) return;
 
-      const center = points[0] ? ([points[0].lat, points[0].lng] as [number, number]) : ([54.352, 18.646] as const);
+      const center: [number, number] = points[0]
+        ? [points[0].lat, points[0].lng]
+        : [54.352, 18.646];
       map = L.map(containerRef.current, { zoomControl: true, attributionControl: true }).setView(center, 13);
       if (cancelled) {
         map.remove();
