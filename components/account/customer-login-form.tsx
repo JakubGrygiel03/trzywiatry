@@ -40,11 +40,6 @@ export function CustomerLoginForm({ error }: { error?: string }) {
           Zarejestruj się
         </Link>
       </p>
-      <p className="text-center text-sm text-czarny/55">
-        <Link href="/konto/sprawdz-email" className="text-czerwony underline-offset-2 hover:underline">
-          Nie dostałeś maila potwierdzającego?
-        </Link>
-      </p>
       <p className="text-center text-xs text-szary">
         <Link href="/admin/logowanie" className="underline-offset-2 hover:text-czerwony hover:underline">
           Panel pracowni (CMS)

@@ -156,11 +156,13 @@ export function issueEmailConfirmToken(email: string) {
   if (index < 0) return { ok: false as const, reason: "missing" as const };
 
   const current = file.users[index]!;
-  if (isCustomerEmailVerified(current)) return { ok: false as const, reason: "already" as const };
+  const waiting = current.emailVerified === false || Boolean(current.confirmTokenHash);
+  if (!waiting) return { ok: false as const, reason: "already" as const };
 
   const confirm = issueConfirmSecret();
   file.users[index] = {
     ...current,
+    emailVerified: false,
     confirmTokenHash: confirm.confirmTokenHash,
     confirmExpiresAt: confirm.confirmExpiresAt,
     updatedAt: new Date().toISOString(),

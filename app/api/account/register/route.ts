@@ -21,8 +21,11 @@ function redirectToRegister(request: Request, blad: string) {
   return response;
 }
 
-function redirectToCheckEmail(request: Request) {
-  const response = NextResponse.redirect(new URL("/konto/sprawdz-email", request.url), 303);
+function redirectToCheckEmail(request: Request, email: string, mailed: boolean) {
+  const url = new URL("/konto/sprawdz-email", request.url);
+  if (email) url.searchParams.set("email", email);
+  if (!mailed) url.searchParams.set("mail", "0");
+  const response = NextResponse.redirect(url, 303);
   response.headers.set("Cache-Control", "private, no-store");
   return response;
 }
@@ -35,9 +38,11 @@ function confirmUrl(request: Request, token: string) {
 
 async function sendConfirm(request: Request, email: string, name: string, token: string) {
   try {
-    await sendCustomerConfirmEmail(email, name, confirmUrl(request, token));
+    const mailed = await sendCustomerConfirmEmail(email, name, confirmUrl(request, token));
+    return mailed.ok;
   } catch (error) {
     console.error("[register] confirm email failed", error);
+    return false;
   }
 }
 
@@ -64,11 +69,12 @@ export async function POST(request: Request) {
   if (existing) {
     if (!isCustomerEmailVerified(existing)) {
       const issued = issueEmailConfirmToken(existing.email);
+      let mailed = false;
       if (issued.ok) {
         await flushCustomersSave();
-        await sendConfirm(request, issued.user.email, issued.user.name, issued.token);
+        mailed = await sendConfirm(request, issued.user.email, issued.user.name, issued.token);
       }
-      return redirectToCheckEmail(request);
+      return redirectToCheckEmail(request, existing.email, mailed);
     }
     return redirectToRegister(request, "exists");
   }
@@ -78,6 +84,6 @@ export async function POST(request: Request) {
     return redirectToRegister(request, "exists");
   }
   await flushCustomersSave();
-  await sendConfirm(request, result.user.email, result.user.name, result.confirmToken);
-  return redirectToCheckEmail(request);
+  const mailed = await sendConfirm(request, result.user.email, result.user.name, result.confirmToken);
+  return redirectToCheckEmail(request, result.user.email, mailed);
 }

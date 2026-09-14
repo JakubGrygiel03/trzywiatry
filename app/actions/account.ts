@@ -41,25 +41,39 @@ export async function requestCustomerEmailConfirm(
     return { ok: false, message: parsed.error.issues[0]?.message ?? "Podaj e-mail." };
   }
 
-  const neutral =
-    "Jeśli konto czeka na potwierdzenie, wysłaliśmy nowy link. Sprawdź skrzynkę (i spam).";
+  try {
+    await ensureCustomersHydrated();
+    const issued = issueEmailConfirmToken(parsed.data.email);
+    if (!issued.ok) {
+      return {
+        ok: issued.reason === "already",
+        message:
+          issued.reason === "already"
+            ? "To konto jest już aktywne. Zaloguj się."
+            : "Nie znaleźliśmy konta oczekującego na potwierdzenie. Sprawdź adres albo zarejestruj się.",
+      };
+    }
+    await flushCustomersSave();
 
-  await ensureCustomersHydrated();
-  const issued = issueEmailConfirmToken(parsed.data.email);
-  if (!issued.ok) {
-    return { ok: true, message: neutral };
+    const origin = await getRequestOrigin();
+    const confirmUrl = `${origin}/konto/potwierdz-email?token=${issued.token}`;
+    const mailed = await sendCustomerConfirmEmail(issued.user.email, issued.user.name, confirmUrl);
+
+    if (!mailed.ok) {
+      return {
+        ok: false,
+        message: "Nie udało się wysłać maila. Sprawdź spam albo spróbuj za chwilę — napisz do pracowni, jeśli cisza.",
+      };
+    }
+
+    return { ok: true, message: `Nowy link poszedł na ${issued.user.email}. Sprawdź skrzynkę i spam.` };
+  } catch (error) {
+    console.error("[account] confirm resend", error);
+    return {
+      ok: false,
+      message: "Nie udało się wysłać maila. Spróbuj później albo napisz do pracowni.",
+    };
   }
-  await flushCustomersSave();
-
-  const origin = await getRequestOrigin();
-  const confirmUrl = `${origin}/konto/potwierdz-email?token=${issued.token}`;
-  const mailed = await sendCustomerConfirmEmail(issued.user.email, issued.user.name, confirmUrl);
-
-  if (!mailed.ok) {
-    return { ok: false, message: "Nie udało się wysłać maila. Spróbuj później albo napisz do pracowni." };
-  }
-
-  return { ok: true, message: neutral };
 }
 
 export async function requestCustomerPasswordReset(

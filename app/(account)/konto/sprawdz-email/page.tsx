@@ -14,11 +14,12 @@ const ERRORS: Record<string, string> = {
 export default async function CheckEmailPage({
   searchParams,
 }: {
-  searchParams: Promise<{ blad?: string }>;
+  searchParams: Promise<{ blad?: string; email?: string; mail?: string }>;
 }) {
   const user = await getCustomerSession();
   if (user) redirect("/konto");
-  const { blad } = await searchParams;
+  const { blad, email, mail } = await searchParams;
+  const defaultEmail = email?.includes("@") ? email : "";
 
   return (
     <div>
@@ -29,7 +30,12 @@ export default async function CheckEmailPage({
           description="Wysłaliśmy link potwierdzający. Kliknij w nim, żeby aktywować konto — to zabezpieczenie przed spamem. Link ważny 24 godziny."
         />
         {blad && ERRORS[blad] ? <p className="text-sm text-czerwony">{ERRORS[blad]}</p> : null}
-        <CustomerResendConfirmForm />
+        {mail === "0" ? (
+          <p className="text-sm text-czerwony">
+            Pierwszy mail nie wyszedł. Sprawdź adres i wyślij link ponownie.
+          </p>
+        ) : null}
+        <CustomerResendConfirmForm defaultEmail={defaultEmail} />
       </Container>
     </div>
   );

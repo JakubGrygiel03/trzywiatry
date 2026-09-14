@@ -8,14 +8,22 @@ import { Input, Label } from "@/components/ui/field";
 
 const initial: AccountFormState = { ok: false, message: "" };
 
-export function CustomerResendConfirmForm() {
+export function CustomerResendConfirmForm({ defaultEmail = "" }: { defaultEmail?: string }) {
   const [state, action, pending] = useActionState(requestCustomerEmailConfirm, initial);
 
   return (
     <form action={action} className="space-y-5">
+      <p className="text-sm text-czarny/70">Nie ma maila? Wyślij link potwierdzający ponownie.</p>
       <div className="space-y-2">
         <Label htmlFor="email">E-mail z rejestracji</Label>
-        <Input id="email" name="email" type="email" autoComplete="email" required />
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+          defaultValue={defaultEmail}
+        />
       </div>
       <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Wysyłam…" : "Wyślij link ponownie"}
