@@ -16,38 +16,37 @@ export function AdminLoginForm({
   error?: string;
 }) {
   return (
-    <LoginFormShell
-      action="/api/admin/login"
-      emptyMessage="Uzupełnij e-mail i hasło."
-      className="space-y-5"
-    >
-      <div className="space-y-2">
-        <Label htmlFor="email">E-mail admina</Label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="username"
-          defaultValue={defaultEmail}
-          placeholder="pracownia@trzywiatry.pl"
-        />
-      </div>
-      <div className="space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <Label htmlFor="password">Hasło</Label>
-          <Link
-            href="/admin/reset-hasla"
-            className="text-[11px] text-czerwony underline-offset-2 hover:underline"
-          >
-            Nie pamiętasz hasła?
-          </Link>
+    <div className="space-y-5">
+      <LoginFormShell
+        action="/api/admin/login"
+        emptyMessage="Uzupełnij e-mail i hasło."
+        className="space-y-5"
+      >
+        <div className="space-y-2">
+          <Label htmlFor="email">E-mail admina</Label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="username"
+            defaultValue={defaultEmail}
+            placeholder="pracownia@trzywiatry.pl"
+          />
         </div>
-        <Input id="password" name="password" type="password" autoComplete="current-password" />
-      </div>
-      <Button type="submit" className="w-full">
-        Zaloguj do panelu
-      </Button>
-      {error && ERRORS[error] ? <p className="text-sm text-czerwony">{ERRORS[error]}</p> : null}
-    </LoginFormShell>
+        <div className="space-y-2">
+          <Label htmlFor="password">Hasło</Label>
+          <Input id="password" name="password" type="password" autoComplete="current-password" />
+        </div>
+        <Button type="submit" className="w-full">
+          Zaloguj do panelu
+        </Button>
+        {error && ERRORS[error] ? <p className="text-sm text-czerwony">{ERRORS[error]}</p> : null}
+      </LoginFormShell>
+      <p className="text-center text-sm">
+        <Link href="/admin/reset-hasla" className="text-czerwony underline-offset-2 hover:underline">
+          Nie pamiętasz hasła?
+        </Link>
+      </p>
+    </div>
   );
 }

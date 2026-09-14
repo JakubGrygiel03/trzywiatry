@@ -1,10 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import {
   createCustomerPasswordResetToken,
-  getSiteBaseUrl,
   issueEmailConfirmToken,
   setCustomerPasswordWithResetToken,
   updateCustomerPassword,
@@ -14,6 +12,7 @@ import {
 } from "@/lib/customer-auth";
 import { clearCustomerSession, getCustomerSession, setCustomerSession } from "@/lib/customer-session";
 import { sendCustomerConfirmEmail, sendCustomerPasswordResetEmail } from "@/lib/resend";
+import { getRequestOrigin } from "@/lib/request-origin";
 import {
   customerChangePasswordSchema,
   customerForgotPasswordSchema,
@@ -36,7 +35,7 @@ export async function requestCustomerEmailConfirm(
   formData: FormData,
 ): Promise<AccountFormState> {
   const parsed = customerForgotPasswordSchema.safeParse({
-    email: formData.get("email"),
+    email: String(formData.get("email") ?? ""),
   });
   if (!parsed.success) {
     return { ok: false, message: parsed.error.issues[0]?.message ?? "Podaj e-mail." };
@@ -52,11 +51,7 @@ export async function requestCustomerEmailConfirm(
   }
   await flushCustomersSave();
 
-  const headerList = await headers();
-  const host = headerList.get("x-forwarded-host") ?? headerList.get("host");
-  const proto =
-    headerList.get("x-forwarded-proto") ?? (host?.includes("localhost") ? "http" : "https");
-  const origin = host ? `${proto}://${host}` : getSiteBaseUrl();
+  const origin = await getRequestOrigin();
   const confirmUrl = `${origin}/konto/potwierdz-email?token=${issued.token}`;
   const mailed = await sendCustomerConfirmEmail(issued.user.email, issued.user.name, confirmUrl);
 
@@ -72,7 +67,7 @@ export async function requestCustomerPasswordReset(
   formData: FormData,
 ): Promise<AccountFormState> {
   const parsed = customerForgotPasswordSchema.safeParse({
-    email: formData.get("email"),
+    email: String(formData.get("email") ?? ""),
   });
   if (!parsed.success) {
     return { ok: false, message: parsed.error.issues[0]?.message ?? "Podaj e-mail." };
@@ -81,32 +76,37 @@ export async function requestCustomerPasswordReset(
   const neutral =
     "Jeśli konto z tym adresem istnieje, wysłaliśmy link do resetu hasła. Sprawdź skrzynkę (i spam).";
 
-  await ensureCustomersHydrated();
-  const created = createCustomerPasswordResetToken(parsed.data.email);
-  if (!created) {
+  try {
+    await ensureCustomersHydrated();
+    const created = createCustomerPasswordResetToken(parsed.data.email);
+    if (!created) {
+      return { ok: true, message: neutral };
+    }
+    await flushCustomersSave();
+
+    const resetUrl = `${await getRequestOrigin()}/konto/nowe-haslo?token=${created.token}`;
+    const mailed = await sendCustomerPasswordResetEmail(created.user.email, resetUrl);
+
+    if (mailed.demo && process.env.NODE_ENV === "development") {
+      return {
+        ok: true,
+        message: `${neutral} (tryb demo: link poniżej — brak RESEND_API_KEY)`,
+        demoResetUrl: resetUrl,
+      };
+    }
+
+    if (!mailed.ok) {
+      return {
+        ok: false,
+        message: "Nie udało się wysłać maila. Spróbuj później albo napisz do pracowni.",
+      };
+    }
+
     return { ok: true, message: neutral };
+  } catch (error) {
+    console.error("[account] password reset", error);
+    return { ok: false, message: "Nie udało się wysłać maila. Spróbuj później albo napisz do pracowni." };
   }
-  await flushCustomersSave();
-
-  const resetUrl = `${getSiteBaseUrl()}/konto/nowe-haslo?token=${created.token}`;
-  const mailed = await sendCustomerPasswordResetEmail(created.user.email, resetUrl);
-
-  if (mailed.demo && process.env.NODE_ENV === "development") {
-    return {
-      ok: true,
-      message: `${neutral} (tryb demo: link poniżej — brak RESEND_API_KEY)`,
-      demoResetUrl: resetUrl,
-    };
-  }
-
-  if (!mailed.ok) {
-    return {
-      ok: false,
-      message: "Nie udało się wysłać maila. Spróbuj później albo napisz do pracowni.",
-    };
-  }
-
-  return { ok: true, message: neutral };
 }
 
 export async function resetCustomerPasswordAction(

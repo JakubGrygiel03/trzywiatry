@@ -10,31 +10,30 @@ const ERRORS: Record<string, string> = {
 
 export function CustomerLoginForm({ error }: { error?: string }) {
   return (
-    <LoginFormShell
-      action="/api/account/login"
-      emptyMessage="Uzupełnij e-mail i hasło."
-      className="space-y-5"
-    >
-      <div className="space-y-2">
-        <Label htmlFor="email">E-mail</Label>
-        <Input id="email" name="email" type="email" autoComplete="email" />
-      </div>
-      <div className="space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <Label htmlFor="password">Hasło</Label>
-          <Link
-            href="/konto/reset-hasla"
-            className="text-[11px] text-czerwony underline-offset-2 hover:underline"
-          >
-            Nie pamiętasz hasła?
-          </Link>
+    <div className="space-y-5">
+      <LoginFormShell
+        action="/api/account/login"
+        emptyMessage="Uzupełnij e-mail i hasło."
+        className="space-y-5"
+      >
+        <div className="space-y-2">
+          <Label htmlFor="email">E-mail</Label>
+          <Input id="email" name="email" type="email" autoComplete="email" />
         </div>
-        <Input id="password" name="password" type="password" autoComplete="current-password" />
-      </div>
-      <Button type="submit" className="w-full">
-        Zaloguj się
-      </Button>
-      {error && ERRORS[error] ? <p className="text-sm text-czerwony">{ERRORS[error]}</p> : null}
+        <div className="space-y-2">
+          <Label htmlFor="password">Hasło</Label>
+          <Input id="password" name="password" type="password" autoComplete="current-password" />
+        </div>
+        <Button type="submit" className="w-full">
+          Zaloguj się
+        </Button>
+        {error && ERRORS[error] ? <p className="text-sm text-czerwony">{ERRORS[error]}</p> : null}
+      </LoginFormShell>
+      <p className="text-center text-sm">
+        <Link href="/konto/reset-hasla" className="text-czerwony underline-offset-2 hover:underline">
+          Nie pamiętasz hasła?
+        </Link>
+      </p>
       <p className="text-center text-sm text-czarny">
         Nie masz konta?{" "}
         <Link href="/konto/rejestracja" className="text-czerwony underline-offset-2 hover:underline">
@@ -51,6 +50,6 @@ export function CustomerLoginForm({ error }: { error?: string }) {
           Panel pracowni (CMS)
         </Link>
       </p>
-    </LoginFormShell>
+    </div>
   );
 }

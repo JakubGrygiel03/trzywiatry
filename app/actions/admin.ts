@@ -6,7 +6,6 @@ import { redirect } from "next/navigation";
 import {
   createPasswordResetToken,
   getAdminEmail,
-  getSiteBaseUrl,
   setPasswordWithResetToken,
 } from "@/lib/admin-auth";
 import { ADMIN_COOKIE } from "@/lib/admin-session";
@@ -20,6 +19,7 @@ import { adminForgotPasswordSchema, adminResetPasswordSchema } from "@/lib/valid
 import { firstZodMessage } from "@/lib/validations/safe-input";
 import { studioSettingsFormSchema } from "@/lib/validations/settings";
 import { notifyCustomerOrderStatus, sendAdminPasswordResetEmail } from "@/lib/resend";
+import { getRequestOrigin } from "@/lib/request-origin";
 import { ORDER_STATUS_LABELS } from "@/lib/constants";
 
 export type AuthFormState = { ok: boolean; message: string; demoResetUrl?: string };
@@ -39,7 +39,7 @@ export async function requestAdminPasswordReset(
   formData: FormData,
 ): Promise<AuthFormState> {
   const parsed = adminForgotPasswordSchema.safeParse({
-    email: formData.get("email"),
+    email: String(formData.get("email") ?? ""),
   });
   if (!parsed.success) {
     return { ok: false, message: parsed.error.issues[0]?.message ?? "Podaj e-mail." };
@@ -48,31 +48,39 @@ export async function requestAdminPasswordReset(
   const neutral =
     "Jeśli ten adres należy do panelu, wysłaliśmy link do resetu hasła. Sprawdź skrzynkę (i spam).";
 
-  const email = parsed.data.email.trim().toLowerCase();
-  if (email !== getAdminEmail()) {
+  try {
+    const email = parsed.data.email.trim().toLowerCase();
+    if (email !== getAdminEmail()) {
+      return { ok: true, message: neutral };
+    }
+
+    const { token } = createPasswordResetToken();
+    const resetUrl = `${await getRequestOrigin()}/admin/nowe-haslo?token=${token}`;
+    const mailed = await sendAdminPasswordResetEmail(email, resetUrl);
+
+    if (mailed.demo && process.env.NODE_ENV === "development") {
+      return {
+        ok: true,
+        message: `${neutral} (tryb demo: link poniżej — brak RESEND_API_KEY)`,
+        demoResetUrl: resetUrl,
+      };
+    }
+
+    if (!mailed.ok) {
+      return {
+        ok: false,
+        message: "Nie udało się wysłać maila. Sprawdź domenę nadawcy w Resend albo spróbuj później.",
+      };
+    }
+
     return { ok: true, message: neutral };
-  }
-
-  const { token } = createPasswordResetToken();
-  const resetUrl = `${getSiteBaseUrl()}/admin/nowe-haslo?token=${token}`;
-  const mailed = await sendAdminPasswordResetEmail(email, resetUrl);
-
-  if (mailed.demo && process.env.NODE_ENV === "development") {
-    return {
-      ok: true,
-      message: `${neutral} (tryb demo: link poniżej — brak RESEND_API_KEY)`,
-      demoResetUrl: resetUrl,
-    };
-  }
-
-  if (!mailed.ok) {
+  } catch (error) {
+    console.error("[admin] password reset", error);
     return {
       ok: false,
       message: "Nie udało się wysłać maila. Sprawdź domenę nadawcy w Resend albo spróbuj później.",
     };
   }
-
-  return { ok: true, message: neutral };
 }
 
 export async function resetAdminPassword(
