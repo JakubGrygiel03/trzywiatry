@@ -25,8 +25,7 @@ export function ProductCard({ product, framed = false }: { product: Product; fra
   return (
     <article
       className={cn(
-        "group relative space-y-2 p-2.5",
-        "bg-bialy",
+        "group relative space-y-2 bg-krem p-2.5",
         frame.card,
       )}
     >

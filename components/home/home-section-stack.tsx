@@ -20,7 +20,7 @@ export function HomeSectionStack({
   nextWorkshop?: Workshop;
 }) {
   return (
-    <>
+    <div className="pb-4 md:pb-6">
       {sections.map((section) => {
         if (!section.enabled) return null;
         if (section.type === "workshop" && (!workshopsEnabled || !nextWorkshop)) return null;
@@ -49,6 +49,6 @@ export function HomeSectionStack({
             return <NewsletterCta key={section.id} payload={section.payload} />;
         }
       })}
-    </>
+    </div>
   );
 }

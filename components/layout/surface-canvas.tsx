@@ -10,10 +10,10 @@ export function SurfaceCanvas({
   className?: string;
 }) {
   return (
-    <div className={cn("relative min-h-full bg-krem-ciemny/70", className)}>
+    <div className={cn("relative min-h-full bg-krem-ciemny", className)}>
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.07]"
+        className="pointer-events-none absolute inset-0 opacity-[0.09]"
         style={{
           backgroundImage: "url(/brand/wzory/a.png)",
           backgroundRepeat: "repeat",

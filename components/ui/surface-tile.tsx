@@ -1,17 +1,30 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-const TILE =
-  "overflow-hidden rounded-[28px] border border-czarny/8 bg-bialy shadow-[0_18px_48px_-36px_rgb(1_1_1_/_0.45)]";
+const TILE_BASE =
+  "overflow-hidden rounded-[28px] border shadow-[0_18px_48px_-36px_rgb(1_1_1_/_0.45)]";
+
+const TILE_TONES = {
+  /** Readable white card for content pages */
+  paper: "border-czarny/10 bg-bialy",
+  /** Warm clay panel — use only when contrast with canvas is enough */
+  clay: "border-czarny/12 bg-krem",
+  /** Soft parchment between paper and clay */
+  mist: "border-czarny/10 bg-papier",
+} as const;
+
+export type SurfaceTileTone = keyof typeof TILE_TONES;
 
 export function SurfaceTile({
   children,
   className,
+  tone = "paper",
 }: {
   children: ReactNode;
   className?: string;
+  tone?: SurfaceTileTone;
 }) {
-  return <section className={cn(TILE, className)}>{children}</section>;
+  return <section className={cn(TILE_BASE, TILE_TONES[tone], className)}>{children}</section>;
 }
 
 export function SurfaceTileHeader({
@@ -26,7 +39,7 @@ export function SurfaceTileHeader({
   end?: ReactNode;
 }) {
   return (
-    <div className="flex items-start justify-between gap-3 border-b border-czarny/8 bg-krem/35 px-5 py-4 sm:px-7">
+    <div className="flex items-start justify-between gap-3 border-b border-czarny/8 bg-krem-ciemny/35 px-5 py-4 sm:px-7">
       <div className="min-w-0">
         {eyebrow ? (
           <p className="font-heading text-[11px] uppercase tracking-[0.2em] text-czerwony">{eyebrow}</p>

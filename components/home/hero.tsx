@@ -87,7 +87,7 @@ export function Hero({
           {galleryProducts.length > 0 ? (
             <HeroProductGallery products={galleryProducts} />
           ) : (
-            <div className="h-full bg-krem-ciemny/40" aria-hidden />
+            <div className="h-full min-h-[12rem] rounded-2xl bg-krem-ciemny/50" aria-hidden />
           )}
         </div>
       </div>
