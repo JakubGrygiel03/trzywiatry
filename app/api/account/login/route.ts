@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { loginHandoff } from "@/lib/auth-handoff";
 import {
   ensureCustomersHydrated,
+  flushCustomersSave,
   isCustomerEmailVerified,
+  markCustomerEmailVerified,
   verifyCustomerCredentials,
 } from "@/lib/customer-auth";
 import { CUSTOMER_COOKIE, createCustomerSessionValue } from "@/lib/customer-session-token";
@@ -11,9 +13,10 @@ import { customerLoginSchema } from "@/lib/validations/forms";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function redirectToLogin(request: Request, blad: "dane" | "haslo") {
+function redirectToLogin(request: Request, blad: "dane" | "haslo", email?: string) {
   const loginUrl = new URL("/konto/logowanie", request.url);
   loginUrl.searchParams.set("blad", blad);
+  if (email) loginUrl.searchParams.set("email", email);
   const response = NextResponse.redirect(loginUrl, 303);
   response.headers.set("Cache-Control", "private, no-store");
   return response;
@@ -28,8 +31,8 @@ export async function POST(request: Request) {
   }
 
   const parsed = customerLoginSchema.safeParse({
-    email: formData.get("email"),
-    password: formData.get("password"),
+    email: String(formData.get("email") ?? ""),
+    password: String(formData.get("password") ?? ""),
   });
   if (!parsed.success) {
     return redirectToLogin(request, "dane");
@@ -40,12 +43,11 @@ export async function POST(request: Request) {
   if (!user) {
     return redirectToLogin(request, "haslo");
   }
+
+  // Email confirmation is disabled — unlock any leftover unverified accounts on successful login.
   if (!isCustomerEmailVerified(user)) {
-    const url = new URL("/konto/sprawdz-email", request.url);
-    url.searchParams.set("email", user.email);
-    const response = NextResponse.redirect(url, 303);
-    response.headers.set("Cache-Control", "private, no-store");
-    return response;
+    markCustomerEmailVerified(user.email);
+    await flushCustomersSave();
   }
 
   const response = loginHandoff(request, "/konto");

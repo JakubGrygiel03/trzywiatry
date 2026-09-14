@@ -54,6 +54,13 @@ export async function requestCustomerEmailConfirm(
     const origin = await getRequestOrigin();
     const confirmUrl = `${origin}/konto/potwierdz-email?token=${issued.token}`;
     const mailed = await sendCustomerConfirmEmail(issued.user.email, issued.user.name, confirmUrl);
+    if (!mailed.ok && process.env.NODE_ENV === "development") {
+      return {
+        ok: true,
+        message: `${customerMailFailureMessage(mailed.error)} Na razie kliknij link poniżej.`,
+        demoResetUrl: confirmUrl,
+      };
+    }
     if (!mailed.ok) {
       return { ok: false, message: customerMailFailureMessage(mailed.error) };
     }

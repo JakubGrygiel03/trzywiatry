@@ -21,7 +21,8 @@ export function CustomerResendConfirmForm({
     <form action={action} className="space-y-5">
       {firstMailFailed ? (
         <p className="rounded-xl bg-czerwony/10 px-4 py-3 text-sm text-czarny">
-          Pierwszy mail nie wyszedł. Kliknij poniżej, wyślemy link jeszcze raz.
+          Pierwszy mail nie wyszedł (Resend w trybie testowym). Wyślij link ponownie — lokalnie pokażemy go też na
+          stronie.
         </p>
       ) : null}
       <div className="space-y-2">
@@ -40,6 +41,14 @@ export function CustomerResendConfirmForm({
       </Button>
       {state.message ? (
         <p className={`text-sm ${state.ok ? "text-czarny/70" : "text-czerwony"}`}>{state.message}</p>
+      ) : null}
+      {state.demoResetUrl ? (
+        <p className="break-all rounded-xl bg-krem px-4 py-3 text-sm">
+          Link potwierdzający:{" "}
+          <Link href={state.demoResetUrl} className="text-czerwony underline">
+            {state.demoResetUrl}
+          </Link>
+        </p>
       ) : null}
       <p className="text-center text-sm text-czarny/55">
         <Link href="/konto/logowanie" className="text-czerwony underline-offset-2 hover:underline">

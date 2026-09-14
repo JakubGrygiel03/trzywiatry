@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
+import { loginHandoff } from "@/lib/auth-handoff";
 import {
   ensureCustomersHydrated,
   findCustomerByEmail,
   flushCustomersSave,
-  isCustomerEmailVerified,
-  issueEmailConfirmToken,
+  markCustomerEmailVerified,
   registerCustomer,
 } from "@/lib/customer-auth";
-import { sendCustomerConfirmEmail } from "@/lib/resend";
+import { CUSTOMER_COOKIE, createCustomerSessionValue } from "@/lib/customer-session-token";
 import { customerRegisterSchema } from "@/lib/validations/forms";
 
 export const runtime = "nodejs";
@@ -21,29 +21,16 @@ function redirectToRegister(request: Request, blad: string) {
   return response;
 }
 
-function redirectToCheckEmail(request: Request, email: string, mailed: boolean) {
-  const url = new URL("/konto/sprawdz-email", request.url);
-  url.searchParams.set("email", email);
-  if (!mailed) url.searchParams.set("mail", "0");
-  const response = NextResponse.redirect(url, 303);
-  response.headers.set("Cache-Control", "private, no-store");
+function sessionCookie(request: Request, user: { id: string; email: string; name: string }) {
+  const response = loginHandoff(request, "/konto");
+  response.cookies.set(CUSTOMER_COOKIE, createCustomerSessionValue(user), {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    secure: new URL(request.url).protocol === "https:",
+    maxAge: 60 * 60 * 24 * 30,
+  });
   return response;
-}
-
-function confirmUrl(request: Request, token: string) {
-  const url = new URL("/konto/potwierdz-email", request.url);
-  url.searchParams.set("token", token);
-  return url.toString();
-}
-
-async function sendConfirm(request: Request, email: string, name: string, token: string) {
-  try {
-    const mailed = await sendCustomerConfirmEmail(email, name, confirmUrl(request, token));
-    return mailed.ok;
-  } catch (error) {
-    console.error("[register] confirm email failed", error);
-    return false;
-  }
 }
 
 export async function POST(request: Request) {
@@ -67,15 +54,9 @@ export async function POST(request: Request) {
   await ensureCustomersHydrated();
   const existing = findCustomerByEmail(parsed.data.email);
   if (existing) {
-    if (!isCustomerEmailVerified(existing)) {
-      const issued = issueEmailConfirmToken(existing.email);
-      let mailed = false;
-      if (issued.ok) {
-        await flushCustomersSave();
-        mailed = await sendConfirm(request, issued.user.email, issued.user.name, issued.token);
-      }
-      return redirectToCheckEmail(request, existing.email, mailed);
-    }
+    // Older unverified rows — unlock and send them to login instead of a dead confirm loop.
+    markCustomerEmailVerified(existing.email);
+    await flushCustomersSave();
     return redirectToRegister(request, "exists");
   }
 
@@ -84,6 +65,5 @@ export async function POST(request: Request) {
     return redirectToRegister(request, "exists");
   }
   await flushCustomersSave();
-  const mailed = await sendConfirm(request, result.user.email, result.user.name, result.confirmToken);
-  return redirectToCheckEmail(request, result.user.email, mailed);
+  return sessionCookie(request, result.user);
 }

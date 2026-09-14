@@ -76,15 +76,37 @@ let usersCache: CustomerUser[] | null = null;
 let customersHydrate: Promise<void> | null = null;
 let pendingCustomerSave: Promise<boolean> | null = null;
 
+/** Prefer the newest row per email so local register is not wiped by a stale Supabase payload. */
+function mergeCustomerLists(remote: CustomerUser[], local: CustomerUser[]) {
+  const byEmail = new Map<string, CustomerUser>();
+  for (const user of [...remote, ...local]) {
+    const prev = byEmail.get(user.email);
+    if (!prev) {
+      byEmail.set(user.email, user);
+      continue;
+    }
+    const prevTs = Date.parse(prev.updatedAt) || 0;
+    const nextTs = Date.parse(user.updatedAt) || 0;
+    byEmail.set(user.email, nextTs >= prevTs ? user : prev);
+  }
+  return [...byEmail.values()];
+}
+
 export async function ensureCustomersHydrated() {
   if (!customersHydrate) {
     customersHydrate = (async () => {
+      const local = readUsersFile().users;
       const remote = await readAtelierState<UsersFile>(ATELIER_STATE_KEYS.customers);
       if (Array.isArray(remote?.users)) {
-        usersCache = remote.users;
+        const merged = mergeCustomerLists(remote.users, local);
+        usersCache = merged;
+        // Seed empty remote from local (common after first Vercel deploy).
+        if (remote.users.length === 0 && local.length > 0) {
+          pendingCustomerSave = writeAtelierState(ATELIER_STATE_KEYS.customers, { users: merged });
+        }
         return;
       }
-      usersCache = readUsersFile().users;
+      usersCache = local;
     })();
   }
   await customersHydrate;
@@ -116,6 +138,23 @@ export function isCustomerEmailVerified(user: CustomerUser) {
   return user.emailVerified !== false;
 }
 
+/** Used when outbound confirm mail fails in development so login is not a dead end. */
+export function markCustomerEmailVerified(email: string) {
+  const file: UsersFile = { users: [...currentUsers()] };
+  const index = file.users.findIndex((user) => user.email === normalizeEmail(email));
+  if (index < 0) return false;
+  const current = file.users[index]!;
+  file.users[index] = {
+    ...current,
+    emailVerified: true,
+    confirmTokenHash: undefined,
+    confirmExpiresAt: undefined,
+    updatedAt: new Date().toISOString(),
+  };
+  writeUsersFile(file);
+  return true;
+}
+
 function issueConfirmSecret() {
   const token = randomBytes(32).toString("hex");
   return {
@@ -133,7 +172,6 @@ export function registerCustomer(input: { email: string; password: string; name:
   }
 
   const now = new Date().toISOString();
-  const confirm = issueConfirmSecret();
   const user: CustomerUser = {
     id: `u-${randomBytes(6).toString("hex")}`,
     email,
@@ -141,13 +179,12 @@ export function registerCustomer(input: { email: string; password: string; name:
     passwordHash: hashPassword(input.password),
     createdAt: now,
     updatedAt: now,
-    emailVerified: false,
-    confirmTokenHash: confirm.confirmTokenHash,
-    confirmExpiresAt: confirm.confirmExpiresAt,
+    // Email confirm is off for now — activate immediately after signup.
+    emailVerified: true,
   };
   file.users.push(user);
   writeUsersFile(file);
-  return { ok: true as const, user, confirmToken: confirm.token };
+  return { ok: true as const, user };
 }
 
 export function issueEmailConfirmToken(email: string) {

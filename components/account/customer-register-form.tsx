@@ -7,7 +7,7 @@ import { Input, Label } from "@/components/ui/field";
 
 const SERVER_ERRORS: Record<string, string> = {
   dane: "Uzupełnij formularz.",
-  exists: "Konto z tym e-mailem już istnieje. Zaloguj się lub potwierdź link z maila.",
+  exists: "Konto z tym e-mailem już istnieje. Zaloguj się.",
 };
 
 export function CustomerRegisterForm({ error }: { error?: string }) {

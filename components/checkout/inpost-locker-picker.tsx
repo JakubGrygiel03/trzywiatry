@@ -23,6 +23,8 @@ export function InpostLockerPicker({
   const [points, setPoints] = useState<InpostPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [focus, setFocus] = useState<{ lat: number; lng: number } | null>(null);
+  const [locating, setLocating] = useState(false);
   const selectedName = value.split(" · ")[0];
 
   function search(nextQuery = query, coords?: { lat: number; lng: number }) {
@@ -30,8 +32,12 @@ export function InpostLockerPicker({
     if (coords) {
       params.set("lat", String(coords.lat));
       params.set("lng", String(coords.lng));
+      setFocus(coords);
     } else if (nextQuery.trim()) {
       params.set("q", nextQuery.trim());
+      setFocus(null);
+    } else {
+      setFocus(null);
     }
 
     setLoading(true);
@@ -41,10 +47,19 @@ export function InpostLockerPicker({
         const payload = (await response.json()) as { items?: InpostPoint[] };
         const items = payload.items ?? [];
         setPoints(items);
-        if (items.length === 0) setError("Nie znaleziono paczkomatów. Spróbuj innego miasta lub kodu.");
+        if (items.length === 0) {
+          setError(
+            coords
+              ? "Brak paczkomatów w promieniu ~3 km. Spróbuj wpisać kod pocztowy."
+              : "Nie znaleziono paczkomatów. Spróbuj innego miasta lub kodu.",
+          );
+        }
       })
       .catch(() => setError("Nie udało się wczytać mapy InPost. Spróbuj ponownie."))
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        setLocating(false);
+      });
   }
 
   useEffect(() => {
@@ -60,9 +75,15 @@ export function InpostLockerPicker({
       setError("Przeglądarka nie udostępnia lokalizacji.");
       return;
     }
+    setLocating(true);
+    setError("");
     navigator.geolocation.getCurrentPosition(
       (position) => search(query, { lat: position.coords.latitude, lng: position.coords.longitude }),
-      () => setError("Nie udało się pobrać lokalizacji. Wpisz miasto lub kod pocztowy."),
+      () => {
+        setLocating(false);
+        setError("Nie udało się pobrać lokalizacji. Wpisz miasto lub kod pocztowy.");
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60_000 },
     );
   }
 
@@ -77,7 +98,7 @@ export function InpostLockerPicker({
           Paczkomat InPost <span className="text-czerwony">*</span>
         </Label>
         <p className="mt-1 text-xs text-szary">
-          Kliknij pinezkę na mapie albo punkt z listy — nie wpisujesz numeru ręcznie.
+          „Najbliższe” przybliża mapę wokół Ciebie. Albo wybierz punkt z listy po lewej.
         </p>
       </div>
 
@@ -97,8 +118,8 @@ export function InpostLockerPicker({
         <Button type="button" variant="secondary" onClick={() => search(query)}>
           Szukaj
         </Button>
-        <Button type="button" variant="outline" onClick={locate}>
-          Najbliższe
+        <Button type="button" variant="outline" onClick={locate} disabled={locating}>
+          {locating ? "Szukam…" : "Najbliższe"}
         </Button>
       </div>
 
@@ -126,7 +147,12 @@ export function InpostLockerPicker({
           ))}
         </ul>
         <div className="h-[280px] overflow-hidden rounded-[22px] border border-czarny/8 lg:h-[360px]">
-          <InpostLockerMap points={points} selectedName={selectedName} onSelect={selectPoint} />
+          <InpostLockerMap
+            points={points}
+            selectedName={selectedName}
+            focus={focus}
+            onSelect={selectPoint}
+          />
         </div>
       </div>
 

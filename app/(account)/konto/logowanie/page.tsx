@@ -9,11 +9,11 @@ export const metadata: Metadata = { title: "Logowanie" };
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ blad?: string }>;
+  searchParams: Promise<{ blad?: string; email?: string }>;
 }) {
   const user = await getCustomerSession();
   if (user) redirect("/konto");
-  const { blad } = await searchParams;
+  const { blad, email } = await searchParams;
 
   return (
     <div>
@@ -23,7 +23,7 @@ export default async function LoginPage({
           title="Zaloguj się"
           description="Zobaczysz tu zamówienia i ustawienia konta."
         />
-        <CustomerLoginForm error={blad} />
+        <CustomerLoginForm error={blad} defaultEmail={email?.trim().toLowerCase() ?? ""} />
       </Container>
     </div>
   );

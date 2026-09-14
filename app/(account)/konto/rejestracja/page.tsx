@@ -21,7 +21,7 @@ export default async function RegisterPage({
         <SectionHeading
           eyebrow="Konto"
           title="Załóż konto"
-          description="Wyślemy link na e-mail. Konto aktywuje się dopiero po kliknięciu — zabezpieczenie przed spamem."
+          description="Załóż konto, żeby śledzić zamówienia i szybciej wracać do kasy."
         />
         <CustomerRegisterForm error={blad} />
       </Container>

@@ -26,9 +26,11 @@ function buildShipXUrl(requestUrl: URL) {
   const query = (requestUrl.searchParams.get("q") ?? "").trim();
 
   if (lat !== null && lng !== null) {
+    // "Najbliższe" — tight radius so the map can zoom in without a city-wide pin soup.
     url.searchParams.set("relative_point", `${lat},${lng}`);
     url.searchParams.set("sort_by", "distance");
-    url.searchParams.set("max_distance", "20000");
+    url.searchParams.set("max_distance", "3000");
+    url.searchParams.set("limit", "10");
     return url;
   }
 

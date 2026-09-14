@@ -6,9 +6,10 @@ import { Input, Label } from "@/components/ui/field";
 const ERRORS: Record<string, string> = {
   dane: "Uzupełnij e-mail i hasło.",
   haslo: "Nieprawidłowy e-mail lub hasło.",
+  gotowe: "Konto gotowe — możesz się zalogować.",
 };
 
-export function CustomerLoginForm({ error }: { error?: string }) {
+export function CustomerLoginForm({ error, defaultEmail = "" }: { error?: string; defaultEmail?: string }) {
   return (
     <div className="space-y-5">
       <LoginFormShell
@@ -18,7 +19,13 @@ export function CustomerLoginForm({ error }: { error?: string }) {
       >
         <div className="space-y-2">
           <Label htmlFor="email">E-mail</Label>
-          <Input id="email" name="email" type="email" autoComplete="email" />
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            defaultValue={defaultEmail}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">Hasło</Label>
@@ -27,7 +34,9 @@ export function CustomerLoginForm({ error }: { error?: string }) {
         <Button type="submit" className="w-full">
           Zaloguj się
         </Button>
-        {error && ERRORS[error] ? <p className="text-sm text-czerwony">{ERRORS[error]}</p> : null}
+        {error && ERRORS[error] ? (
+          <p className={`text-sm ${error === "gotowe" ? "text-czarny/70" : "text-czerwony"}`}>{ERRORS[error]}</p>
+        ) : null}
       </LoginFormShell>
       <p className="text-center text-sm">
         <Link href="/konto/reset-hasla" className="text-czerwony underline-offset-2 hover:underline">
