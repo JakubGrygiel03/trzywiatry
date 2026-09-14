@@ -3,9 +3,15 @@ import { Container, SectionHeading } from "@/components/ui/badge";
 import { SHIPPING_METHODS } from "@/lib/constants";
 import { getSettings } from "@/lib/data/queries";
 import { formatPLN } from "@/lib/format";
+import { pageMetadata } from "@/lib/seo";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Dostawa i zwroty" };
+export const metadata: Metadata = pageMetadata({
+  title: "Dostawa i zwroty",
+  description:
+    "Paczkomaty InPost, kurier i odbiór z pracowni. Pakowanie zero stłuczek i zasady zwrotów w Trzy Wiatry.",
+  path: "/dostawa-i-zwroty",
+});
 
 export default function ShippingPage() {
   const freeFrom = formatPLN(getSettings().freeShippingThresholdCents);

@@ -1,13 +1,12 @@
 "use server";
 
 import { contactSchema, workshopBookingSchema } from "@/lib/validations/forms";
-import { SITE } from "@/lib/constants";
 import { getWorkshopById, getWorkshopBySlug, remainingSeats } from "@/lib/data/queries";
 import { saveAtelierSnapshot, ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 import { getRuntimeSettings, runtimeStore } from "@/lib/data/runtime-store";
 import { renderEmailTemplate } from "@/lib/email/render";
 import { sendEmail } from "@/lib/resend";
-import { escapeHtml } from "@/lib/validations/safe-input";
+import { notifyStudioContact, notifyStudioWorkshop } from "@/lib/studio-notify";
 
 export async function submitContact(_: { ok: boolean; message: string }, formData: FormData) {
   await ensureAtelierHydrated();
@@ -29,13 +28,7 @@ export async function submitContact(_: { ok: boolean; message: string }, formDat
   });
   await saveAtelierSnapshot();
 
-  await sendEmail({
-    to: SITE.email,
-    subject: `Kontakt · ${parsed.data.name}`,
-    html: `<p><strong>${escapeHtml(parsed.data.name)}</strong></p>
-      <p>${escapeHtml(parsed.data.email)}${parsed.data.phone ? ` · ${escapeHtml(parsed.data.phone)}` : ""}</p>
-      <p>${escapeHtml(parsed.data.message)}</p>`,
-  });
+  await notifyStudioContact(parsed.data);
 
   return {
     ok: true,
@@ -83,11 +76,20 @@ export async function bookWorkshop(_: { ok: boolean; message: string }, formData
     workshopTitle: workshop.title,
     seatsCount: String(parsed.data.seatsCount),
   });
-  await sendEmail({
-    to: parsed.data.attendeeEmail,
-    subject: ticket.subject,
-    html: ticket.html,
-  });
+  await Promise.all([
+    sendEmail({
+      to: parsed.data.attendeeEmail,
+      subject: ticket.subject,
+      html: ticket.html,
+    }),
+    notifyStudioWorkshop({
+      workshopTitle: workshop.title,
+      attendeeName: parsed.data.attendeeName,
+      attendeeEmail: parsed.data.attendeeEmail,
+      attendeePhone: parsed.data.attendeePhone,
+      seatsCount: parsed.data.seatsCount,
+    }),
+  ]);
 
   return {
     ok: true,

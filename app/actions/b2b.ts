@@ -1,11 +1,9 @@
 "use server";
 
 import { b2bSchema } from "@/lib/validations/b2b";
-import { SITE } from "@/lib/constants";
 import { saveAtelierSnapshot, ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 import { runtimeStore } from "@/lib/data/runtime-store";
-import { sendEmail } from "@/lib/resend";
-import { escapeHtml } from "@/lib/validations/safe-input";
+import { notifyStudioB2B } from "@/lib/studio-notify";
 
 export async function submitB2BInquiry(_: { ok: boolean; message: string }, formData: FormData) {
   await ensureAtelierHydrated();
@@ -30,11 +28,7 @@ export async function submitB2BInquiry(_: { ok: boolean; message: string }, form
   });
   await saveAtelierSnapshot();
 
-  await sendEmail({
-    to: SITE.email,
-    subject: `Zapytanie B2B · ${parsed.data.companyName}`,
-    html: `<p>${escapeHtml(parsed.data.contactPerson)} (${escapeHtml(parsed.data.email)}) · NIP/VAT ${escapeHtml(parsed.data.nip || "—")}</p><p>${escapeHtml(parsed.data.message)}</p>`,
-  });
+  await notifyStudioB2B(parsed.data);
 
   return {
     ok: true,

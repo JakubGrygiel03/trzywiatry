@@ -4,11 +4,13 @@ import { getCustomerSession } from "@/lib/customer-session";
 import { getSettings } from "@/lib/data/queries";
 import { hasP24Credentials } from "@/lib/p24";
 import { getVacationCheckoutNote } from "@/lib/vacation-message";
+import { noIndexRobots } from "@/lib/seo";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Zamówienie",
   description: "Kasa Trzy Wiatry — InPost, kurier, pakowanie prezentowe, P24 i BLIK.",
+  robots: noIndexRobots,
 };
 
 export default async function CheckoutPage() {

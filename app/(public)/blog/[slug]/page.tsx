@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BlogBlocks } from "@/components/blog/blog-blocks";
+import { JsonLd } from "@/components/seo/json-ld";
 import { Container } from "@/components/ui/badge";
+import { SITE } from "@/lib/constants";
 import { getPostBySlug, getPublishedPosts } from "@/lib/data/queries";
+import { breadcrumbJsonLd, noIndexRobots, pageMetadata } from "@/lib/seo";
+import { absoluteUrl } from "@/lib/site-url";
 import type { Metadata } from "next";
 
 function formatPostDate(iso: string) {
@@ -16,10 +20,14 @@ function formatPostDate(iso: string) {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const post = getPostBySlug(slug);
-  return {
-    title: post?.title ?? "Wpis",
-    description: post?.excerpt,
-  };
+  if (!post) return { title: "Wpis", robots: noIndexRobots };
+  return pageMetadata({
+    title: post.title,
+    description: post.excerpt || post.content.slice(0, 160),
+    path: `/blog/${post.slug}`,
+    image: post.coverImage,
+    type: "article",
+  });
 }
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -40,6 +48,25 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
   return (
     <article className="py-12 md:py-16">
+      <JsonLd
+        data={[
+          {
+            "@context": "https://schema.org",
+            "@type": "BlogPosting",
+            headline: post.title,
+            description: post.excerpt,
+            image: post.coverImage ? [absoluteUrl(post.coverImage)] : undefined,
+            datePublished: post.publishedAt,
+            author: { "@type": "Person", name: post.author || SITE.owner },
+            publisher: { "@type": "Organization", name: SITE.name, url: absoluteUrl("/") },
+            mainEntityOfPage: absoluteUrl(`/blog/${post.slug}`),
+          },
+          breadcrumbJsonLd([
+            { name: "Blog", path: "/blog" },
+            { name: post.title, path: `/blog/${post.slug}` },
+          ]),
+        ]}
+      />
       <Container className="grid gap-10 rounded-2xl border border-szary bg-bialy px-5 py-8 md:px-8 md:py-10 lg:grid-cols-[minmax(0,1fr)_240px] lg:gap-12 lg:px-10">
         <div className="min-w-0 space-y-6">
           <p className="text-sm text-czerwony">

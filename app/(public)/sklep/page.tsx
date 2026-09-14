@@ -15,11 +15,14 @@ import {
 import { isShopLane, laneForDomain, SHOP_LANES } from "@/lib/shop-lanes";
 import type { ProductDomain } from "@/lib/types";
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Sklep",
-  description: "Dwa katalogi Trzy Wiatry: ceramika użytkowa i półka dla pracowni ceramicznych.",
-};
+  description:
+    "Ręcznie toczona ceramika i półka dla pracowni: kubki, czarki, miski, formy matki. Katalog Trzy Wiatry z Gdańska.",
+  path: "/sklep",
+});
 
 const PAGE_SIZE = 12;
 

@@ -14,6 +14,7 @@ import { ensureAtelierHydrated, flushAtelierSave } from "@/lib/data/atelier-pers
 import { getAllProducts } from "@/lib/data/queries";
 import { getCustomerSession } from "@/lib/customer-session";
 import { orderPlacedEmail, sendEmail } from "@/lib/resend";
+import { notifyStudioNewOrder } from "@/lib/studio-notify";
 import { buildP24Session, hasP24Credentials, registerP24Transaction } from "@/lib/p24";
 import { getVacationCheckoutNote } from "@/lib/vacation-message";
 import type { ShippingMethod, StoredOrder, StoredOrderItem } from "@/lib/types";
@@ -160,11 +161,14 @@ export async function createCheckoutSession(
 
   const vacationNote = getVacationCheckoutNote(settings) ?? undefined;
   const placed = orderPlacedEmail(order, vacationNote);
-  const mailed = await sendEmail({
-    to: order.customerEmail,
-    subject: placed.subject,
-    html: placed.html,
-  });
+  const [mailed] = await Promise.all([
+    sendEmail({
+      to: order.customerEmail,
+      subject: placed.subject,
+      html: placed.html,
+    }),
+    notifyStudioNewOrder(order),
+  ]);
 
   const confirmPath = `/zamowienie/potwierdzenie?order=${encodeURIComponent(orderNumber)}&k=${encodeURIComponent(order.id)}${mailed.ok ? "" : "&mail=0"}`;
   const p24 = buildP24Session({

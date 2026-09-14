@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { Container, SectionHeading } from "@/components/ui/badge";
 import { privacySections, renderLegalBlocks } from "@/lib/legal/shop-terms";
+import { pageMetadata } from "@/lib/seo";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Polityka prywatności",
   description:
     "Polityka prywatności sklepu Trzy Wiatry — RODO, cele przetwarzania danych, cookies i prawa klienta.",
-};
+  path: "/polityka-prywatnosci",
+});
 
 export default function PrivacyPolicyPage() {
   return (

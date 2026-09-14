@@ -3,12 +3,14 @@ import { WorkshopCard } from "@/components/workshops/workshop-card";
 import { Container, SectionHeading } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { areWorkshopsEnabled, getWorkshops } from "@/lib/data/queries";
+import { pageMetadata } from "@/lib/seo";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Warsztaty",
   description: "Harmonogram sesji ceramicznych w pracowni Trzy Wiatry — toczenie, szkliwienie, herbata.",
-};
+  path: "/warsztaty",
+});
 
 export default function WorkshopsPage() {
   if (!areWorkshopsEnabled()) {

@@ -1,7 +1,14 @@
+import { JsonLd } from "@/components/seo/json-ld";
+import { breadcrumbJsonLd, faqJsonLd, pageMetadata } from "@/lib/seo";
 import { Container, SectionHeading } from "@/components/ui/badge";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "FAQ" };
+export const metadata: Metadata = pageMetadata({
+  title: "FAQ",
+  description:
+    "Czas realizacji, tolerancja rękodzieła, pielęgnacja drewna i gliny, bilety na warsztaty — pytania do pracowni Trzy Wiatry.",
+  path: "/faq",
+});
 
 const faqs = [
   {
@@ -27,6 +34,14 @@ export default function FaqPage() {
     <div className="py-16 md:py-24">
       <Container className="max-w-3xl space-y-10">
         <SectionHeading eyebrow="Pytania" title="FAQ" />
+        <JsonLd
+          data={[
+            faqJsonLd(faqs),
+            breadcrumbJsonLd([
+              { name: "FAQ", path: "/faq" },
+            ]),
+          ]}
+        />
         {faqs.map((item) => (
           <article key={item.q} className="space-y-2 border-b border-czarny/8 pb-6">
             <h2 className="font-heading text-base uppercase tracking-[0.08em]">{item.q}</h2>

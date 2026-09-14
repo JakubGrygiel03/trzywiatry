@@ -163,6 +163,4 @@ export function setPasswordWithResetToken(token: string, newPassword: string) {
   return { ok: true as const };
 }
 
-export function getSiteBaseUrl() {
-  return (process.env.NEXT_PUBLIC_SITE_URL ?? SITE.url).replace(/\/$/, "");
-}
+export { getPublicSiteUrl as getSiteBaseUrl } from "@/lib/site-url";

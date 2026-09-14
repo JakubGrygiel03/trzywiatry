@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { connection } from "next/server";
 import { CartDrawer } from "@/components/cart/cart-drawer";
@@ -6,6 +7,11 @@ import { Footer } from "@/components/layout/footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 import { getSettings } from "@/lib/data/queries";
+import { noIndexRobots } from "@/lib/seo";
+
+export const metadata: Metadata = {
+  robots: noIndexRobots,
+};
 
 export default async function AccountLayout({ children }: { children: ReactNode }) {
   await connection();

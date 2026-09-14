@@ -2,11 +2,16 @@ import { ContactDirect } from "@/components/contact/contact-direct";
 import { ContactForm } from "@/components/contact/contact-form";
 import { Container } from "@/components/ui/badge";
 import { getContentPage } from "@/lib/data/content-pages";
+import { pageMetadata } from "@/lib/seo";
 import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
   const page = await getContentPage("kontakt");
-  return { title: page.metaTitle, description: page.metaDescription };
+  return pageMetadata({
+    title: page.metaTitle,
+    description: page.metaDescription,
+    path: "/kontakt",
+  });
 }
 
 export default async function ContactPage() {

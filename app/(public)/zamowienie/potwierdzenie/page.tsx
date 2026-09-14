@@ -5,11 +5,13 @@ import { ORDER_STATUS_HINTS, ORDER_STATUS_LABELS, SITE } from "@/lib/constants";
 import { ensureOrdersHydrated } from "@/lib/data/order-persist";
 import { getOrderByNumber } from "@/lib/data/runtime-store";
 import { formatPLN } from "@/lib/format";
+import { noIndexRobots } from "@/lib/seo";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Potwierdzenie zamówienia",
   description: "Status zamówienia w pracowni Trzy Wiatry.",
+  robots: noIndexRobots,
 };
 
 export default async function OrderConfirmationPage({

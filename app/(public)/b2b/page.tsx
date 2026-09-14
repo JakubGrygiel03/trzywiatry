@@ -2,11 +2,16 @@ import { B2BForm } from "@/components/b2b/b2b-form";
 import { Container, SectionHeading } from "@/components/ui/badge";
 import { AtelierFrame } from "@/components/visual/atelier-frame";
 import { getContentPage } from "@/lib/data/content-pages";
+import { pageMetadata } from "@/lib/seo";
 import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
   const page = await getContentPage("b2b");
-  return { title: page.metaTitle, description: page.metaDescription };
+  return pageMetadata({
+    title: page.metaTitle,
+    description: page.metaDescription,
+    path: "/b2b",
+  });
 }
 
 export default async function B2BPage() {

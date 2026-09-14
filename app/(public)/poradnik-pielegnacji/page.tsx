@@ -1,10 +1,12 @@
 import { Container, SectionHeading } from "@/components/ui/badge";
+import { pageMetadata } from "@/lib/seo";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Jak dbać o ceramikę",
   description: "Pielęgnacja ceramiki Trzy Wiatry: zmywarka, szok termiczny, formy gipsowe.",
-};
+  path: "/poradnik-pielegnacji",
+});
 
 const sections = [
   {

@@ -3,11 +3,17 @@ import { WorksGallery } from "@/components/about/works-gallery";
 import { Container } from "@/components/ui/badge";
 import { getContentPage } from "@/lib/data/content-pages";
 import { aboutGalleryWorks } from "@/lib/data/gallery";
+import { pageMetadata } from "@/lib/seo";
 import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
   const page = await getContentPage("o-nas");
-  return { title: page.metaTitle, description: page.metaDescription };
+  return pageMetadata({
+    title: page.metaTitle,
+    description: page.metaDescription,
+    path: "/o-nas",
+    image: page.imageSrc,
+  });
 }
 
 export default async function AboutPage() {

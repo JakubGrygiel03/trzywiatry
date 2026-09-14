@@ -2,13 +2,20 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { ProductCard } from "@/components/shop/product-card";
 import { Container, SectionHeading } from "@/components/ui/badge";
+import { noIndexRobots, pageMetadata } from "@/lib/seo";
 import { getCollectionBySlug, getProductsByCollection } from "@/lib/data/queries";
 import type { Metadata } from "next";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const collection = getCollectionBySlug(slug);
-  return { title: collection ? `Kolekcja ${collection.name}` : "Kolekcja" };
+  if (!collection) return { title: "Kolekcja", robots: noIndexRobots };
+  return pageMetadata({
+    title: `Kolekcja ${collection.name}`,
+    description: collection.description || `Naczynia z kolekcji ${collection.name} — pracownia Trzy Wiatry.`,
+    path: `/kolekcje/${collection.slug}`,
+    image: collection.imageUrl,
+  });
 }
 
 export default async function CollectionPage({ params }: { params: Promise<{ slug: string }> }) {

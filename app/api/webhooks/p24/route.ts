@@ -4,6 +4,7 @@ import { flushAtelierSave } from "@/lib/data/atelier-persist";
 import { getOrderByNumber, updateOrderStatusInStore } from "@/lib/data/runtime-store";
 import { p24NotificationValid, type P24Notification } from "@/lib/p24";
 import { notifyCustomerOrderStatus } from "@/lib/resend";
+import { notifyStudioOrderPaid } from "@/lib/studio-notify";
 
 /**
  * Przelewy24 status webhook.
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
     if (updated) {
       await flushOrdersSave();
       await flushAtelierSave();
-      await notifyCustomerOrderStatus(updated);
+      await Promise.all([notifyCustomerOrderStatus(updated), notifyStudioOrderPaid(updated)]);
     }
   }
 

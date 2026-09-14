@@ -31,12 +31,6 @@ export default function manifest(): MetadataRoute.Manifest {
         description: "Otwórz katalog Trzy Wiatry",
         url: "/sklep",
       },
-      {
-        name: "Panel admina",
-        short_name: "Admin",
-        description: "Otwórz panel CMS",
-        url: "/admin/logowanie",
-      },
     ],
   };
 }

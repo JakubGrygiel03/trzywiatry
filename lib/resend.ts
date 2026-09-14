@@ -8,6 +8,8 @@ type TransactionalEmail = {
   to: string;
   subject: string;
   html: string;
+  /** Ops copies use the customer address so Reply opens a thread with them. */
+  replyTo?: string;
 };
 
 export type SendEmailResult = {
@@ -55,7 +57,7 @@ async function postResend(
       body: JSON.stringify({
         from,
         to: [message.to],
-        reply_to: SITE.email,
+        reply_to: message.replyTo?.trim() || SITE.email,
         subject: message.subject,
         html: message.html,
       }),

@@ -1,3 +1,5 @@
+import { JsonLd } from "@/components/seo/json-ld";
+import { localBusinessJsonLd } from "@/lib/seo";
 import { HomeSectionStack } from "@/components/home/home-section-stack";
 import { findHomeSection } from "@/lib/cms/home-layout";
 import { getHomeLayout } from "@/lib/data/home-layout";
@@ -11,11 +13,14 @@ export default async function HomePage() {
   const galleryProducts = getHeroGalleryProducts(12, hero?.payload.slots);
 
   return (
-    <HomeSectionStack
-      sections={sections}
-      workshopsEnabled={workshopsEnabled}
-      galleryProducts={galleryProducts}
-      nextWorkshop={nextWorkshop}
-    />
+    <>
+      <JsonLd data={localBusinessJsonLd()} />
+      <HomeSectionStack
+        sections={sections}
+        workshopsEnabled={workshopsEnabled}
+        galleryProducts={galleryProducts}
+        nextWorkshop={nextWorkshop}
+      />
+    </>
   );
 }

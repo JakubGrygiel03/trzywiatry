@@ -1,10 +1,10 @@
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { SITE } from "@/lib/constants";
 import { ATELIER_STATE_KEYS, readAtelierState, writeAtelierState } from "@/lib/data/supabase-state";
 import { verifyCustomerSessionCookie } from "@/lib/customer-session-token";
 
+export { getPublicSiteUrl as getSiteBaseUrl } from "@/lib/site-url";
 export { CUSTOMER_COOKIE, createCustomerSessionValue, verifyCustomerSessionCookie } from "@/lib/customer-session-token";
 
 const DATA_DIR = path.join(process.cwd(), ".data");
@@ -255,10 +255,6 @@ export function setCustomerPasswordWithResetToken(token: string, newPassword: st
   };
   writeUsersFile(file);
   return { ok: true as const, user: file.users[index]! };
-}
-
-export function getSiteBaseUrl() {
-  return (process.env.NEXT_PUBLIC_SITE_URL ?? SITE.url).replace(/\/$/, "");
 }
 
 export function parseCustomerSessionValue(raw: string | undefined) {

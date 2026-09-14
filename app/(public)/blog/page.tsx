@@ -3,9 +3,14 @@ import Link from "next/link";
 import { Container } from "@/components/ui/badge";
 import { coverBackdropClass } from "@/lib/blog-cover";
 import { getPublishedPosts } from "@/lib/data/queries";
+import { pageMetadata } from "@/lib/seo";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Blog" };
+export const metadata: Metadata = pageMetadata({
+  title: "Blog",
+  description: "Zapiski z pracowni Trzy Wiatry: szkliwa, wypały, warsztaty i dbanie o ceramikę.",
+  path: "/blog",
+});
 
 function formatPostDate(iso: string) {
   return new Intl.DateTimeFormat("pl-PL", {

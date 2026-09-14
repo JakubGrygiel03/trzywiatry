@@ -1,6 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { PwaRegister } from "@/components/pwa/pwa-register";
 import { Geist, Space_Mono } from "next/font/google";
+import { SITE } from "@/lib/constants";
+import { getPublicSiteUrl } from "@/lib/site-url";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,8 +17,8 @@ const spaceMono = Space_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://trzywiatry.pl"),
-  applicationName: "Trzy Wiatry",
+  metadataBase: new URL(getPublicSiteUrl()),
+  applicationName: SITE.name,
   manifest: "/manifest.webmanifest",
   title: {
     default: "Trzy Wiatry — ceramika, drewno, warsztaty",
@@ -24,18 +26,38 @@ export const metadata: Metadata = {
   },
   description:
     "Pracownia Trzy Wiatry: ręcznie toczona ceramika, drewno i warsztaty ceramiczne w Gdańsku. Slow craft, lokalne materiały.",
-  themeColor: "#9c644e",
+  authors: [{ name: SITE.owner, url: getPublicSiteUrl() }],
+  creator: SITE.name,
+  publisher: SITE.name,
+  category: "shopping",
+  formatDetection: { telephone: false, email: false, address: false },
   appleWebApp: {
     capable: true,
-    title: "Trzy Wiatry",
+    title: SITE.name,
     statusBarStyle: "default",
   },
   openGraph: {
-    title: "Trzy Wiatry",
+    title: "Trzy Wiatry — ceramika, drewno, warsztaty",
     description: "Ceramika, drewno i warsztaty. Slow craft z Gdańska.",
     locale: "pl_PL",
     type: "website",
+    siteName: SITE.name,
+    url: "/",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Trzy Wiatry — ceramika, drewno, warsztaty",
+    description: "Ceramika, drewno i warsztaty. Slow craft z Gdańska.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#9C644E",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

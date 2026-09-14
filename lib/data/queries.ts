@@ -52,8 +52,15 @@ const PRODUCT_SLUG_ALIASES: Record<string, string> = {
 };
 
 export function getProductBySlug(slug: string) {
-  const canonical = PRODUCT_SLUG_ALIASES[slug] ?? slug;
-  return getPublishedProducts().find((product) => product.slug === canonical);
+  return getPublishedProducts().find((product) => product.slug === resolveProductSlug(slug));
+}
+
+export function resolveProductSlug(slug: string) {
+  return PRODUCT_SLUG_ALIASES[slug] ?? slug;
+}
+
+export function isAliasedProductSlug(slug: string) {
+  return Boolean(PRODUCT_SLUG_ALIASES[slug]);
 }
 
 export function getProductById(id: string) {

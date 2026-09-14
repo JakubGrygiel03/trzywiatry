@@ -6,13 +6,15 @@ import {
   regulaminSections,
   renderLegalBlocks,
 } from "@/lib/legal/shop-terms";
+import { pageMetadata } from "@/lib/seo";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Regulamin sklepu internetowego",
   description:
     "Regulamin sklepu internetowego Trzy Wiatry — zasady zamówień, płatności, dostawy, odstąpienia i reklamacji.",
-};
+  path: "/regulamin",
+});
 
 export default function RegulaminPage() {
   return (

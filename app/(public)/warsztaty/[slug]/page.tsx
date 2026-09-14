@@ -3,14 +3,21 @@ import Image from "next/image";
 import { BookingForm } from "@/components/workshops/booking-form";
 import { Container } from "@/components/ui/badge";
 import { formatDate, formatPLN, formatTime } from "@/lib/format";
+import { noIndexRobots, pageMetadata } from "@/lib/seo";
 import { areWorkshopsEnabled, getWorkshopBySlug } from "@/lib/data/queries";
 import type { Metadata } from "next";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  if (!areWorkshopsEnabled()) return { title: "Warsztat" };
+  if (!areWorkshopsEnabled()) return { title: "Warsztat", robots: noIndexRobots };
   const workshop = getWorkshopBySlug(slug);
-  return { title: workshop?.title ?? "Warsztat" };
+  if (!workshop) return { title: "Warsztat", robots: noIndexRobots };
+  return pageMetadata({
+    title: workshop.title,
+    description: workshop.description,
+    path: `/warsztaty/${workshop.slug}`,
+    image: workshop.imageUrl,
+  });
 }
 
 export default async function WorkshopDetailPage({ params }: { params: Promise<{ slug: string }> }) {

@@ -5,25 +5,32 @@ import { RecentlyViewed } from "@/components/shop/recently-viewed";
 import { TrackRecentlyViewed } from "@/components/shop/track-recently-viewed";
 import { UpsellRail } from "@/components/shop/upsell-rail";
 import { ProductGallery } from "@/components/shop/product-gallery";
+import { JsonLd } from "@/components/seo/json-ld";
 import { Badge, Container } from "@/components/ui/badge";
 import { DOMAIN_LABELS } from "@/lib/constants";
-import { getCollections, getProductBySlug, variantStockLabel } from "@/lib/data/queries";
+import { getCollections, getProductBySlug, isAliasedProductSlug, resolveProductSlug, variantStockLabel } from "@/lib/data/queries";
 import { getProductUpsells } from "@/lib/data/recommendations";
+import { getProductPhoto } from "@/lib/media";
+import { breadcrumbJsonLd, noIndexRobots, pageMetadata, productJsonLd } from "@/lib/seo";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const product = getProductBySlug(slug);
-  if (!product) return { title: "Produkt" };
-  return {
+  if (!product) return { title: "Produkt", robots: noIndexRobots };
+  const description = product.metaDescription ?? product.description;
+  return pageMetadata({
     title: product.metaTitle ?? product.name,
-    description: product.metaDescription ?? product.description,
-  };
+    description,
+    path: `/sklep/${product.slug}`,
+    image: getProductPhoto(product),
+  });
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  if (isAliasedProductSlug(slug)) permanentRedirect(`/sklep/${resolveProductSlug(slug)}`);
   const product = getProductBySlug(slug);
   if (!product) notFound();
 
@@ -34,6 +41,15 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   return (
     <div className="py-10 md:py-14">
+      <JsonLd
+        data={[
+          productJsonLd(product),
+          breadcrumbJsonLd([
+            { name: "Sklep", path: "/sklep" },
+            { name: product.name, path: `/sklep/${product.slug}` },
+          ]),
+        ]}
+      />
       <TrackRecentlyViewed product={product} />
       <Container className="space-y-12 md:space-y-16">
         <PdpVariantProvider product={product}>
