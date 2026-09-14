@@ -1,4 +1,6 @@
-import { Container, SectionHeading } from "@/components/ui/badge";
+import { SurfacePageIntro } from "@/components/layout/surface-page";
+import { Container } from "@/components/ui/badge";
+import { SurfaceTile, SurfaceTileBody, SurfaceTileHeader } from "@/components/ui/surface-tile";
 import { pageMetadata } from "@/lib/seo";
 import type { Metadata } from "next";
 
@@ -29,18 +31,22 @@ const sections = [
 
 export default function CarePage() {
   return (
-    <div className="py-14 md:py-20">
-      <Container className="max-w-3xl space-y-10">
-        <SectionHeading
+    <div className="py-8 md:py-10">
+      <Container className="max-w-3xl space-y-4 md:space-y-5">
+        <SurfacePageIntro
           eyebrow="Poradnik"
           title="Jak dbać o ceramikę"
           description="Rękodzieło ma tolerancję wymiarową i własny charakter szkliwa. Poniżej zasady, które przedłużają życie naczynia."
         />
         {sections.map((section) => (
-          <article key={section.title} className="space-y-2">
-            <h2 className="font-heading text-lg uppercase tracking-[0.1em]">{section.title}</h2>
-            <p className="leading-relaxed text-czarny/75">{section.body}</p>
-          </article>
+          <SurfaceTile key={section.title}>
+            <SurfaceTileHeader title={section.title} />
+            <SurfaceTileBody>
+              <p className="text-[15px] leading-relaxed text-czarny/70 md:text-base md:leading-[1.75]">
+                {section.body}
+              </p>
+            </SurfaceTileBody>
+          </SurfaceTile>
         ))}
       </Container>
     </div>

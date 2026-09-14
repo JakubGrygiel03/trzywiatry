@@ -52,32 +52,49 @@ export function CatalogFilters({
 
   return (
     <>
-      <div className="rounded-2xl border border-szary bg-bialy lg:hidden">
-        <div className="flex items-center gap-2 p-2.5">
-          <button
-            type="button"
-            aria-expanded={open}
-            onClick={() => setOpen((value) => !value)}
-            className="flex h-10 flex-1 items-center justify-between rounded-xl bg-krem px-3 font-heading text-[11px] uppercase tracking-[0.14em] text-czarny"
-          >
-            <span className="inline-flex items-center gap-2">
-              <SlidersHorizontal className="size-3.5" strokeWidth={1.75} aria-hidden />
-              Filtry
-              {activeCount > 0 ? (
-                <span className="rounded-full bg-czerwony px-1.5 py-0.5 text-[10px] text-bialy">{activeCount}</span>
-              ) : null}
+      <div className="overflow-hidden rounded-2xl border border-czarny/10 bg-bialy shadow-[0_10px_28px_-22px_rgb(1_1_1_/_0.35)] lg:hidden">
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((value) => !value)}
+          className="flex h-14 w-full items-center justify-between gap-3 px-4 text-left transition-colors hover:bg-krem/50"
+        >
+          <span className="inline-flex min-w-0 items-center gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-krem text-czerwony">
+              <SlidersHorizontal className="size-4" strokeWidth={1.75} aria-hidden />
             </span>
-            <ChevronDown className={cn("size-4 transition-transform", open && "rotate-180")} aria-hidden />
-          </button>
-          <a
-            href="/sklep"
-            className="flex h-10 shrink-0 items-center px-2 font-heading text-[10px] uppercase tracking-[0.12em] text-czerwony"
-          >
-            Sklepy
-          </a>
-        </div>
+            <span className="min-w-0">
+              <span className="block font-heading text-[14px] uppercase tracking-[0.14em] text-czarny">
+                Filtry
+              </span>
+              <span className="mt-0.5 block truncate text-[13px] text-czarny/55">
+                {activeCount > 0
+                  ? `${activeCount} aktywne · dotknij, by zmienić`
+                  : "Cena, kategorie, pojemność"}
+              </span>
+            </span>
+          </span>
+          <span className="inline-flex shrink-0 items-center gap-2">
+            {activeCount > 0 ? (
+              <span className="rounded-full bg-czerwony px-2 py-0.5 font-heading text-[11px] text-bialy">
+                {activeCount}
+              </span>
+            ) : null}
+            <ChevronDown
+              className={cn("size-5 text-czarny/50 transition-transform duration-200", open && "rotate-180")}
+              aria-hidden
+            />
+          </span>
+        </button>
+
         {open ? (
-          <div className="border-t border-krem-ciemny p-4">
+          <div className="space-y-5 border-t border-czarny/8 bg-papier/60 px-4 py-5">
+            <a
+              href="/sklep"
+              className="inline-flex font-heading text-[12px] uppercase tracking-[0.14em] text-czerwony underline decoration-czerwony/30 underline-offset-4"
+            >
+              Zmień sklep
+            </a>
             <CatalogFilterFields {...fieldProps} />
           </div>
         ) : null}

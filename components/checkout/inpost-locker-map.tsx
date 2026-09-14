@@ -8,10 +8,13 @@ const MAP_PIN_LIMIT = 8;
 const NEAR_PIN_LIMIT = 5;
 
 function pinHtml(selected: boolean) {
-  const size = selected ? 40 : 28;
+  const size = selected ? 40 : 30;
+  const icon = selected ? 18 : 14;
   const bg = selected ? "#D39058" : "#9C644E";
   const ring = selected ? "3px solid #fff" : "2px solid #fff";
-  return `<div style="width:${size}px;height:${size}px;border-radius:999px;background:${bg};border:${ring};box-shadow:0 2px 6px rgba(1,1,1,.3)" aria-hidden="true"></div>`;
+  // Inline parcel glyph — Lucide-style box so pins stay readable without external assets.
+  const parcel = `<svg width="${icon}" height="${icon}" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3.2 20 7.5v9L12 20.8 4 16.5v-9L12 3.2Z" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 12.2 20 7.5M12 12.2 4 7.5M12 12.2V20.8" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  return `<div style="width:${size}px;height:${size}px;border-radius:999px;background:${bg};border:${ring};box-shadow:0 2px 6px rgba(1,1,1,.3);display:flex;align-items:center;justify-content:center" aria-hidden="true">${parcel}</div>`;
 }
 
 function sortByDistance(points: InpostPoint[], focus: { lat: number; lng: number }) {
@@ -114,8 +117,8 @@ export function InpostLockerMap({
           icon: L.divIcon({
             className: isSelected ? "inpost-pin is-selected" : "inpost-pin",
             html: pinHtml(isSelected),
-            iconSize: isSelected ? [40, 40] : [28, 28],
-            iconAnchor: isSelected ? [20, 20] : [14, 14],
+            iconSize: isSelected ? [40, 40] : [30, 30],
+            iconAnchor: isSelected ? [20, 20] : [15, 15],
           }),
           title: `${point.name} — ${point.address}`,
           zIndexOffset: isSelected ? 900 : 0,

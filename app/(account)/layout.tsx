@@ -26,7 +26,7 @@ export default async function AccountLayout({ children }: { children: ReactNode 
         data-announcement={announcementHidden ? "off" : "on"}
       >
         <SiteHeader />
-        <main className="flex-1 pt-6 pb-12 md:pt-8 md:pb-16">{children}</main>
+        <main className="flex-1">{children}</main>
         <Footer />
         <CartDrawer />
       </div>

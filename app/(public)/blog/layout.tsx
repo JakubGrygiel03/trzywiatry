@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
+import { SurfaceCanvas } from "@/components/layout/surface-canvas";
 
-/** Cream canvas vs white nav — footer stays white on the parent shell. */
-export default function BlogLayout({ children }: { children: ReactNode }) {
-  return <div className="min-h-full bg-krem">{children}</div>;
+export default function Layout({ children }: { children: ReactNode }) {
+  return <SurfaceCanvas>{children}</SurfaceCanvas>;
 }

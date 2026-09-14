@@ -30,7 +30,7 @@ export function CheckoutShipping({
               key={method.id}
               className={cn(
                 "flex cursor-pointer items-start justify-between gap-3 rounded-2xl border px-4 py-3 transition-colors",
-                selected ? "border-czerwony bg-krem" : "border-czarny/10 bg-bialy hover:border-czerwony/40",
+                selected ? "border-czerwony bg-krem" : "border-czarny/10 bg-krem/50 hover:border-czerwony/40",
               )}
             >
               <span>

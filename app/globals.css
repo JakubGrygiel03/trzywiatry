@@ -8,7 +8,7 @@
   --czarny: #010101;
   --krem: #f4efe8;
   --krem-ciemny: #e8dfd3;
-  --papier: #ffffff;
+  --papier: #faf7f2;
   --nav: #ffffff;
 }
 
@@ -113,7 +113,7 @@ html::-webkit-scrollbar-thumb:hover {
 }
 
 body {
-  background: var(--bialy);
+  background: var(--papier);
   color: var(--czarny);
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   font-size: 1.05rem;

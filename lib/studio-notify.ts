@@ -50,18 +50,37 @@ export async function notifyStudioNewOrder(order: StoredOrder) {
     : "";
   const notes = order.notes ? `<p><strong>Uwagi:</strong> ${escapeHtml(order.notes)}</p>` : "";
   const gift = order.hasGiftWrapping
-    ? `<p><strong>Pakowanie na prezent</strong>${order.giftMessage ? `: ${escapeHtml(order.giftMessage)}` : ""}</p>`
+    ? `<div style="margin:20px 0;padding:20px 22px;border-radius:16px;background:#9C644E;color:#fff">
+        <p style="margin:0;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;opacity:0.85">Uwaga pracowni</p>
+        <p style="margin:8px 0 0;font-size:26px;line-height:1.15;font-weight:700;text-transform:uppercase;letter-spacing:0.04em">
+          Pakowanie na prezent
+        </p>
+        <p style="margin:12px 0 0;font-size:15px;line-height:1.45;opacity:0.95">
+          Pudełko, wstążka i bilecik${
+            order.giftWrappingCostCents ? ` · ${formatPLN(order.giftWrappingCostCents)}` : ""
+          }. Nie pakuj jak zwykłej wysyłki.
+        </p>
+        ${
+          order.giftMessage
+            ? `<p style="margin:14px 0 0;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,0.15);font-size:15px;line-height:1.45">
+                <strong>Dedykacja:</strong> „${escapeHtml(order.giftMessage)}”
+              </p>`
+            : `<p style="margin:12px 0 0;font-size:14px;opacity:0.8">Bez dedykacji — tylko ozdobne pakowanie.</p>`
+        }
+      </div>`
     : "";
   const discount = order.discountAmountCents
     ? ` · Rabat ${formatPLN(order.discountAmountCents)}${order.discountCode ? ` (${escapeHtml(order.discountCode)})` : ""}`
     : "";
   const giftCost = order.giftWrappingCostCents ? ` · Prezent ${formatPLN(order.giftWrappingCostCents)}` : "";
+  const giftSubject = order.hasGiftWrapping ? " · PREZENT" : "";
 
   return notifyStudio({
-    subject: `Nowe zamówienie ${order.orderNumber} · ${formatPLN(order.totalAmountInCents)}`,
+    subject: `Nowe zamówienie ${order.orderNumber}${giftSubject} · ${formatPLN(order.totalAmountInCents)}`,
     replyTo: order.customerEmail,
     html: wrapEmail(`
       <h1 style="font-size:22px">Nowe zamówienie ${escapeHtml(order.orderNumber)}</h1>
+      ${gift}
       <p>Status: ${ORDER_STATUS_LABELS[order.status]}</p>
       <p><strong>${escapeHtml(order.customerName)}</strong><br/>
       ${escapeHtml(order.customerEmail)} · ${escapeHtml(order.customerPhone)}</p>
@@ -71,7 +90,6 @@ export async function notifyStudioNewOrder(order: StoredOrder) {
       <ul>${items}</ul>
       <p>Towar ${formatPLN(order.goodsInCents)} · Wysyłka ${formatPLN(order.shippingCostInCents)}${giftCost}${discount}
       <br/><strong>Razem ${formatPLN(order.totalAmountInCents)}</strong></p>
-      ${gift}
       ${notes}
       <p style="font-size:13px;color:#666">Panel: ${absoluteUrl(`/admin/zamowienia/${order.id}`)}</p>
     `),
@@ -79,13 +97,30 @@ export async function notifyStudioNewOrder(order: StoredOrder) {
 }
 
 export async function notifyStudioOrderPaid(order: StoredOrder) {
+  const gift = order.hasGiftWrapping
+    ? `<div style="margin:20px 0;padding:20px 22px;border-radius:16px;background:#9C644E;color:#fff">
+        <p style="margin:0;font-size:26px;line-height:1.15;font-weight:700;text-transform:uppercase">
+          Pakowanie na prezent
+        </p>
+        ${
+          order.giftMessage
+            ? `<p style="margin:12px 0 0;font-size:15px">Dedykacja: „${escapeHtml(order.giftMessage)}”</p>`
+            : ""
+        }
+      </div>`
+    : "";
+  const giftSubject = order.hasGiftWrapping ? " · PREZENT" : "";
+
   return notifyStudio({
-    subject: `Opłacone ${order.orderNumber} · ${formatPLN(order.totalAmountInCents)}`,
+    subject: `Opłacone ${order.orderNumber}${giftSubject} · ${formatPLN(order.totalAmountInCents)}`,
     replyTo: order.customerEmail,
     html: wrapEmail(`
       <h1 style="font-size:22px">Płatność weszła · ${escapeHtml(order.orderNumber)}</h1>
+      ${gift}
       <p><strong>${escapeHtml(order.customerName)}</strong> · ${escapeHtml(order.customerEmail)}</p>
-      <p>Razem ${formatPLN(order.totalAmountInCents)}. Można pakować.</p>
+      <p>Razem ${formatPLN(order.totalAmountInCents)}. ${
+        order.hasGiftWrapping ? "Pakuj jako prezent — nie jak zwykłą wysyłkę." : "Można pakować."
+      }</p>
       <p style="font-size:13px;color:#666">Panel: ${absoluteUrl(`/admin/zamowienia/${order.id}`)}</p>
     `),
   });

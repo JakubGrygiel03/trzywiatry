@@ -51,11 +51,15 @@ export async function POST(request: Request) {
   }
 
   const response = loginHandoff(request, "/konto");
+  const https =
+    new URL(request.url).protocol === "https:" ||
+    process.env.VERCEL === "1" ||
+    process.env.NODE_ENV === "production";
   response.cookies.set(CUSTOMER_COOKIE, createCustomerSessionValue(user), {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
-    secure: new URL(request.url).protocol === "https:",
+    secure: https,
     maxAge: 60 * 60 * 24 * 30,
   });
   return response;

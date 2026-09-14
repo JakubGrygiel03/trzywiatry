@@ -55,6 +55,37 @@ export default async function AdminOrderDetailPage({
         </p>
       ) : null}
 
+      {order.hasGiftWrapping ? (
+        <aside
+          className="rounded-[24px] border-2 border-czerwony bg-czerwony px-5 py-6 text-bialy shadow-[0_8px_28px_rgb(156_100_78/0.35)]"
+          role="status"
+        >
+          <p className="font-heading text-[12px] uppercase tracking-[0.22em] text-bialy/80">
+            Uwaga pracowni
+          </p>
+          <p className="mt-2 font-heading text-2xl uppercase leading-tight tracking-[0.06em] md:text-3xl">
+            Pakowanie na prezent
+          </p>
+          <p className="mt-3 text-[15px] leading-relaxed text-bialy/90">
+            Pudełko, wstążka i bilecik
+            {order.giftWrappingCostCents
+              ? ` · ${formatPLN(order.giftWrappingCostCents)}`
+              : ""}
+            . Nie pakuj jak zwykłej wysyłki.
+          </p>
+          {order.giftMessage ? (
+            <div className="mt-4 rounded-2xl bg-bialy/15 px-4 py-3">
+              <p className="font-heading text-[11px] uppercase tracking-[0.16em] text-bialy/70">
+                Dedykacja od klienta
+              </p>
+              <p className="mt-1 text-base leading-relaxed text-bialy">„{order.giftMessage}”</p>
+            </div>
+          ) : (
+            <p className="mt-3 text-sm text-bialy/75">Bez dedykacji — tylko ozdobne pakowanie.</p>
+          )}
+        </aside>
+      ) : null}
+
       <div className="space-y-2 rounded-[24px] bg-krem p-5 text-sm">
         <p>
           {order.customerName} ·{" "}
@@ -71,12 +102,6 @@ export default async function AdminOrderDetailPage({
           {order.inpostLocker ? ` · paczkomat ${order.inpostLocker}` : ""}
         </p>
         <p className="font-heading text-lg">{formatPLN(order.totalAmountInCents)}</p>
-        {order.hasGiftWrapping ? (
-          <p className="text-czerwony">
-            Pakowanie prezentowe
-            {order.giftMessage ? `: „${order.giftMessage}”` : ""}
-          </p>
-        ) : null}
         {order.trackingNumber ? (
           <p>
             Śledzenie: <strong>{order.trackingNumber}</strong>

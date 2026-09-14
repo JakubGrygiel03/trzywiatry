@@ -6,10 +6,14 @@ function sessionSecret() {
   return process.env.CUSTOMER_SESSION_SECRET ?? process.env.ADMIN_DEMO_PASSWORD ?? "trzywiatry-dev-session";
 }
 
-/** Compact signed cookie value: id.email.exp.sig */
+/**
+ * Signed cookie: id.exp.sig
+ * Do not put email in the cookie — addresses contain `.` and break `.`-delimited parsing.
+ */
 export function createCustomerSessionValue(user: { id: string; email: string }) {
+  void user.email;
   const exp = String(Date.now() + 1000 * 60 * 60 * 24 * 30);
-  const payload = `${user.id}.${encodeURIComponent(user.email)}.${exp}`;
+  const payload = `${user.id}.${exp}`;
   const sig = createHmac("sha256", sessionSecret()).update(payload).digest("hex");
   return `${payload}.${sig}`;
 }
@@ -18,10 +22,11 @@ export function createCustomerSessionValue(user: { id: string; email: string }) 
 export function verifyCustomerSessionCookie(raw: string | undefined) {
   if (!raw) return null;
   const parts = raw.split(".");
-  if (parts.length !== 4) return null;
-  const [id, emailEnc, exp, sig] = parts;
-  if (!id || !emailEnc || !exp || !sig) return null;
-  const payload = `${id}.${emailEnc}.${exp}`;
+  if (parts.length !== 3) return null;
+  const [id, exp, sig] = parts;
+  if (!id || !exp || !sig) return null;
+  if (!/^u-[a-f0-9]+$/i.test(id)) return null;
+  const payload = `${id}.${exp}`;
   const expected = createHmac("sha256", sessionSecret()).update(payload).digest("hex");
   try {
     const left = Buffer.from(sig);
@@ -31,5 +36,5 @@ export function verifyCustomerSessionCookie(raw: string | undefined) {
     return null;
   }
   if (Number(exp) < Date.now()) return null;
-  return { id, email: decodeURIComponent(emailEnc) };
+  return { id };
 }

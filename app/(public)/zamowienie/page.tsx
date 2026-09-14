@@ -1,5 +1,7 @@
 import { CheckoutForm } from "@/components/checkout/checkout-form";
-import { Container, SectionHeading } from "@/components/ui/badge";
+import { SurfacePageIntro } from "@/components/layout/surface-page";
+import { Container } from "@/components/ui/badge";
+import { SurfaceTile, SurfaceTileBody } from "@/components/ui/surface-tile";
 import { getCustomerSession } from "@/lib/customer-session";
 import { getSettings } from "@/lib/data/queries";
 import { hasP24Credentials } from "@/lib/p24";
@@ -18,9 +20,9 @@ export default async function CheckoutPage() {
   const customer = await getCustomerSession();
 
   return (
-    <div className="py-14 md:py-20">
-      <Container className="space-y-10">
-        <SectionHeading
+    <div className="py-8 md:py-10">
+      <Container className="space-y-4 md:space-y-5">
+        <SurfacePageIntro
           eyebrow="Kasa"
           title="Dostawa i płatność"
           description={
@@ -30,9 +32,13 @@ export default async function CheckoutPage() {
           }
         />
         {vacation ? (
-          <p className="rounded-2xl bg-czerwony/15 px-4 py-3 text-sm leading-relaxed text-czarny/80">
-            {vacation} Potwierdzenie e-mail też o tym przypomni.
-          </p>
+          <SurfaceTile>
+            <SurfaceTileBody>
+              <p className="text-[14px] leading-relaxed text-czerwony">
+                {vacation} Potwierdzenie e-mail też o tym przypomni.
+              </p>
+            </SurfaceTileBody>
+          </SurfaceTile>
         ) : null}
         <CheckoutForm
           defaultEmail={customer?.email ?? ""}

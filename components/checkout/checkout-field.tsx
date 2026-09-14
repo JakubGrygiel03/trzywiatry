@@ -1,6 +1,10 @@
 "use client";
 
 import { Input, Label } from "@/components/ui/field";
+import { cn } from "@/lib/utils";
+
+const creamField =
+  "h-12 rounded-2xl border-czarny/8 bg-krem placeholder:text-czarny/35 focus:border-czerwony focus:bg-bialy";
 
 export function CheckoutField({
   name,
@@ -29,7 +33,7 @@ export function CheckoutField({
 
   return (
     <div className="space-y-2">
-      <Label htmlFor={name}>
+      <Label htmlFor={name} className="text-czerwony/80">
         {label}
         {required ? <span className="text-czerwony"> *</span> : null}
       </Label>
@@ -40,11 +44,12 @@ export function CheckoutField({
         placeholder={placeholder}
         required={required}
         autoComplete={autoComplete}
+        className={cn(creamField)}
         {...(controlled
           ? { value: value ?? "", onChange: (event) => onChange(event.target.value) }
           : { defaultValue })}
       />
-      {hint ? <p className="text-xs text-szary">{hint}</p> : null}
+      {hint ? <p className="text-xs text-czarny/45">{hint}</p> : null}
     </div>
   );
 }

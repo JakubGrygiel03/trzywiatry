@@ -1,12 +1,6 @@
-import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { noIndexRobots } from "@/lib/seo";
+import { SurfaceCanvas } from "@/components/layout/surface-canvas";
 
-export const metadata: Metadata = {
-  title: "Koszyk",
-  robots: noIndexRobots,
-};
-
-export default function CartLayout({ children }: { children: ReactNode }) {
-  return children;
+export default function Layout({ children }: { children: ReactNode }) {
+  return <SurfaceCanvas>{children}</SurfaceCanvas>;
 }

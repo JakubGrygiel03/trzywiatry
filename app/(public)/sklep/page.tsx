@@ -5,7 +5,8 @@ import { CatalogToolbar } from "@/components/shop/catalog-toolbar";
 import { ProductCard } from "@/components/shop/product-card";
 import { RecentlyViewed } from "@/components/shop/recently-viewed";
 import { ShopHub } from "@/components/shop/shop-hub";
-import { Container, SectionHeading } from "@/components/ui/badge";
+import { SurfacePageIntro } from "@/components/layout/surface-page";
+import { Container } from "@/components/ui/badge";
 import {
   filterCatalog,
   getCatalogPriceBounds,
@@ -86,14 +87,14 @@ export default async function ShopPage({
   };
 
   return (
-    <div className="py-6 md:py-8">
-      <Container className="space-y-5">
-        <SectionHeading
+    <div className="py-8 md:py-10">
+      <Container className="space-y-4 md:space-y-5">
+        <SurfacePageIntro
           eyebrow={laneMeta.shortLabel}
           title={laneMeta.label}
           description={laneMeta.description}
         />
-        <div className="grid items-start gap-6 lg:grid-cols-[260px_1fr] lg:gap-8">
+        <div className="grid items-start gap-4 lg:grid-cols-[260px_1fr] lg:gap-5">
           <Suspense>
             <CatalogFilters
               priceBounds={priceBounds}
@@ -106,7 +107,9 @@ export default async function ShopPage({
               <CatalogToolbar total={total} from={from} to={to} />
             </Suspense>
             {pageProducts.length === 0 ? (
-              <p className="text-sm text-szary">Zdejmij jeden warunek z listy po lewej.</p>
+              <p className="rounded-[22px] border border-dashed border-czarny/15 bg-bialy/80 px-4 py-5 text-sm text-czarny/55">
+                Zdejmij jeden warunek z listy po lewej.
+              </p>
             ) : (
               <>
                 <div className="grid gap-x-5 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">

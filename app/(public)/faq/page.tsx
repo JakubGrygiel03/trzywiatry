@@ -1,6 +1,8 @@
 import { JsonLd } from "@/components/seo/json-ld";
+import { SurfacePageIntro } from "@/components/layout/surface-page";
+import { Container } from "@/components/ui/badge";
+import { SurfaceTile } from "@/components/ui/surface-tile";
 import { breadcrumbJsonLd, faqJsonLd, pageMetadata } from "@/lib/seo";
-import { Container, SectionHeading } from "@/components/ui/badge";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = pageMetadata({
@@ -31,23 +33,33 @@ const faqs = [
 
 export default function FaqPage() {
   return (
-    <div className="py-16 md:py-24">
-      <Container className="max-w-3xl space-y-10">
-        <SectionHeading eyebrow="Pytania" title="FAQ" />
+    <div className="py-8 md:py-10">
+      <Container className="max-w-3xl space-y-4 md:space-y-5">
+        <SurfacePageIntro
+          eyebrow="Pytania"
+          title="FAQ"
+          description="Najczęstsze pytania o czas realizacji, rękodzieło i warsztaty."
+        />
         <JsonLd
           data={[
             faqJsonLd(faqs),
-            breadcrumbJsonLd([
-              { name: "FAQ", path: "/faq" },
-            ]),
+            breadcrumbJsonLd([{ name: "FAQ", path: "/faq" }]),
           ]}
         />
-        {faqs.map((item) => (
-          <article key={item.q} className="space-y-2 border-b border-czarny/8 pb-6">
-            <h2 className="font-heading text-base uppercase tracking-[0.08em]">{item.q}</h2>
-            <p className="leading-relaxed text-czarny/75">{item.a}</p>
-          </article>
-        ))}
+        <SurfaceTile>
+          <ul className="divide-y divide-czarny/8">
+            {faqs.map((item) => (
+              <li key={item.q} className="px-5 py-5 sm:px-7 sm:py-6">
+                <h2 className="font-heading text-[15px] uppercase tracking-[0.1em] text-czarny">
+                  {item.q}
+                </h2>
+                <p className="mt-2 text-[15px] leading-relaxed text-czarny/70 md:text-base md:leading-[1.75]">
+                  {item.a}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </SurfaceTile>
       </Container>
     </div>
   );

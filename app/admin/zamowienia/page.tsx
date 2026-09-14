@@ -42,13 +42,21 @@ export default async function AdminOrdersPage() {
                   <th className="px-4 py-3 font-medium">Numer</th>
                   <th className="px-4 py-3 font-medium">Klient</th>
                   <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Uwagi</th>
                   <th className="px-4 py-3 font-medium">Wysyłka</th>
                   <th className="px-4 py-3 text-right font-medium">Kwota</th>
                 </tr>
               </thead>
               <tbody>
                 {orders.map((order) => (
-                  <tr key={order.id} className="border-b border-czarny/5 last:border-0 hover:bg-krem/30">
+                  <tr
+                    key={order.id}
+                    className={
+                      order.hasGiftWrapping
+                        ? "border-b border-czerwony/20 bg-czerwony/[0.07] last:border-0 hover:bg-czerwony/10"
+                        : "border-b border-czarny/5 last:border-0 hover:bg-krem/30"
+                    }
+                  >
                     <td className="px-4 py-3">
                       <Link
                         href={`/admin/zamowienia/${order.id}`}
@@ -63,6 +71,15 @@ export default async function AdminOrdersPage() {
                     </td>
                     <td className="px-4 py-3">
                       <OrderStatusBadge status={order.status} />
+                    </td>
+                    <td className="px-4 py-3">
+                      {order.hasGiftWrapping ? (
+                        <span className="inline-flex rounded-full bg-czerwony px-3 py-1 font-heading text-[10px] uppercase tracking-[0.14em] text-bialy">
+                          Prezent
+                        </span>
+                      ) : (
+                        <span className="text-czarny/25">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-czarny/55">{order.shippingMethod}</td>
                     <td className="px-4 py-3 text-right font-heading text-xs">

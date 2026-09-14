@@ -50,7 +50,7 @@ export function ContactForm({ intro }: { intro?: string }) {
           />
         </div>
       </div>
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-8 flex flex-col items-center gap-3 text-center">
         <Button type="submit" disabled={pending} className="min-w-[10rem]">
           {pending ? "Wysyłam… / Sending…" : "Wyślij / Send"}
         </Button>

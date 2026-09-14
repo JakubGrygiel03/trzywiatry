@@ -298,7 +298,7 @@ export function parseCustomerSessionValue(raw: string | undefined) {
   const verified = verifyCustomerSessionCookie(raw);
   if (!verified) return null;
   const user = findCustomerById(verified.id);
-  if (!user || user.email !== verified.email) return null;
+  if (!user) return null;
   if (!isCustomerEmailVerified(user)) return null;
   return user;
 }
