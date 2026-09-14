@@ -80,13 +80,21 @@ async function postResend(
 
 export function customerMailFailureMessage(error?: string) {
   const text = (error ?? "").toLowerCase();
-  if (text.includes("only send testing") || text.includes("your own email") || text.includes("missing-smtp")) {
-    return "Mail do klienta nie wyszedł: Resend jest w trybie testowym (tylko skrzynka pracowni). Ustaw SMTP_PASS (hasło aplikacji Gmail) albo zweryfikuj domenę send.trzywiatry.pl w Resend.";
+  if (
+    text.includes("only send testing") ||
+    text.includes("your own email") ||
+    text.includes("missing-smtp") ||
+    text.includes("testing emails")
+  ) {
+    return "Mail nie wyszedł: Resend wysyła tylko na skrzynkę pracowni. W .env.local ustaw SMTP_PASS (hasło aplikacji Gmail) i zrestartuj next dev — albo zweryfikuj send.trzywiatry.pl w Resend.";
   }
-  if (text.includes("smtp-failed")) {
-    return "SMTP odrzucił wysyłkę. Sprawdź hasło aplikacji Gmail (SMTP_PASS).";
+  if (text.includes("smtp-failed") || text.includes("invalid login") || text.includes("username and password")) {
+    return "SMTP odrzucił wysyłkę. Sprawdź hasło aplikacji Gmail w SMTP_PASS (nie zwykłe hasło do konta).";
   }
-  return "Nie udało się wysłać maila. Spróbuj później albo napisz do pracowni.";
+  if (text.includes("missing-key") || text.includes("no-from")) {
+    return "Brak konfiguracji maila (RESEND_API_KEY / SMTP). Uzupełnij .env.local i zrestartuj serwer.";
+  }
+  return "Nie udało się wysłać maila. Sprawdź SMTP_PASS albo napisz do pracowni.";
 }
 
 /** Always delivers to the address from the form — same path as a live domain. */
@@ -114,9 +122,22 @@ export async function sendEmail(message: TransactionalEmail): Promise<SendEmailR
     return smtp;
   }
 
-  return last.error === "missing-key" && smtp.error === "missing-smtp"
-    ? last
-    : { ok: false, demo: false, error: last.error ?? smtp.error };
+  const resendText = (last.error ?? "").toLowerCase();
+  const testingBlocked =
+    resendText.includes("only send testing") ||
+    resendText.includes("your own email") ||
+    resendText.includes("testing emails");
+
+  // Prefer the actionable cause when Resend is locked to the account inbox.
+  if (testingBlocked && smtp.error === "missing-smtp") {
+    return { ok: false, demo: false, error: "missing-smtp" };
+  }
+
+  return {
+    ok: false,
+    demo: last.demo && smtp.error === "missing-smtp",
+    error: last.error ?? smtp.error ?? "send-failed",
+  };
 }
 
 function itemsList(order: StoredOrder) {

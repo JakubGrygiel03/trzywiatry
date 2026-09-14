@@ -89,10 +89,11 @@ export async function requestCustomerPasswordReset(
     const resetUrl = `${await getRequestOrigin()}/konto/nowe-haslo?token=${created.token}`;
     const mailed = await sendCustomerPasswordResetEmail(created.user.email, resetUrl);
 
-    if (mailed.demo && process.env.NODE_ENV === "development") {
+    // Local/dev: always surface the link when outbound mail is blocked (Resend test mode / no SMTP).
+    if (!mailed.ok && process.env.NODE_ENV === "development") {
       return {
         ok: true,
-        message: `${waiting} (tryb demo: link poniżej — brak RESEND_API_KEY)`,
+        message: `${customerMailFailureMessage(mailed.error)} Na razie użyj linku poniżej.`,
         demoResetUrl: resetUrl,
       };
     }

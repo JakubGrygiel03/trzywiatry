@@ -58,10 +58,10 @@ export async function requestAdminPasswordReset(
     const resetUrl = `${await getRequestOrigin()}/admin/nowe-haslo?token=${token}`;
     const mailed = await sendAdminPasswordResetEmail(email, resetUrl);
 
-    if (mailed.demo && process.env.NODE_ENV === "development") {
+    if (!mailed.ok && process.env.NODE_ENV === "development") {
       return {
         ok: true,
-        message: `${neutral} (tryb demo: link poniżej — brak RESEND_API_KEY)`,
+        message: `${customerMailFailureMessage(mailed.error)} Na razie użyj linku poniżej.`,
         demoResetUrl: resetUrl,
       };
     }
@@ -69,7 +69,7 @@ export async function requestAdminPasswordReset(
     if (!mailed.ok) {
       return {
         ok: false,
-        message: "Nie udało się wysłać maila. Sprawdź domenę nadawcy w Resend albo spróbuj później.",
+        message: customerMailFailureMessage(mailed.error),
       };
     }
 
@@ -78,7 +78,7 @@ export async function requestAdminPasswordReset(
     console.error("[admin] password reset", error);
     return {
       ok: false,
-      message: "Nie udało się wysłać maila. Sprawdź domenę nadawcy w Resend albo spróbuj później.",
+      message: customerMailFailureMessage(),
     };
   }
 }
