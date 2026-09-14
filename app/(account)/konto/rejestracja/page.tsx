@@ -6,9 +6,14 @@ import { redirect } from "next/navigation";
 
 export const metadata: Metadata = { title: "Rejestracja" };
 
-export default async function RegisterPage() {
+export default async function RegisterPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ blad?: string }>;
+}) {
   const user = await getCustomerSession();
   if (user) redirect("/konto");
+  const { blad } = await searchParams;
 
   return (
     <div>
@@ -16,9 +21,9 @@ export default async function RegisterPage() {
         <SectionHeading
           eyebrow="Konto"
           title="Załóż konto"
-          description="Zapiszesz zamówienia i wrócisz do nich w dowolnym momencie."
+          description="Wyślemy link na e-mail. Konto aktywuje się dopiero po kliknięciu — zabezpieczenie przed spamem."
         />
-        <CustomerRegisterForm />
+        <CustomerRegisterForm error={blad} />
       </Container>
     </div>
   );

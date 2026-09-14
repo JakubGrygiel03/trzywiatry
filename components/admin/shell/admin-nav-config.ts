@@ -51,7 +51,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: "Pracownia",
     items: [
       { href: "/admin/warsztaty", label: "Warsztaty", icon: CalendarDays },
-      { href: "/admin/b2b", label: "Zapytania B2B", icon: Building2, badgeKey: "b2b" },
+      { href: "/admin/b2b", label: "Zapytania", icon: Building2, badgeKey: "b2b" },
     ],
   },
   {

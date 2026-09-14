@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, type ReactNode } from "react";
+import { defaultStudioSettings } from "@/lib/data/settings";
 import type { StudioSettings } from "@/lib/types";
 
 const SiteSettingsContext = createContext<StudioSettings | null>(null);
@@ -17,9 +18,5 @@ export function SiteSettingsProvider({
 }
 
 export function useSiteSettings() {
-  const settings = useContext(SiteSettingsContext);
-  if (!settings) {
-    throw new Error("useSiteSettings must be used under SiteSettingsProvider.");
-  }
-  return settings;
+  return useContext(SiteSettingsContext) ?? defaultStudioSettings;
 }

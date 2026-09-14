@@ -17,8 +17,12 @@ export function interpolateEmailCopy(text: string, vars: EmailVars) {
   return text.replace(/\{([a-zA-Z]+)\}/g, (_, token: string) => vars[token] ?? "");
 }
 
+export function emailButtonHtml(url: string, label: string) {
+  return `<a href="${url}" style="display:inline-block;background:#9C644E;color:#fff;text-decoration:none;padding:12px 20px;border-radius:999px;font-size:14px;letter-spacing:0.06em;text-transform:uppercase">${label}</a>`;
+}
+
 export function resetButtonHtml(url: string) {
-  return `<a href="${url}" style="display:inline-block;background:#9C644E;color:#fff;text-decoration:none;padding:12px 20px;border-radius:999px;font-size:14px;letter-spacing:0.06em;text-transform:uppercase">Ustaw nowe hasło</a>`;
+  return emailButtonHtml(url, "Ustaw nowe hasło");
 }
 
 export function renderEmailTemplate(key: EmailTemplateKey, vars: EmailVars) {

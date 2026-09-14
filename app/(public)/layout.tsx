@@ -4,10 +4,12 @@ import { CartDrawer } from "@/components/cart/cart-drawer";
 import { SiteSettingsProvider } from "@/components/cms/site-settings-provider";
 import { Footer } from "@/components/layout/footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 import { getSettings } from "@/lib/data/queries";
 
 export default async function PublicLayout({ children }: { children: ReactNode }) {
   await connection();
+  await ensureAtelierHydrated();
   const settings = getSettings();
   const announcementHidden = settings.announcementType === "hidden";
 

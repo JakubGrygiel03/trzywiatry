@@ -6,9 +6,14 @@ import { redirect } from "next/navigation";
 
 export const metadata: Metadata = { title: "Logowanie" };
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ blad?: string }>;
+}) {
   const user = await getCustomerSession();
   if (user) redirect("/konto");
+  const { blad } = await searchParams;
 
   return (
     <div>
@@ -18,7 +23,7 @@ export default async function LoginPage() {
           title="Zaloguj się"
           description="Zobaczysz tu zamówienia i ustawienia konta."
         />
-        <CustomerLoginForm />
+        <CustomerLoginForm error={blad} />
       </Container>
     </div>
   );

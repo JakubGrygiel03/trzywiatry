@@ -7,8 +7,8 @@ import { ensureOrdersHydrated } from "@/lib/data/order-persist";
 import { runtimeStore } from "@/lib/data/runtime-store";
 import { formatPLN } from "@/lib/format";
 
-export default function AdminOrdersPage() {
-  ensureOrdersHydrated();
+export default async function AdminOrdersPage() {
+  await ensureOrdersHydrated();
   const orders = [...runtimeStore.orders].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
@@ -24,7 +24,7 @@ export default function AdminOrdersPage() {
         <div className="rounded-xl border border-czarny/8 bg-bialy">
           <AdminEmptyState
             icon={ShoppingBag}
-            title="Brak zamówień w tej sesji"
+            title="Brak zamówień"
             description="Złóż testowe zamówienie w sklepie — lista wypełni się automatycznie."
             action={
               <Link href="/sklep" className="text-xs font-medium text-czerwony underline-offset-2 hover:underline">

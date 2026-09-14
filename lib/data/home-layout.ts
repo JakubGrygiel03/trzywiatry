@@ -1,5 +1,6 @@
 import "server-only";
 import { HOME_PAGE_KEY, defaultHomeLayout, findHomeSection, type HomeSection } from "@/lib/cms/home-layout";
+import { ensureAtelierHydrated, saveAtelierSnapshot } from "@/lib/data/atelier-persist";
 import { runtimeStore, updateRuntimeSettings, upsertCollectionsFromGlaze } from "@/lib/data/runtime-store";
 import { createServiceClient } from "@/lib/supabase/service";
 import { normalizeHomeLayout } from "@/lib/validations/home-layout";
@@ -12,6 +13,7 @@ export function getCachedHomeLayout(): HomeSection[] {
 }
 
 export async function getHomeLayout(): Promise<HomeSection[]> {
+  await ensureAtelierHydrated();
   const remote = await fetchHomeLayoutFromSupabase();
   if (remote) {
     runtimeStore.homeLayout = remote;
@@ -24,8 +26,9 @@ export async function persistHomeLayout(sections: HomeSection[]) {
   const next = normalizeHomeLayout(sections);
   runtimeStore.homeLayout = next;
   syncSettingsFromHomeLayout(next);
-  const stored = await saveHomeLayoutToSupabase(next);
-  return { sections: next, stored };
+  const remote = await saveHomeLayoutToSupabase(next);
+  const disk = await saveAtelierSnapshot();
+  return { sections: next, stored: remote || disk };
 }
 
 export function syncSettingsFromHomeLayout(sections: HomeSection[]) {

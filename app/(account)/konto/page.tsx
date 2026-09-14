@@ -14,13 +14,13 @@ export const metadata: Metadata = { title: "Konto" };
 export default async function AccountPage({
   searchParams,
 }: {
-  searchParams: Promise<{ haslo?: string }>;
+  searchParams: Promise<{ haslo?: string; potwierdzone?: string }>;
 }) {
   const user = await getCustomerSession();
   if (!user) redirect("/konto/logowanie");
 
-  const { haslo } = await searchParams;
-  const { open, history } = splitCustomerOrders(getOrdersForCustomer(user));
+  const { haslo, potwierdzone } = await searchParams;
+  const { open, history } = splitCustomerOrders(await getOrdersForCustomer(user));
 
   return (
     <div>
@@ -38,6 +38,11 @@ export default async function AccountPage({
           </form>
         </div>
 
+        {potwierdzone ? (
+          <p className="rounded-xl bg-krem px-4 py-3 text-sm text-czarny/70">
+            E-mail potwierdzony. Konto jest aktywne.
+          </p>
+        ) : null}
         {haslo ? (
           <p className="rounded-xl bg-krem px-4 py-3 text-sm text-czarny/70">Hasło zostało zaktualizowane.</p>
         ) : null}

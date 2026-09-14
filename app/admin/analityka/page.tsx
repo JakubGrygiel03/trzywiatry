@@ -5,8 +5,8 @@ import { ensureOrdersHydrated } from "@/lib/data/order-persist";
 import { runtimeStore } from "@/lib/data/runtime-store";
 import { formatPLN } from "@/lib/format";
 
-export default function AnalyticsPage() {
-  ensureOrdersHydrated();
+export default async function AnalyticsPage() {
+  await ensureOrdersHydrated();
   const products = getPublishedProducts();
   const bestsellers = products.filter((product) => product.isBestseller);
   const revenue = runtimeStore.orders.reduce((sum, order) => sum + order.totalAmountInCents, 0);
@@ -30,7 +30,7 @@ export default function AnalyticsPage() {
     <div className="mx-auto max-w-6xl space-y-6">
       <AdminPageHeader
         title="Analityka"
-        description="Przychód, zamówienia i eksport CSV z tej sesji."
+        description="Przychód, zamówienia i eksport CSV."
       />
 
       <div className="grid gap-3 sm:grid-cols-3">

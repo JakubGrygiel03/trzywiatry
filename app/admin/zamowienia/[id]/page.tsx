@@ -19,7 +19,7 @@ export default async function AdminOrderDetailPage({
 }) {
   const { id } = await params;
   const query = await searchParams;
-  ensureOrdersHydrated();
+  await ensureOrdersHydrated();
   const order = getOrderById(id);
   if (!order) notFound();
 
@@ -46,7 +46,7 @@ export default async function AdminOrderDetailPage({
             : query.mail === "off"
               ? " E-mail do klienta wyłączony przy tym zapisie."
               : query.mail === "0"
-                ? " Status zapisany, ale wysyłka e-maila się nie powiodła (sprawdź RESEND_API_KEY / logi)."
+                ? " Status zapisany, ale e-mail do klienta nie wyszedł (sprawdź logi serwera i domenę nadawcy w Resend)."
                 : ""}
         </p>
       ) : null}

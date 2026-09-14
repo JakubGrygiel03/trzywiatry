@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import {
   CUSTOMER_COOKIE,
   createCustomerSessionValue,
+  ensureCustomersHydrated,
   findCustomerById,
   parseCustomerSessionValue,
   type CustomerUser,
@@ -26,6 +27,7 @@ export async function clearCustomerSession() {
 }
 
 export async function getCustomerSession(): Promise<CustomerUser | null> {
+  await ensureCustomersHydrated();
   const store = await cookies();
   const raw = store.get(CUSTOMER_COOKIE)?.value;
   return parseCustomerSessionValue(raw);

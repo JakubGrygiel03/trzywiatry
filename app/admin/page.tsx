@@ -28,8 +28,8 @@ function todayLabel() {
   }).format(new Date());
 }
 
-export default function AdminHomePage() {
-  const m = getDashboardMetrics();
+export default async function AdminHomePage() {
+  const m = await getDashboardMetrics();
   const vacationOn = m.settings.announcementType === "vacation";
 
   return (
@@ -75,7 +75,7 @@ export default function AdminHomePage() {
         <AdminStatCard
           label="Zamówienia"
           value={String(m.orderCount)}
-          hint="W tej sesji serwera"
+          hint="Zapisane lokalnie"
           href="/admin/zamowienia"
           icon={ShoppingBag}
         />
@@ -113,7 +113,7 @@ export default function AdminHomePage() {
           {m.recentOrders.length === 0 ? (
             <AdminEmptyState
               icon={ShoppingBag}
-              title="Brak zamówień w tej sesji"
+              title="Brak zamówień"
               description="Złóż testowe zamówienie w sklepie — pojawi się na tej liście."
               action={
                 <Link href="/sklep" className="text-xs font-medium text-czerwony underline-offset-2 hover:underline">
@@ -219,7 +219,7 @@ export default function AdminHomePage() {
             <div className="grid grid-cols-2 gap-2 text-xs">
               <QuickLink href="/admin/produkty/nowy" label="Nowy produkt" />
               <QuickLink href="/admin/ustawienia-sklepu" label="Banner / urlop" />
-              <QuickLink href="/admin/b2b" label={`B2B (${m.b2bCount})`} />
+              <QuickLink href="/admin/b2b" label={`Zapytania (${m.b2bCount + m.contactCount})`} />
               <QuickLink href="/admin/analityka" label="Eksport CSV" />
             </div>
           </AdminPanel>

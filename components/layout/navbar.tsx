@@ -26,7 +26,7 @@ export async function Navbar() {
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-2.5 md:gap-4">
+        <div className="relative z-10 flex shrink-0 items-center gap-2.5 md:gap-4">
           <Link
             href={customer ? "/konto" : "/konto/logowanie"}
             className="hidden font-heading text-[13px] uppercase tracking-[0.14em] text-szary hover:text-czarny md:inline md:text-[15px] md:tracking-[0.16em]"

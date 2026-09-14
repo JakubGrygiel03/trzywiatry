@@ -58,7 +58,7 @@ export default async function EditWorkshopPage({
         <form action={deleteWorkshop} className="rounded-xl border border-czerwony/20 bg-bialy p-4">
           <input type="hidden" name="id" value={workshop.id} />
           <p className="text-sm font-medium text-czarny">Usuń warsztat</p>
-          <p className="mt-1 text-xs text-czarny/50">Usunięcie jest nieodwracalne w bieżącej sesji serwera.</p>
+          <p className="mt-1 text-xs text-czarny/50">Usunięcie jest nieodwracalne.</p>
           <button
             type="submit"
             className="mt-3 rounded-lg border border-czerwony/30 px-3.5 py-2 text-xs font-medium text-czerwony transition hover:bg-czerwony/5"

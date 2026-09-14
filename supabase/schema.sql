@@ -205,6 +205,14 @@ create table page_layouts (
   constraint page_layouts_key_format check (page_key ~ '^[a-z][a-z0-9_-]*$')
 );
 
+-- Vercel snapshot (catalog / orders / customer hashes). Service role only — no public policies.
+create table atelier_state (
+  key text primary key,
+  payload jsonb not null default '{}'::jsonb,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  constraint atelier_state_key_format check (key ~ '^[a-z][a-z0-9_]*$')
+);
+
 alter table products enable row level security;
 alter table product_variants enable row level security;
 alter table collections enable row level security;
@@ -219,6 +227,10 @@ alter table newsletter_subscribers enable row level security;
 alter table b2b_inquiries enable row level security;
 alter table email_templates enable row level security;
 alter table page_layouts enable row level security;
+alter table atelier_state enable row level security;
+
+grant select, insert, update, delete on table atelier_state to service_role;
+revoke all on table atelier_state from anon, authenticated, public;
 
 create policy "Public read published products" on products for select using (is_published = true);
 create policy "Public read variants" on product_variants for select using (is_available = true);

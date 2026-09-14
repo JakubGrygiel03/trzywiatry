@@ -7,6 +7,8 @@ import { mergeProductImages, saveProductImageUploads } from "@/lib/admin-product
 import { CATEGORIES_BY_DOMAIN } from "@/lib/constants";
 import { getAllProducts, getProductById } from "@/lib/data/queries";
 import { deleteRuntimeProduct, upsertRuntimeProduct } from "@/lib/data/runtime-store";
+import { flushAtelierSave } from "@/lib/data/atelier-persist";
+import { assertAdminSession } from "@/lib/admin-guard";
 import type { Product, ProductDomain, ProductVariant } from "@/lib/types";
 
 const domains = ["ceramika", "drewno", "formy", "warsztaty"] as const;
@@ -197,6 +199,7 @@ function revalidateShop(slug: string) {
 }
 
 export async function createProduct(formData: FormData) {
+  await assertAdminSession();
   const parsed = parseForm(formData);
   if (!parsed.success) {
     redirect(`/admin/produkty/nowy?blad=${encodeURIComponent(parsed.error.issues[0]?.message ?? "Błąd")}`);
@@ -250,10 +253,12 @@ export async function createProduct(formData: FormData) {
 
   upsertRuntimeProduct(product);
   revalidateShop(product.slug);
+  await flushAtelierSave();
   redirect(`/admin/produkty/${product.id}?zapisano=1`);
 }
 
 export async function updateProduct(formData: FormData) {
+  await assertAdminSession();
   const parsed = parseForm(formData);
   if (!parsed.success || !parsed.data.id) {
     redirect("/admin/produkty?blad=1");
@@ -312,21 +317,25 @@ export async function updateProduct(formData: FormData) {
 
   upsertRuntimeProduct(product);
   revalidateShop(product.slug);
+  await flushAtelierSave();
   redirect(`/admin/produkty/${product.id}?zapisano=1`);
 }
 
 export async function deleteProduct(formData: FormData) {
+  await assertAdminSession();
   const id = String(formData.get("id") ?? "").trim();
   const existing = getProductById(id);
   if (!existing) redirect("/admin/produkty?blad=1");
 
   deleteRuntimeProduct(id);
   revalidateShop(existing.slug);
+  await flushAtelierSave();
   redirect("/admin/produkty?usunieto=1");
 }
 
 /** Quick stock update from the products list — qty + out-of-stock flag. */
 export async function updateVariantStock(formData: FormData) {
+  await assertAdminSession();
   const productId = String(formData.get("productId") ?? "").trim();
   const variantId = String(formData.get("variantId") ?? "").trim();
   const outOfStock = formData.get("outOfStock") === "true";
@@ -352,6 +361,7 @@ export async function updateVariantStock(formData: FormData) {
 
   upsertRuntimeProduct({ ...existing, variants });
   revalidateShop(existing.slug);
+  await flushAtelierSave();
   return { ok: true as const, stockQuantity, outOfStock };
 }
 

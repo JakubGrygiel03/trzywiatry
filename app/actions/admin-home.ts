@@ -3,10 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { persistHomeLayout } from "@/lib/data/home-layout";
+import { atelierDiskPersistsAcrossDeploys } from "@/lib/data/atelier-persist";
 import { getRuntimeSettings } from "@/lib/data/runtime-store";
 import { explainHomeLayoutIssues, homeLayoutSchema } from "@/lib/validations/home-layout";
+import { assertAdminSession } from "@/lib/admin-guard";
 
 export async function saveHomeLayout(formData: FormData) {
+  await assertAdminSession();
   let parsedJson: unknown;
   try {
     parsedJson = JSON.parse(String(formData.get("sections") ?? "[]"));
@@ -20,7 +23,12 @@ export async function saveHomeLayout(formData: FormData) {
     redirect(`/admin/strona-glowna?blad=${encodeURIComponent(issue ?? "Sprawdź tytuły i linki w sekcjach.")}`);
   }
 
-  await persistHomeLayout(parsed.data);
+  const { stored } = await persistHomeLayout(parsed.data);
+  if (!stored && !atelierDiskPersistsAcrossDeploys()) {
+    redirect(
+      `/admin/strona-glowna?blad=${encodeURIComponent("Nie zapisano w bazie. Sprawdź SUPABASE_SERVICE_ROLE_KEY oraz tabele page_layouts i atelier_state.")}`,
+    );
+  }
   revalidatePath("/");
   revalidatePath("/kolekcje", "layout");
   revalidatePath("/admin/strona-glowna");

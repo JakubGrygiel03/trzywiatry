@@ -16,7 +16,7 @@ export default async function CustomerOrderPage({ params }: { params: Promise<{ 
   if (!user) redirect("/konto/logowanie");
 
   const { id } = await params;
-  const order = getCustomerOrder(id, user);
+  const order = await getCustomerOrder(id, user);
   if (!order) notFound();
 
   const shippingLabel =

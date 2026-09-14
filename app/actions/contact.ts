@@ -3,12 +3,14 @@
 import { contactSchema, workshopBookingSchema } from "@/lib/validations/forms";
 import { SITE } from "@/lib/constants";
 import { getWorkshopById, getWorkshopBySlug, remainingSeats } from "@/lib/data/queries";
-import { runtimeStore } from "@/lib/data/runtime-store";
+import { saveAtelierSnapshot, ensureAtelierHydrated } from "@/lib/data/atelier-persist";
+import { getRuntimeSettings, runtimeStore } from "@/lib/data/runtime-store";
 import { renderEmailTemplate } from "@/lib/email/render";
 import { sendEmail } from "@/lib/resend";
 import { escapeHtml } from "@/lib/validations/safe-input";
 
 export async function submitContact(_: { ok: boolean; message: string }, formData: FormData) {
+  await ensureAtelierHydrated();
   const parsed = contactSchema.safeParse({
     name: formData.get("name"),
     phone: String(formData.get("phone") ?? "").trim() || undefined,
@@ -25,6 +27,7 @@ export async function submitContact(_: { ok: boolean; message: string }, formDat
     createdAt: new Date().toISOString(),
     payload: parsed.data,
   });
+  await saveAtelierSnapshot();
 
   await sendEmail({
     to: SITE.email,
@@ -42,6 +45,7 @@ export async function submitContact(_: { ok: boolean; message: string }, formDat
 }
 
 export async function bookWorkshop(_: { ok: boolean; message: string }, formData: FormData) {
+  await ensureAtelierHydrated();
   const parsed = workshopBookingSchema.safeParse({
     workshopId: formData.get("workshopId"),
     attendeeName: formData.get("attendeeName"),
@@ -52,6 +56,10 @@ export async function bookWorkshop(_: { ok: boolean; message: string }, formData
 
   if (!parsed.success) {
     return { ok: false, message: parsed.error.issues[0]?.message ?? "Sprawdź dane rezerwacji. / Check the booking details." };
+  }
+
+  if (!getRuntimeSettings().workshopsEnabled) {
+    return { ok: false, message: "Rezerwacje warsztatów są teraz wyłączone. / Workshop bookings are currently closed." };
   }
 
   const workshop = getWorkshopById(parsed.data.workshopId);
@@ -69,6 +77,7 @@ export async function bookWorkshop(_: { ok: boolean; message: string }, formData
     createdAt: new Date().toISOString(),
     payload: parsed.data,
   });
+  await saveAtelierSnapshot();
 
   const ticket = renderEmailTemplate("workshop_ticket", {
     workshopTitle: workshop.title,
@@ -82,7 +91,8 @@ export async function bookWorkshop(_: { ok: boolean; message: string }, formData
 
   return {
     ok: true,
-    message: "Miejsce zarezerwowane. Bilet PDF wyślemy po podpięciu P24 — na razie to potwierdzenie demo.",
+    message:
+      "Miejsce zarezerwowane. To nie jest opłacony bilet — potwierdzenie i płatność wyślemy mailem. / Seat held — this is not a paid ticket yet. We will email payment details.",
   };
 }
 

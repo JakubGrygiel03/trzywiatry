@@ -1,31 +1,41 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { checkoutSchema } from "@/lib/validations/checkout";
 import { SHIPPING_METHODS, SITE } from "@/lib/constants";
-import { addRuntimeOrder, nextOrderNumber, getRuntimeSettings } from "@/lib/data/runtime-store";
-import { ensureOrdersHydrated, saveOrdersToDisk } from "@/lib/data/order-persist";
+import {
+  addRuntimeOrder,
+  applyVariantStockDelta,
+  getRuntimeSettings,
+  nextOrderNumber,
+} from "@/lib/data/runtime-store";
+import { ensureOrdersHydrated, flushOrdersSave } from "@/lib/data/order-persist";
+import { ensureAtelierHydrated, flushAtelierSave } from "@/lib/data/atelier-persist";
 import { getAllProducts } from "@/lib/data/queries";
 import { getCustomerSession } from "@/lib/customer-session";
 import { orderPlacedEmail, sendEmail } from "@/lib/resend";
-import { buildP24Session } from "@/lib/p24";
+import { buildP24Session, hasP24Credentials, registerP24Transaction } from "@/lib/p24";
 import { getVacationCheckoutNote } from "@/lib/vacation-message";
 import type { ShippingMethod, StoredOrder, StoredOrderItem } from "@/lib/types";
 import { formatPLN } from "@/lib/format";
-import { revalidatePath } from "next/cache";
 
-type CartPayload = {
-  variantId: string;
-  quantity: number;
+type CartPayload = { variantId: string; quantity: number };
+
+export type CheckoutState = {
+  ok: boolean;
+  message: string;
+  orderNumber?: string;
+  redirectTo?: string;
 };
 
 /**
- * Places the order, simulates successful payment in demo mode,
- * sets status to `processing`, and emails confirmation + start of fulfillment.
+ * Creates a pending order, reserves stock, then starts P24 when keys exist.
+ * Never marks the order as paid without a verified payment.
  */
 export async function createCheckoutSession(
-  _: { ok: boolean; message: string; orderNumber?: string },
+  _: CheckoutState,
   formData: FormData,
-) {
+): Promise<CheckoutState> {
   const parsed = checkoutSchema.safeParse({
     customerName: formData.get("customerName"),
     customerEmail: formData.get("customerEmail"),
@@ -56,6 +66,8 @@ export async function createCheckoutSession(
   if (cartLines.length === 0) {
     return { ok: false, message: "Koszyk jest pusty." };
   }
+
+  await ensureAtelierHydrated();
 
   const catalog = getAllProducts();
   const items: StoredOrderItem[] = [];
@@ -91,13 +103,11 @@ export async function createCheckoutSession(
       ? Math.round(goods * 0.15)
       : 0;
   const total = goods + shippingCost + giftCost - discount;
-  ensureOrdersHydrated();
+  await ensureOrdersHydrated();
   const orderNumber = nextOrderNumber();
   const now = new Date().toISOString();
   const customer = await getCustomerSession();
-
-  // Demo: no live P24 keys → treat as paid and start fulfillment immediately.
-  const status = "processing" as const;
+  const status = "pending" as const;
 
   const order: StoredOrder = {
     id: crypto.randomUUID(),
@@ -138,30 +148,52 @@ export async function createCheckoutSession(
   };
 
   addRuntimeOrder(order);
-  saveOrdersToDisk();
+  applyVariantStockDelta(
+    cartLines.map((line) => ({ variantId: line.variantId, quantity: line.quantity })),
+    -1,
+  );
+  await flushOrdersSave();
+  await flushAtelierSave();
   revalidatePath("/konto");
   revalidatePath("/admin/zamowienia");
+  revalidatePath("/sklep");
 
   const vacationNote = getVacationCheckoutNote(settings) ?? undefined;
   const placed = orderPlacedEmail(order, vacationNote);
-  await sendEmail({
+  const mailed = await sendEmail({
     to: order.customerEmail,
     subject: placed.subject,
     html: placed.html,
   });
 
+  const confirmPath = `/zamowienie/potwierdzenie?order=${encodeURIComponent(orderNumber)}&k=${encodeURIComponent(order.id)}${mailed.ok ? "" : "&mail=0"}`;
   const p24 = buildP24Session({
     sessionId: orderNumber,
     amountInCents: total,
     email: order.customerEmail,
     description: `Trzy Wiatry ${orderNumber}`,
-    urlReturn: `${SITE.url}/zamowienie/potwierdzenie?order=${orderNumber}`,
+    urlReturn: `${SITE.url}${confirmPath}`,
     urlStatus: `${SITE.url}/api/webhooks/p24`,
   });
+
+  if (hasP24Credentials()) {
+    const registered = await registerP24Transaction(p24);
+    if (registered.ok) {
+      return {
+        ok: true,
+        orderNumber,
+        redirectTo: registered.redirectUrl,
+        message: `Zamówienie ${orderNumber} zapisane. Przekierowujemy do płatności…`,
+      };
+    }
+  }
 
   return {
     ok: true,
     orderNumber,
-    message: `Zamówienie ${orderNumber} złożone (${formatPLN(total)}). Potwierdzenie i start realizacji wysłaliśmy na ${order.customerEmail}. Status: w realizacji. Sesja P24: ${p24.sessionId} (demo).`,
+    redirectTo: confirmPath,
+    message: mailed.ok
+      ? `Zamówienie ${orderNumber} złożone (${formatPLN(total)}). Status: oczekuje na płatność. Potwierdzenie wysłaliśmy na ${order.customerEmail}.`
+      : `Zamówienie ${orderNumber} złożone (${formatPLN(total)}). Status: oczekuje na płatność. E-mail nie wyszedł — napisz na ${SITE.email} jeśli nie dostaniesz potwierdzenia.`,
   };
 }

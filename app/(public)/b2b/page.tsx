@@ -29,7 +29,9 @@ export default async function B2BPage() {
             caption={page.frameCaption || "B2B"}
           />
         </div>
-        <B2BForm intro={page.formIntro} />
+        <div className="rounded-3xl border border-czarny/8 bg-bialy p-6 md:p-8 lg:p-10">
+          <B2BForm intro={page.formIntro} />
+        </div>
       </Container>
     </div>
   );

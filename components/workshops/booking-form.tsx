@@ -31,9 +31,11 @@ export function BookingForm({ workshop }: { workshop: Workshop }) {
         <Input id="seatsCount" name="seatsCount" type="number" min={1} max={seats || 1} defaultValue={1} required />
       </div>
       <Button type="submit" disabled={pending || soldOut} className="w-full">
-        {soldOut ? "Wyprzedane" : pending ? "Rezerwuję" : "Rezerwuj i płać"}
+        {soldOut ? "Wyprzedane" : pending ? "Rezerwuję" : "Rezerwuj miejsce"}
       </Button>
-      {state.message ? <p className="text-sm text-czerwony">{state.message}</p> : null}
+      {state.message ? (
+        <p className={`text-sm ${state.ok ? "text-czarny/70" : "text-czerwony"}`}>{state.message}</p>
+      ) : null}
     </form>
   );
 }

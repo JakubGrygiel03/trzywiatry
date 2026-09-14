@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect } from "react";
-import { createCheckoutSession } from "@/app/actions/checkout";
+import { useActionState, useEffect, useState } from "react";
+import { createCheckoutSession, type CheckoutState } from "@/app/actions/checkout";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea } from "@/components/ui/field";
 import { useSiteSettings } from "@/components/cms/site-settings-provider";
@@ -10,20 +10,23 @@ import { SHIPPING_METHODS } from "@/lib/constants";
 import { formatPLN } from "@/lib/format";
 import { cartGiftWrapCost, cartSubtotal, useCartStore } from "@/store/use-cart-store";
 
-const initial = { ok: false, message: "" };
+const initial: CheckoutState = { ok: false, message: "" };
 
 export function CheckoutForm({
   defaultEmail = "",
   defaultName = "",
+  paymentsLive = false,
 }: {
   defaultEmail?: string;
   defaultName?: string;
+  paymentsLive?: boolean;
 }) {
   const items = useCartStore((state) => state.items);
   const hasGiftWrapping = useCartStore((state) => state.hasGiftWrapping);
   const giftMessage = useCartStore((state) => state.giftMessage);
   const clear = useCartStore((state) => state.clear);
   const [state, action, pending] = useActionState(createCheckoutSession, initial);
+  const [shippingMethod, setShippingMethod] = useState<(typeof SHIPPING_METHODS)[number]["id"]>("inpost");
   const settings = useSiteSettings();
   const subtotal = cartSubtotal(items);
   const gift = cartGiftWrapCost(hasGiftWrapping, settings.giftWrapPriceCents);
@@ -34,8 +37,10 @@ export function CheckoutForm({
       : `Doliczymy koszt dostawy, jeśli nie osiągniesz ${thresholdLabel}.`;
 
   useEffect(() => {
-    if (state.ok) clear();
-  }, [state.ok, clear]);
+    if (!state.ok || !state.redirectTo) return;
+    clear();
+    window.location.assign(state.redirectTo);
+  }, [state.ok, state.redirectTo, clear]);
 
   if (items.length === 0 && !state.ok) {
     return <p className="text-sm text-szary">Koszyk jest pusty.</p>;
@@ -46,10 +51,6 @@ export function CheckoutForm({
       <div className="rounded-[28px] bg-krem p-8">
         <p className="font-heading text-sm uppercase tracking-[0.14em] text-czerwony">Zamówienie przyjęte</p>
         <p className="mt-4 text-lg leading-relaxed">{state.message}</p>
-        <p className="mt-3 text-sm text-czarny/60">
-          Na podany e-mail poszło potwierdzenie złożenia zamówienia i startu realizacji. Status
-          możesz dalej zmieniać w panelu admina — klient dostanie kolejnego maila.
-        </p>
       </div>
     );
   }
@@ -102,7 +103,10 @@ export function CheckoutForm({
           <select
             id="shippingMethod"
             name="shippingMethod"
-            defaultValue="inpost"
+            value={shippingMethod}
+            onChange={(event) =>
+              setShippingMethod(event.target.value as (typeof SHIPPING_METHODS)[number]["id"])
+            }
             className="h-11 w-full rounded-2xl border border-czarny/10 bg-bialy px-4 text-sm"
           >
             {SHIPPING_METHODS.map((method) => (
@@ -113,7 +117,9 @@ export function CheckoutForm({
           </select>
           <p className="text-xs text-szary">{shippingHint}</p>
         </div>
-        <Field name="inpostLocker" label="Paczkomat InPost (opcjonalnie)" required={false} />
+        {shippingMethod === "inpost" ? (
+          <Field name="inpostLocker" label="Paczkomat InPost (numer / nazwa)" />
+        ) : null}
         <Field
           name="discountCode"
           label="Kod rabatowy"
@@ -141,7 +147,11 @@ export function CheckoutForm({
           </div>
         ) : null}
         <Button type="submit" disabled={pending} className="w-full">
-          {pending ? "Składam zamówienie…" : "Zamawiam i płacę (P24 / BLIK)"}
+          {pending
+            ? "Składam zamówienie…"
+            : paymentsLive
+              ? "Zamawiam i płacę (P24 / BLIK)"
+              : "Zamawiam"}
         </Button>
         {state.message ? <p className="text-sm text-czerwony">{state.message}</p> : null}
       </aside>

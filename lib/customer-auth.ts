@@ -2,6 +2,7 @@ import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypt
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { SITE } from "@/lib/constants";
+import { ATELIER_STATE_KEYS, readAtelierState, writeAtelierState } from "@/lib/data/supabase-state";
 import { verifyCustomerSessionCookie } from "@/lib/customer-session-token";
 
 export { CUSTOMER_COOKIE, createCustomerSessionValue, verifyCustomerSessionCookie } from "@/lib/customer-session-token";
@@ -16,6 +17,10 @@ export type CustomerUser = {
   passwordHash: string;
   createdAt: string;
   updatedAt: string;
+  /** Missing on legacy rows = already trusted. New signups start as `false`. */
+  emailVerified?: boolean;
+  confirmTokenHash?: string;
+  confirmExpiresAt?: string;
   resetTokenHash?: string;
   resetExpiresAt?: string;
 };
@@ -57,8 +62,41 @@ function readUsersFile(): UsersFile {
 }
 
 function writeUsersFile(data: UsersFile) {
+  usersCache = data.users;
   ensureDataDir();
-  writeFileSync(USERS_FILE, `${JSON.stringify(data, null, 2)}\n`, "utf8");
+  try {
+    writeFileSync(USERS_FILE, `${JSON.stringify(data, null, 2)}\n`, "utf8");
+  } catch {
+    // Vercel read-only FS — memory + Supabase remain.
+  }
+  pendingCustomerSave = writeAtelierState(ATELIER_STATE_KEYS.customers, data);
+}
+
+let usersCache: CustomerUser[] | null = null;
+let customersHydrate: Promise<void> | null = null;
+let pendingCustomerSave: Promise<boolean> | null = null;
+
+export async function ensureCustomersHydrated() {
+  if (!customersHydrate) {
+    customersHydrate = (async () => {
+      const remote = await readAtelierState<UsersFile>(ATELIER_STATE_KEYS.customers);
+      if (Array.isArray(remote?.users)) {
+        usersCache = remote.users;
+        return;
+      }
+      usersCache = readUsersFile().users;
+    })();
+  }
+  await customersHydrate;
+}
+
+export async function flushCustomersSave() {
+  if (pendingCustomerSave) await pendingCustomerSave;
+}
+
+function currentUsers(): CustomerUser[] {
+  if (usersCache) return usersCache;
+  return readUsersFile().users;
 }
 
 export function normalizeEmail(email: string) {
@@ -67,21 +105,35 @@ export function normalizeEmail(email: string) {
 
 export function findCustomerByEmail(email: string) {
   const normalized = normalizeEmail(email);
-  return readUsersFile().users.find((user) => user.email === normalized) ?? null;
+  return currentUsers().find((user) => user.email === normalized) ?? null;
 }
 
 export function findCustomerById(id: string) {
-  return readUsersFile().users.find((user) => user.id === id) ?? null;
+  return currentUsers().find((user) => user.id === id) ?? null;
+}
+
+export function isCustomerEmailVerified(user: CustomerUser) {
+  return user.emailVerified !== false;
+}
+
+function issueConfirmSecret() {
+  const token = randomBytes(32).toString("hex");
+  return {
+    token,
+    confirmTokenHash: sha256(token),
+    confirmExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+  };
 }
 
 export function registerCustomer(input: { email: string; password: string; name: string }) {
   const email = normalizeEmail(input.email);
-  const file = readUsersFile();
+  const file: UsersFile = { users: [...currentUsers()] };
   if (file.users.some((user) => user.email === email)) {
     return { ok: false as const, reason: "exists" as const };
   }
 
   const now = new Date().toISOString();
+  const confirm = issueConfirmSecret();
   const user: CustomerUser = {
     id: `u-${randomBytes(6).toString("hex")}`,
     email,
@@ -89,10 +141,56 @@ export function registerCustomer(input: { email: string; password: string; name:
     passwordHash: hashPassword(input.password),
     createdAt: now,
     updatedAt: now,
+    emailVerified: false,
+    confirmTokenHash: confirm.confirmTokenHash,
+    confirmExpiresAt: confirm.confirmExpiresAt,
   };
   file.users.push(user);
   writeUsersFile(file);
-  return { ok: true as const, user };
+  return { ok: true as const, user, confirmToken: confirm.token };
+}
+
+export function issueEmailConfirmToken(email: string) {
+  const file: UsersFile = { users: [...currentUsers()] };
+  const index = file.users.findIndex((user) => user.email === normalizeEmail(email));
+  if (index < 0) return { ok: false as const, reason: "missing" as const };
+
+  const current = file.users[index]!;
+  if (isCustomerEmailVerified(current)) return { ok: false as const, reason: "already" as const };
+
+  const confirm = issueConfirmSecret();
+  file.users[index] = {
+    ...current,
+    confirmTokenHash: confirm.confirmTokenHash,
+    confirmExpiresAt: confirm.confirmExpiresAt,
+    updatedAt: new Date().toISOString(),
+  };
+  writeUsersFile(file);
+  return { ok: true as const, token: confirm.token, user: file.users[index]! };
+}
+
+export function confirmCustomerEmail(token: string) {
+  const file: UsersFile = { users: [...currentUsers()] };
+  const tokenHash = sha256(token);
+  const index = file.users.findIndex((user) => user.confirmTokenHash === tokenHash);
+  if (index < 0) return { ok: false as const, reason: "invalid" as const };
+
+  const user = file.users[index]!;
+  if (!user.confirmExpiresAt || new Date(user.confirmExpiresAt).getTime() < Date.now()) {
+    file.users[index] = { ...user, confirmTokenHash: undefined, confirmExpiresAt: undefined };
+    writeUsersFile(file);
+    return { ok: false as const, reason: "expired" as const };
+  }
+
+  file.users[index] = {
+    ...user,
+    emailVerified: true,
+    confirmTokenHash: undefined,
+    confirmExpiresAt: undefined,
+    updatedAt: new Date().toISOString(),
+  };
+  writeUsersFile(file);
+  return { ok: true as const, user: file.users[index]! };
 }
 
 export function verifyCustomerCredentials(email: string, password: string) {
@@ -103,7 +201,7 @@ export function verifyCustomerCredentials(email: string, password: string) {
 }
 
 export function updateCustomerPassword(userId: string, newPassword: string) {
-  const file = readUsersFile();
+  const file: UsersFile = { users: [...currentUsers()] };
   const index = file.users.findIndex((user) => user.id === userId);
   if (index < 0) return false;
   const current = file.users[index]!;
@@ -119,7 +217,7 @@ export function updateCustomerPassword(userId: string, newPassword: string) {
 }
 
 export function createCustomerPasswordResetToken(email: string) {
-  const file = readUsersFile();
+  const file: UsersFile = { users: [...currentUsers()] };
   const index = file.users.findIndex((user) => user.email === normalizeEmail(email));
   if (index < 0) return null;
 
@@ -136,7 +234,7 @@ export function createCustomerPasswordResetToken(email: string) {
 }
 
 export function setCustomerPasswordWithResetToken(token: string, newPassword: string) {
-  const file = readUsersFile();
+  const file: UsersFile = { users: [...currentUsers()] };
   const tokenHash = sha256(token);
   const index = file.users.findIndex((user) => user.resetTokenHash === tokenHash);
   if (index < 0) return { ok: false as const, reason: "invalid" as const };
@@ -168,6 +266,7 @@ export function parseCustomerSessionValue(raw: string | undefined) {
   if (!verified) return null;
   const user = findCustomerById(verified.id);
   if (!user || user.email !== verified.email) return null;
+  if (!isCustomerEmailVerified(user)) return null;
   return user;
 }
 

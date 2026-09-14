@@ -2,6 +2,7 @@ import { CheckoutForm } from "@/components/checkout/checkout-form";
 import { Container, SectionHeading } from "@/components/ui/badge";
 import { getCustomerSession } from "@/lib/customer-session";
 import { getSettings } from "@/lib/data/queries";
+import { hasP24Credentials } from "@/lib/p24";
 import { getVacationCheckoutNote } from "@/lib/vacation-message";
 import type { Metadata } from "next";
 
@@ -20,7 +21,11 @@ export default async function CheckoutPage() {
         <SectionHeading
           eyebrow="Kasa"
           title="Dostawa i płatność"
-          description="Podaj e-mail i dane dostawy. Płatność P24 / BLIK — potwierdzenie przyjdzie mailem."
+          description={
+            hasP24Credentials()
+              ? "Podaj e-mail i dane dostawy. Płatność P24 / BLIK — potwierdzenie przyjdzie mailem."
+              : "Podaj e-mail i dane dostawy. Zamówienie zapisujemy; o płatności damy znać mailem."
+          }
         />
         {vacation ? (
           <p className="rounded-2xl bg-czerwony/15 px-4 py-3 text-sm leading-relaxed text-czarny/80">
@@ -30,6 +35,7 @@ export default async function CheckoutPage() {
         <CheckoutForm
           defaultEmail={customer?.email ?? ""}
           defaultName={customer?.name ?? ""}
+          paymentsLive={hasP24Credentials()}
         />
       </Container>
     </div>

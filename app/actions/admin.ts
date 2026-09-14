@@ -10,8 +10,10 @@ import {
   setPasswordWithResetToken,
 } from "@/lib/admin-auth";
 import { ADMIN_COOKIE } from "@/lib/admin-session";
+import { assertAdminSession } from "@/lib/admin-guard";
 import { updateRuntimeSettings, updateOrderStatusInStore } from "@/lib/data/runtime-store";
-import { ensureOrdersHydrated, saveOrdersToDisk } from "@/lib/data/order-persist";
+import { ensureOrdersHydrated, flushOrdersSave } from "@/lib/data/order-persist";
+import { flushAtelierSave } from "@/lib/data/atelier-persist";
 import { defaultStudioSettings } from "@/lib/data/settings";
 import type { OrderStatus } from "@/lib/types";
 import { adminForgotPasswordSchema, adminResetPasswordSchema } from "@/lib/validations/forms";
@@ -66,7 +68,7 @@ export async function requestAdminPasswordReset(
   if (!mailed.ok) {
     return {
       ok: false,
-      message: "Nie udało się wysłać maila. Sprawdź RESEND_API_KEY albo spróbuj później.",
+      message: "Nie udało się wysłać maila. Sprawdź domenę nadawcy w Resend albo spróbuj później.",
     };
   }
 
@@ -101,6 +103,7 @@ export async function resetAdminPassword(
 }
 
 export async function updateOrderStatus(formData: FormData) {
+  await assertAdminSession();
   const id = String(formData.get("id") ?? "");
   const statusRaw = String(formData.get("status") ?? "");
   const tracking = String(formData.get("tracking") ?? "").trim();
@@ -118,12 +121,13 @@ export async function updateOrderStatus(formData: FormData) {
     redirect("/admin/zamowienia?blad=1");
   }
 
-  ensureOrdersHydrated();
+  await ensureOrdersHydrated();
   const updated = updateOrderStatusInStore(id, statusRaw as OrderStatus, tracking);
-  if (updated) saveOrdersToDisk();
   if (!updated) {
     redirect("/admin/zamowienia?blad=1");
   }
+  await flushOrdersSave();
+  await flushAtelierSave();
 
   let mailed = false;
   if (notify) {
@@ -148,6 +152,7 @@ function parseShopHubImage(raw: unknown, fallback: string) {
 }
 
 export async function saveStudioSettings(formData: FormData) {
+  await assertAdminSession();
   const parsed = studioSettingsFormSchema.safeParse({
     announcementType: String(formData.get("announcementType") ?? "promo"),
     announcementText: String(formData.get("announcementText") ?? ""),
@@ -186,6 +191,7 @@ export async function saveStudioSettings(formData: FormData) {
     ),
   });
 
+  await flushAtelierSave();
   revalidatePath("/", "layout");
   revalidatePath("/sklep");
   revalidatePath("/admin/ustawienia-sklepu");

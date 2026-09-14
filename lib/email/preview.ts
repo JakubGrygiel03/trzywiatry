@@ -1,7 +1,8 @@
 import { SITE } from "@/lib/constants";
-import { resetButtonHtml } from "@/lib/email/render";
+import { emailButtonHtml, resetButtonHtml } from "@/lib/email/render";
 
 const SAMPLE_RESET = "https://trzywiatry.pl/konto/nowe-haslo?token=przyklad";
+const SAMPLE_CONFIRM = "https://trzywiatry.pl/konto/potwierdz-email?token=przyklad";
 
 /** Dummy values so admin preview never depends on a live order. */
 export const EMAIL_PREVIEW_VARS = {
@@ -18,4 +19,6 @@ export const EMAIL_PREVIEW_VARS = {
   seatsCount: "2",
   resetUrl: SAMPLE_RESET,
   resetButton: resetButtonHtml(SAMPLE_RESET),
+  confirmUrl: SAMPLE_CONFIRM,
+  confirmButton: emailButtonHtml(SAMPLE_CONFIRM, "Potwierdź konto"),
 };

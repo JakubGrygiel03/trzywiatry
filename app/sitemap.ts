@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 import {
   areWorkshopsEnabled,
   getPublishedPosts,
@@ -6,7 +7,8 @@ import {
   getWorkshops,
 } from "@/lib/data/queries";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  await ensureAtelierHydrated();
   const base = "https://trzywiatry.pl";
   const workshopsOn = areWorkshopsEnabled();
 

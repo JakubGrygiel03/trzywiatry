@@ -37,7 +37,9 @@ export function B2BForm({ intro }: { intro?: string }) {
       <Button type="submit" disabled={pending}>
         {pending ? "Wysyłam / Sending" : "Wyślij zapytanie / Send inquiry"}
       </Button>
-      {state.message ? <p className="text-sm text-czerwony">{state.message}</p> : null}
+      {state.message ? (
+        <p className={`text-sm ${state.ok ? "text-czarny/70" : "text-czerwony"}`}>{state.message}</p>
+      ) : null}
     </form>
   );
 }

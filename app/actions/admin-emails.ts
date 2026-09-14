@@ -6,8 +6,10 @@ import { resetEmailTemplate, updateEmailTemplate } from "@/lib/data/email-templa
 import { isEmailTemplateKey } from "@/lib/email/catalog";
 import { emailDraftSchema, explainEmailDraft } from "@/lib/validations/email-template";
 import { firstZodMessage } from "@/lib/validations/safe-input";
+import { assertAdminSession } from "@/lib/admin-guard";
 
 export async function saveEmailTemplate(formData: FormData) {
+  await assertAdminSession();
   const draft = {
     key: String(formData.get("key") ?? ""),
     subject: String(formData.get("subject") ?? ""),
@@ -24,7 +26,7 @@ export async function saveEmailTemplate(formData: FormData) {
     redirect(target);
   }
 
-  updateEmailTemplate(parsed.data.key, {
+  await updateEmailTemplate(parsed.data.key, {
     subject: parsed.data.subject,
     body: parsed.data.body,
   });
@@ -34,9 +36,10 @@ export async function saveEmailTemplate(formData: FormData) {
 }
 
 export async function restoreEmailTemplate(formData: FormData) {
+  await assertAdminSession();
   const key = String(formData.get("key") ?? "");
   if (!isEmailTemplateKey(key)) redirect("/admin/emaile?blad=1");
-  resetEmailTemplate(key);
+  await resetEmailTemplate(key);
   revalidatePath("/admin/emaile");
   revalidatePath(`/admin/emaile/${key}`);
   redirect(`/admin/emaile/${key}?przywrocono=1`);

@@ -9,6 +9,8 @@ const PUBLIC_ACCOUNT_PREFIXES = [
   "/konto/rejestracja",
   "/konto/reset-hasla",
   "/konto/nowe-haslo",
+  "/konto/sprawdz-email",
+  "/konto/potwierdz-email",
 ];
 
 function isPublicAdminPath(pathname: string) {

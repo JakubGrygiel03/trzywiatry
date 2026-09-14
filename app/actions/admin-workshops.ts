@@ -8,6 +8,8 @@ import {
   deleteRuntimeWorkshop,
   upsertRuntimeWorkshop,
 } from "@/lib/data/runtime-store";
+import { flushAtelierSave } from "@/lib/data/atelier-persist";
+import { assertAdminSession } from "@/lib/admin-guard";
 import type { Workshop } from "@/lib/types";
 
 const workshopSchema = z.object({
@@ -66,6 +68,7 @@ function revalidateWorkshops(slug: string) {
 }
 
 export async function createWorkshop(formData: FormData) {
+  await assertAdminSession();
   const parsed = parseForm(formData);
   if (!parsed.success) {
     redirect(`/admin/warsztaty/nowy?blad=${encodeURIComponent(parsed.error.issues[0]?.message ?? "Błąd")}`);
@@ -103,10 +106,12 @@ export async function createWorkshop(formData: FormData) {
 
   upsertRuntimeWorkshop(workshop);
   revalidateWorkshops(workshop.slug);
+  await flushAtelierSave();
   redirect(`/admin/warsztaty/${workshop.id}?zapisano=1`);
 }
 
 export async function updateWorkshop(formData: FormData) {
+  await assertAdminSession();
   const parsed = parseForm(formData);
   if (!parsed.success || !parsed.data.id) {
     redirect("/admin/warsztaty?blad=1");
@@ -151,15 +156,18 @@ export async function updateWorkshop(formData: FormData) {
 
   upsertRuntimeWorkshop(workshop);
   revalidateWorkshops(workshop.slug);
+  await flushAtelierSave();
   redirect(`/admin/warsztaty/${workshop.id}?zapisano=1`);
 }
 
 export async function deleteWorkshop(formData: FormData) {
+  await assertAdminSession();
   const id = String(formData.get("id") ?? "").trim();
   const existing = getWorkshopById(id);
   if (!existing) redirect("/admin/warsztaty?blad=1");
 
   deleteRuntimeWorkshop(id);
   revalidateWorkshops(existing.slug);
+  await flushAtelierSave();
   redirect("/admin/warsztaty?usunieto=1");
 }

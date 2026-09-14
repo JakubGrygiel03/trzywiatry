@@ -8,13 +8,15 @@ import {
   remainingSeats,
 } from "@/lib/data/queries";
 import { ensureOrdersHydrated } from "@/lib/data/order-persist";
+import { ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 import { runtimeStore } from "@/lib/data/runtime-store";
 import type { OrderStatus } from "@/lib/types";
 
 const OPEN_ORDER_STATUSES: OrderStatus[] = ["pending", "paid", "processing"];
 
-export function getAdminBadges(): AdminBadges {
-  ensureOrdersHydrated();
+export async function getAdminBadges(): Promise<AdminBadges> {
+  await ensureOrdersHydrated();
+  await ensureAtelierHydrated();
   const catalog = getAllProducts();
   const lowStock = catalog.filter((product) =>
     product.variants.some(
@@ -23,13 +25,14 @@ export function getAdminBadges(): AdminBadges {
   ).length;
 
   const orders = runtimeStore.orders.filter((order) => OPEN_ORDER_STATUSES.includes(order.status)).length;
-  const b2b = runtimeStore.b2b.length;
+  const b2b = runtimeStore.b2b.length + runtimeStore.contacts.length;
 
   return { orders, lowStock, b2b };
 }
 
-export const getDashboardMetrics = cache(function getDashboardMetrics() {
-  ensureOrdersHydrated();
+export const getDashboardMetrics = cache(async function getDashboardMetrics() {
+  await ensureOrdersHydrated();
+  await ensureAtelierHydrated();
   const catalog = getAllProducts();
   const published = getPublishedProducts();
   const orders = [...runtimeStore.orders].sort(
@@ -71,6 +74,7 @@ export const getDashboardMetrics = cache(function getDashboardMetrics() {
     statusCounts,
     tightWorkshops,
     b2bCount: runtimeStore.b2b.length,
+    contactCount: runtimeStore.contacts.length,
     settings: getSettings(),
   };
 });

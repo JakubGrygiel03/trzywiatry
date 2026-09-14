@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LoginFormShell } from "@/components/forms/login-form-shell";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/field";
 
@@ -15,7 +16,11 @@ export function AdminLoginForm({
   error?: string;
 }) {
   return (
-    <form action="/api/admin/login" method="post" className="space-y-5">
+    <LoginFormShell
+      action="/api/admin/login"
+      emptyMessage="Uzupełnij e-mail i hasło."
+      className="space-y-5"
+    >
       <div className="space-y-2">
         <Label htmlFor="email">E-mail admina</Label>
         <Input
@@ -23,7 +28,6 @@ export function AdminLoginForm({
           name="email"
           type="email"
           autoComplete="username"
-          required
           defaultValue={defaultEmail}
           placeholder="pracownia@trzywiatry.pl"
         />
@@ -38,19 +42,12 @@ export function AdminLoginForm({
             Nie pamiętasz hasła?
           </Link>
         </div>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-          minLength={4}
-        />
+        <Input id="password" name="password" type="password" autoComplete="current-password" />
       </div>
       <Button type="submit" className="w-full">
         Zaloguj do panelu
       </Button>
       {error && ERRORS[error] ? <p className="text-sm text-czerwony">{ERRORS[error]}</p> : null}
-    </form>
+    </LoginFormShell>
   );
 }

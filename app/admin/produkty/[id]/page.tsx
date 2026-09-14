@@ -81,7 +81,7 @@ export default async function EditProductPage({
           <input type="hidden" name="id" value={product.id} />
           <p className="text-sm font-medium text-czarny">Usuń produkt</p>
           <p className="mt-1 text-xs text-czarny/50">
-            Produkt zniknie z katalogu w tej sesji serwera. Możesz też odznaczyć „Opublikowany”, żeby tylko ukryć go w
+            Produkt zniknie z katalogu. Możesz też odznaczyć „Opublikowany”, żeby tylko ukryć go w
             sklepie.
           </p>
           <button

@@ -4,6 +4,7 @@ import { AdminAlert } from "@/components/admin/ui/admin-alert";
 import { AdminPageHeader } from "@/components/admin/ui/admin-page-header";
 import { PublishBadge } from "@/components/admin/ui/admin-status-badge";
 import { getAllWorkshops, getSettings, remainingSeats } from "@/lib/data/queries";
+import { ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 import { runtimeStore } from "@/lib/data/runtime-store";
 import { formatDate, formatPLN } from "@/lib/format";
 
@@ -13,6 +14,7 @@ export default async function AdminWorkshopsPage({
   searchParams: Promise<{ usunieto?: string; blad?: string }>;
 }) {
   const query = await searchParams;
+  await ensureAtelierHydrated();
   const workshops = getAllWorkshops();
   const enabled = getSettings().workshopsEnabled;
 
@@ -94,7 +96,7 @@ export default async function AdminWorkshopsPage({
           </tbody>
         </table>
         <div className="border-t border-czarny/6 px-4 py-2.5 text-xs text-czarny/40">
-          Rezerwacje w sesji: {runtimeStore.bookings.length}
+          Rezerwacje: {runtimeStore.bookings.length}
         </div>
       </div>
     </div>

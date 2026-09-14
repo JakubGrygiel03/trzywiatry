@@ -27,7 +27,7 @@ export default async function ContactPage() {
           ) : null}
         </header>
 
-        <div className="grid overflow-hidden rounded-3xl border border-czarny/8 bg-bialy/60 lg:grid-cols-2 lg:items-stretch">
+        <div className="grid overflow-hidden rounded-3xl border border-czarny/8 bg-bialy lg:grid-cols-2 lg:items-stretch">
           <section className="flex flex-col border-b border-czarny/8 p-6 md:p-8 lg:border-b-0 lg:border-r lg:p-10">
             <h2 className="mb-7 font-heading text-sm uppercase tracking-[0.14em] text-czerwony">
               {page.formHeading}

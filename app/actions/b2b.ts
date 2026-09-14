@@ -2,11 +2,13 @@
 
 import { b2bSchema } from "@/lib/validations/b2b";
 import { SITE } from "@/lib/constants";
+import { saveAtelierSnapshot, ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 import { runtimeStore } from "@/lib/data/runtime-store";
 import { sendEmail } from "@/lib/resend";
 import { escapeHtml } from "@/lib/validations/safe-input";
 
 export async function submitB2BInquiry(_: { ok: boolean; message: string }, formData: FormData) {
+  await ensureAtelierHydrated();
   const parsed = b2bSchema.safeParse({
     companyName: formData.get("companyName"),
     nip: formData.get("nip"),
@@ -26,6 +28,7 @@ export async function submitB2BInquiry(_: { ok: boolean; message: string }, form
     createdAt: new Date().toISOString(),
     payload: parsed.data,
   });
+  await saveAtelierSnapshot();
 
   await sendEmail({
     to: SITE.email,

@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { defaultContentOverlay } from "@/lib/cms/content-page-defaults";
 import type { ContentOverlayMap, ContentPageKey } from "@/lib/cms/content-pages";
+import { ensureAtelierHydrated, saveAtelierSnapshot } from "@/lib/data/atelier-persist";
 import { runtimeStore } from "@/lib/data/runtime-store";
 import { createServiceClient } from "@/lib/supabase/service";
 import { normalizeContentOverlay } from "@/lib/validations/content-pages";
@@ -20,6 +21,7 @@ export function getCachedContentPage<K extends ContentPageKey>(key: K): ContentO
 export const getContentPage = cache(async function getContentPage<K extends ContentPageKey>(
   key: K,
 ): Promise<ContentOverlayMap[K]> {
+  await ensureAtelierHydrated();
   const remote = await fetchOverlayFromSupabase(key);
   if (remote) {
     writeCache(key, remote);
@@ -31,8 +33,9 @@ export const getContentPage = cache(async function getContentPage<K extends Cont
 export async function persistContentPage(key: ContentPageKey, overlay: ContentOverlayMap[ContentPageKey]) {
   const next = normalizeContentOverlay(key, overlay);
   writeCache(key, next);
-  const stored = await saveOverlayToSupabase(key, next);
-  return { overlay: next, stored };
+  const remote = await saveOverlayToSupabase(key, next);
+  const disk = await saveAtelierSnapshot();
+  return { overlay: next, stored: remote || disk };
 }
 
 function writeCache<K extends ContentPageKey>(key: K, overlay: ContentOverlayMap[K]) {

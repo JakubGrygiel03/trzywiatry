@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyAdminCredentials } from "@/lib/admin-auth";
-import { ADMIN_COOKIE, adminCookieOptions } from "@/lib/admin-session";
+import { ADMIN_COOKIE, adminCookieOptions, createAdminCookieValue } from "@/lib/admin-session";
+import { loginHandoff } from "@/lib/auth-handoff";
 import { adminLoginSchema } from "@/lib/validations/forms";
 
 export const runtime = "nodejs";
@@ -14,10 +15,6 @@ function redirectToLogin(request: Request, blad: "dane" | "haslo") {
   return response;
 }
 
-/**
- * Native POST + cookie + HTML handoff (not a Server Action).
- * 303 + Set-Cookie is dropped by iOS/Android installed PWAs; a 200 page is not.
- */
 export async function POST(request: Request) {
   let formData: FormData;
   try {
@@ -46,17 +43,7 @@ export async function POST(request: Request) {
     return redirectToLogin(request, "haslo");
   }
 
-  const dest = new URL("/admin", request.url).toString();
-  const response = new NextResponse(
-    `<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=/admin"><title>Panel</title></head><body><p><a href="/admin">Otwórz panel</a></p><script>location.replace(${JSON.stringify(dest)});</script></body></html>`,
-    {
-      status: 200,
-      headers: {
-        "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "private, no-store",
-      },
-    },
-  );
-  response.cookies.set(ADMIN_COOKIE, "1", adminCookieOptions(request));
+  const response = loginHandoff(request, "/admin");
+  response.cookies.set(ADMIN_COOKIE, createAdminCookieValue(), adminCookieOptions(request));
   return response;
 }

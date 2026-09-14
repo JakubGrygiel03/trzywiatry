@@ -8,6 +8,7 @@ export const EMAIL_TEMPLATE_KEYS = [
   "order_cancelled",
   "newsletter_welcome",
   "workshop_ticket",
+  "customer_welcome",
   "customer_password_reset",
 ] as const;
 
@@ -28,14 +29,14 @@ export const EMAIL_TEMPLATES: Record<EmailTemplateKey, EmailTemplateMeta> = {
     label: "Zamówienie przyjęte",
     trigger: "Klient składa zamówienie w kasie.",
     tokens: ["customerName", "orderNumber", "items", "total", "vacationBlock"],
-    subject: "Zamówienie {orderNumber} · przyjęte i w realizacji",
+    subject: "Zamówienie {orderNumber} · przyjęte",
     body: `<h1 style="font-size:22px">Zamówienie {orderNumber} przyjęte</h1>
-<p>Cześć {customerName}, dziękujemy. Płatność przyjęliśmy i <strong>rozpoczęliśmy realizację</strong> Twojego zamówienia.</p>
+<p>Cześć {customerName}, dziękujemy. Zapisaliśmy Twoje zamówienie. Status na start: <strong>oczekuje na płatność</strong>.</p>
 {vacationBlock}
 <ul>{items}</ul>
 <p><strong>Razem:</strong> {total}</p>
-<p>Pakujemy ręcznie, ze wkładkami — zero stłuczek. Dam znać mailem, gdy paczka wyjdzie z pracowni.</p>
-<p>Status zamówienia śledzisz też po zalogowaniu na konto w sklepie.</p>`,
+<p>Jak tylko płatność wejdzie, ruszamy z pakowaniem (wkładki, karton — zero stłuczek). Dam znać mailem, gdy paczka wyjdzie z pracowni.</p>
+<p>Status zamówienia śledzisz też po zalogowaniu na konto w sklepie (konto musi być zalogowane już przy kasie).</p>`,
   },
   order_pending: {
     key: "order_pending",
@@ -114,6 +115,18 @@ export const EMAIL_TEMPLATES: Record<EmailTemplateKey, EmailTemplateMeta> = {
     tokens: ["workshopTitle", "seatsCount"],
     subject: "Bilet · {workshopTitle}",
     body: `<p>Rezerwacja potwierdzona: {workshopTitle}. Liczba miejsc: {seatsCount}.</p>`,
+  },
+  customer_welcome: {
+    key: "customer_welcome",
+    label: "Potwierdzenie e-mail",
+    trigger: "Klient zakłada konto — musi kliknąć link, zanim się zaloguje.",
+    tokens: ["customerName", "confirmButton", "confirmUrl"],
+    subject: "Potwierdź konto w pracowni",
+    body: `<h1 style="font-size:22px">Cześć, {customerName}</h1>
+<p>Ktoś podał ten adres przy rejestracji w sklepie Trzy Wiatry. Kliknij przycisk, żeby potwierdzić skrzynkę i aktywować konto — to zabezpieczenie przed spamem.</p>
+<p style="margin:24px 0">{confirmButton}</p>
+<p style="font-size:13px;color:#666">Link ważny 24 godziny. Jeśli to nie Ty — zignoruj tę wiadomość, konto nie powstanie bez kliknięcia.</p>
+<p style="font-size:12px;color:#999;word-break:break-all">{confirmUrl}</p>`,
   },
   customer_password_reset: {
     key: "customer_password_reset",

@@ -1,4 +1,5 @@
 import { EMAIL_TEMPLATES, type EmailTemplateKey } from "@/lib/email/catalog";
+import { saveAtelierSnapshot } from "@/lib/data/atelier-persist";
 import { runtimeStore } from "@/lib/data/runtime-store";
 
 export type EmailTemplateDraft = {
@@ -15,7 +16,7 @@ export function getEmailTemplate(key: EmailTemplateKey): EmailTemplateDraft {
   };
 }
 
-export function updateEmailTemplate(key: EmailTemplateKey, draft: EmailTemplateDraft) {
+export async function updateEmailTemplate(key: EmailTemplateKey, draft: EmailTemplateDraft) {
   runtimeStore.emailTemplates = {
     ...(runtimeStore.emailTemplates ?? {}),
     [key]: {
@@ -23,12 +24,14 @@ export function updateEmailTemplate(key: EmailTemplateKey, draft: EmailTemplateD
       body: draft.body.trim() || EMAIL_TEMPLATES[key].body,
     },
   };
+  await saveAtelierSnapshot();
   return getEmailTemplate(key);
 }
 
-export function resetEmailTemplate(key: EmailTemplateKey) {
+export async function resetEmailTemplate(key: EmailTemplateKey) {
   const next = { ...(runtimeStore.emailTemplates ?? {}) };
   delete next[key];
   runtimeStore.emailTemplates = next;
+  await saveAtelierSnapshot();
   return getEmailTemplate(key);
 }

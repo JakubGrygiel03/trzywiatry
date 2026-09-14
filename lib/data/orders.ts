@@ -8,19 +8,19 @@ export function orderBelongsToCustomer(
   order: StoredOrder,
   user: { id: string; email: string },
 ) {
-  if (order.userId && order.userId === user.id) return true;
-  return order.customerEmail.toLowerCase() === user.email.toLowerCase();
+  if (order.userId) return order.userId === user.id;
+  return false;
 }
 
-export function getOrdersForCustomer(user: { id: string; email: string }): StoredOrder[] {
-  ensureOrdersHydrated();
+export async function getOrdersForCustomer(user: { id: string; email: string }): Promise<StoredOrder[]> {
+  await ensureOrdersHydrated();
   return runtimeStore.orders
     .filter((order) => orderBelongsToCustomer(order, user))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
-export function getCustomerOrder(id: string, user: { id: string; email: string }): StoredOrder | null {
-  ensureOrdersHydrated();
+export async function getCustomerOrder(id: string, user: { id: string; email: string }): Promise<StoredOrder | null> {
+  await ensureOrdersHydrated();
   const order = getOrderById(id);
   if (!order || !orderBelongsToCustomer(order, user)) return null;
   return order;

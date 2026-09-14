@@ -1,12 +1,22 @@
 import type { ContentOverlayMap } from "@/lib/cms/content-pages";
 import type { HomeSection } from "@/lib/cms/home-layout";
-import type { BlogPost, Collection, OrderStatus, Product, StoredOrder, StudioSettings, Workshop } from "@/lib/types";
 import { collections as seedCollections } from "@/lib/data/collections";
 import { blogPosts as seedBlogPosts } from "@/lib/data/posts";
 import { products as seedProducts } from "@/lib/data/products";
 import { defaultStudioSettings } from "@/lib/data/settings";
 import { workshops as seedWorkshops } from "@/lib/data/workshops";
-import { getProductPhoto } from "@/lib/media";
+import type { BlogPost, Collection, OrderStatus, Product, StoredOrder, StudioSettings, Workshop } from "@/lib/types";
+
+let persistRuntime: (() => void) | null = null;
+
+/** Server persist module registers a disk writer; the browser keeps a no-op. */
+export function setAtelierPersister(fn: () => void) {
+  persistRuntime = fn;
+}
+
+function persist() {
+  persistRuntime?.();
+}
 
 type Inquiry = {
   id: string;
@@ -140,6 +150,7 @@ export function upsertRuntimeBlogPost(post: BlogPost) {
   } else {
     posts.unshift(post);
   }
+  persist();
   return post;
 }
 
@@ -148,6 +159,7 @@ export function deleteRuntimeBlogPost(id: string) {
   const index = posts.findIndex((item) => item.id === id);
   if (index < 0) return false;
   posts.splice(index, 1);
+  persist();
   return true;
 }
 
@@ -184,6 +196,7 @@ export function upsertRuntimeWorkshop(workshop: Workshop) {
   } else {
     list.unshift(workshop);
   }
+  persist();
   return workshop;
 }
 
@@ -192,6 +205,7 @@ export function deleteRuntimeWorkshop(id: string) {
   const index = list.findIndex((item) => item.id === id);
   if (index < 0) return false;
   list.splice(index, 1);
+  persist();
   return true;
 }
 
@@ -200,8 +214,12 @@ export function getRuntimeWorkshopById(id: string) {
 }
 
 export function nextOrderNumber() {
-  const n = runtimeStore.orders.length + 1;
-  return `TW-${String(n).padStart(4, "0")}`;
+  let max = 0;
+  for (const order of runtimeStore.orders) {
+    const match = /^TW-(\d+)$/.exec(order.orderNumber);
+    if (match) max = Math.max(max, Number(match[1]));
+  }
+  return `TW-${String(max + 1).padStart(4, "0")}`;
 }
 
 export function getRuntimeSettings(): StudioSettings {
@@ -210,6 +228,7 @@ export function getRuntimeSettings(): StudioSettings {
 
 export function updateRuntimeSettings(patch: Partial<StudioSettings>) {
   runtimeStore.settings = { ...getRuntimeSettings(), ...patch };
+  persist();
   return runtimeStore.settings;
 }
 
@@ -237,7 +256,15 @@ export function upsertCollectionsFromGlaze(
     if (index >= 0) list[index] = next;
     else list.push(next);
   }
+  persist();
 }
+
+const DROP_PRODUCT_IDS = new Set([
+  "p-wygodny-kubas-miodowy",
+  "p-wygodny-kubas-zolty",
+  "p-wygodny-kubas-lawendowy",
+  "p-formy-nieokielznane",
+]);
 
 let lastSeedIdSignature = "";
 
@@ -247,44 +274,43 @@ function seedIdSignature() {
     .join("|");
 }
 
+export function getCatalogSeedSignature() {
+  return lastSeedIdSignature;
+}
+
+export function setCatalogSeedSignature(signature: string) {
+  lastSeedIdSignature = signature;
+}
+
 /**
- * Sync catalog with seed products:
- * - replace seed entries with current seed file
- * - drop products removed from seed (old demo / illustration SKUs)
- * - keep admin-created products (ids never in the seed set)
+ * Keep admin edits. Only append products that appeared in the seed file
+ * after the last persisted signature — never replace the whole catalog.
  */
-function syncCatalogWithSeed() {
+function mergeNewSeedProducts() {
   const signature = seedIdSignature();
-  const seedIds = new Set(seedProducts.map((product) => product.id));
-  const previousSeedIds = new Set(lastSeedIdSignature ? lastSeedIdSignature.split("|") : []);
+  if (!Array.isArray(runtimeStore.catalog) || runtimeStore.catalog.length === 0) {
+    runtimeStore.catalog = structuredClone(seedProducts);
+    lastSeedIdSignature = signature;
+    return;
+  }
 
-  const customProducts = (runtimeStore.catalog ?? []).filter((product) => {
-    if (seedIds.has(product.id)) return false;
-    if (previousSeedIds.has(product.id)) return false;
-    // After long-lived HMR, unknown leftovers without real photos are old demos
-    if (!lastSeedIdSignature) return Boolean(getProductPhoto(product));
-    return true;
-  });
+  runtimeStore.catalog = runtimeStore.catalog.filter((product) => !DROP_PRODUCT_IDS.has(product.id));
+  if (signature === lastSeedIdSignature) return;
 
-  runtimeStore.catalog = [...structuredClone(seedProducts), ...customProducts];
+  const ids = new Set(runtimeStore.catalog.map((product) => product.id));
+  for (const seed of seedProducts) {
+    if (!ids.has(seed.id) && !DROP_PRODUCT_IDS.has(seed.id)) {
+      runtimeStore.catalog.push(structuredClone(seed));
+      ids.add(seed.id);
+    }
+  }
   lastSeedIdSignature = signature;
 }
 
 export function getRuntimeCatalog(): Product[] {
-  if (!Array.isArray(runtimeStore.catalog) || runtimeStore.catalog.length === 0) {
-    syncCatalogWithSeed();
-    return runtimeStore.catalog;
-  }
-
-  if (seedIdSignature() !== lastSeedIdSignature) {
-    syncCatalogWithSeed();
-  }
-
+  mergeNewSeedProducts();
   return runtimeStore.catalog;
 }
-
-/** One-shot prune of demo SKUs left in the HMR-global store. */
-syncCatalogWithSeed();
 
 export function upsertRuntimeProduct(product: Product) {
   const catalog = getRuntimeCatalog();
@@ -294,6 +320,7 @@ export function upsertRuntimeProduct(product: Product) {
   } else {
     catalog.unshift(product);
   }
+  persist();
   return product;
 }
 
@@ -302,11 +329,32 @@ export function deleteRuntimeProduct(id: string) {
   const index = catalog.findIndex((item) => item.id === id);
   if (index < 0) return false;
   catalog.splice(index, 1);
+  persist();
   return true;
+}
+
+export function applyVariantStockDelta(
+  lines: { variantId: string; quantity: number }[],
+  sign: 1 | -1,
+) {
+  const catalog = getRuntimeCatalog();
+  for (const line of lines) {
+    for (const product of catalog) {
+      const variant = product.variants.find((item) => item.id === line.variantId);
+      if (!variant) continue;
+      variant.stockQuantity = Math.max(0, variant.stockQuantity + sign * line.quantity);
+      variant.isAvailable = variant.stockQuantity > 0;
+    }
+  }
+  persist();
 }
 
 export function getOrderById(id: string) {
   return runtimeStore.orders.find((order) => order.id === id);
+}
+
+export function getOrderByNumber(orderNumber: string) {
+  return runtimeStore.orders.find((order) => order.orderNumber === orderNumber);
 }
 
 export function addRuntimeOrder(order: StoredOrder) {
@@ -327,6 +375,13 @@ export function updateOrderStatusInStore(
   const history = [...(current.statusHistory ?? [{ status: current.status, at: current.createdAt }])];
   if (current.status !== status) {
     history.push({ status, at: now });
+  }
+
+  if (status === "cancelled" && current.status !== "cancelled") {
+    applyVariantStockDelta(
+      current.items.map((item) => ({ variantId: item.variantId, quantity: item.quantity })),
+      1,
+    );
   }
 
   const next: StoredOrder = {

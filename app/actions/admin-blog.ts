@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAllPosts, getPostById } from "@/lib/data/queries";
 import { deleteRuntimeBlogPost, upsertRuntimeBlogPost } from "@/lib/data/runtime-store";
+import { flushAtelierSave } from "@/lib/data/atelier-persist";
+import { assertAdminSession } from "@/lib/admin-guard";
 import type { BlogPost } from "@/lib/types";
 import { blogPostSchema } from "@/lib/validations/blog";
 
@@ -61,6 +63,7 @@ async function parseBlogForm(formData: FormData) {
 }
 
 export async function createBlogPost(formData: FormData) {
+  await assertAdminSession();
   const result = await parseBlogForm(formData);
   if (!result.ok) {
     redirect(`/admin/blog/nowy?blad=${encodeURIComponent(result.message)}`);
@@ -91,10 +94,12 @@ export async function createBlogPost(formData: FormData) {
 
   upsertRuntimeBlogPost(post);
   revalidateBlog(post.slug);
+  await flushAtelierSave();
   redirect(`/admin/blog/${post.id}?zapisano=1`);
 }
 
 export async function updateBlogPost(formData: FormData) {
+  await assertAdminSession();
   const result = await parseBlogForm(formData);
   if (!result.ok || !result.data.id) {
     redirect("/admin/blog?blad=1");
@@ -130,15 +135,18 @@ export async function updateBlogPost(formData: FormData) {
 
   upsertRuntimeBlogPost(post);
   revalidateBlog(post.slug);
+  await flushAtelierSave();
   redirect(`/admin/blog/${post.id}?zapisano=1`);
 }
 
 export async function deleteBlogPost(formData: FormData) {
+  await assertAdminSession();
   const id = String(formData.get("id") ?? "").trim();
   const existing = getPostById(id);
   if (!existing) redirect("/admin/blog?blad=1");
 
   deleteRuntimeBlogPost(id);
   revalidateBlog(existing.slug);
+  await flushAtelierSave();
   redirect("/admin/blog?usunieto=1");
 }

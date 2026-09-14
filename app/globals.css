@@ -305,7 +305,7 @@ h4 {
 .footer-logo {
   display: block;
   width: auto;
-  height: clamp(1.8rem, 3.8cqi + 0.55vh, 2.9rem);
+  height: clamp(1.7rem, 1.8cqi + 0.35vh, 2rem);
 }
 
 .bubble {

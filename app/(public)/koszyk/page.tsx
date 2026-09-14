@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { CartLineItem } from "@/components/cart/cart-line-item";
+import { CartStockNotice } from "@/components/cart/cart-stock-notice";
 import { CartUpsell } from "@/components/cart/cart-upsell";
 import { FreeShippingMeter, GiftWrappingCard } from "@/components/cart/gift-and-shipping";
 import { useSiteSettings } from "@/components/cms/site-settings-provider";
@@ -26,6 +27,7 @@ export default function CartPage() {
         ) : (
           <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr]">
             <div className="space-y-6">
+              <CartStockNotice />
               {items.map((item) => (
                 <CartLineItem key={item.variantId} item={item} />
               ))}

@@ -1,21 +1,23 @@
-"use client";
-
 import Link from "next/link";
-import { useActionState } from "react";
-import { loginCustomerAction, type AccountFormState } from "@/app/actions/account";
+import { LoginFormShell } from "@/components/forms/login-form-shell";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/field";
 
-const initial: AccountFormState = { ok: false, message: "" };
+const ERRORS: Record<string, string> = {
+  dane: "Uzupełnij e-mail i hasło.",
+  haslo: "Nieprawidłowy e-mail lub hasło.",
+};
 
-export function CustomerLoginForm() {
-  const [state, action, pending] = useActionState(loginCustomerAction, initial);
-
+export function CustomerLoginForm({ error }: { error?: string }) {
   return (
-    <form action={action} className="space-y-5">
+    <LoginFormShell
+      action="/api/account/login"
+      emptyMessage="Uzupełnij e-mail i hasło."
+      className="space-y-5"
+    >
       <div className="space-y-2">
         <Label htmlFor="email">E-mail</Label>
-        <Input id="email" name="email" type="email" autoComplete="email" required />
+        <Input id="email" name="email" type="email" autoComplete="email" />
       </div>
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2">
@@ -27,30 +29,28 @@ export function CustomerLoginForm() {
             Nie pamiętasz hasła?
           </Link>
         </div>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-          minLength={4}
-        />
+        <Input id="password" name="password" type="password" autoComplete="current-password" />
       </div>
-      <Button type="submit" disabled={pending} className="w-full">
-        {pending ? "Logowanie…" : "Zaloguj się"}
+      <Button type="submit" className="w-full">
+        Zaloguj się
       </Button>
-      {state.message ? <p className="text-sm text-czerwony">{state.message}</p> : null}
+      {error && ERRORS[error] ? <p className="text-sm text-czerwony">{ERRORS[error]}</p> : null}
       <p className="text-center text-sm text-czarny">
         Nie masz konta?{" "}
         <Link href="/konto/rejestracja" className="text-czerwony underline-offset-2 hover:underline">
           Zarejestruj się
         </Link>
       </p>
-      <p className="text-center text-xs text-szary">
-        <Link href="/admin/logowanie" className="underline-offset-2 hover:text-czerwony hover:underline">
-          Panel pracowni
+      <p className="text-center text-sm text-czarny/55">
+        <Link href="/konto/sprawdz-email" className="text-czerwony underline-offset-2 hover:underline">
+          Nie dostałeś maila potwierdzającego?
         </Link>
       </p>
-    </form>
+      <p className="text-center text-xs text-szary">
+        <Link href="/admin/logowanie" className="underline-offset-2 hover:text-czerwony hover:underline">
+          Panel pracowni (CMS)
+        </Link>
+      </p>
+    </LoginFormShell>
   );
 }

@@ -8,7 +8,7 @@ export async function GET() {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  return Response.json(getAdminBadges(), {
+  return Response.json(await getAdminBadges(), {
     headers: { "Cache-Control": "private, no-store" },
   });
 }
