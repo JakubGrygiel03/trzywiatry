@@ -33,6 +33,7 @@ export function CheckoutForm({
   const [postalCode, setPostalCode] = useState("");
   const [city, setCity] = useState("");
   const [locker, setLocker] = useState("");
+  const [cartReady, setCartReady] = useState(false);
   const settings = useSiteSettings();
   const subtotal = cartSubtotal(items);
   const gift = cartGiftWrapCost(hasGiftWrapping, settings.giftWrapPriceCents);
@@ -43,10 +44,25 @@ export function CheckoutForm({
       : `Doliczymy koszt dostawy, jeśli nie osiągniesz ${thresholdLabel}.`;
 
   useEffect(() => {
+    const api = useCartStore.persist;
+    if (!api?.hasHydrated || !api.onFinishHydration) {
+      setCartReady(true);
+      return;
+    }
+    const finish = () => setCartReady(true);
+    if (api.hasHydrated()) finish();
+    return api.onFinishHydration(finish);
+  }, []);
+
+  useEffect(() => {
     if (!state.ok || !state.redirectTo) return;
     clear();
     window.location.assign(state.redirectTo);
   }, [state.ok, state.redirectTo, clear]);
+
+  if (!cartReady) {
+    return <p className="text-sm text-szary">Ładowanie koszyka…</p>;
+  }
 
   if (items.length === 0 && !state.ok) {
     return <p className="text-sm text-szary">Koszyk jest pusty.</p>;
