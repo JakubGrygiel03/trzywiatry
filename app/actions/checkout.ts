@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { checkoutSchema } from "@/lib/validations/checkout";
 import { SHIPPING_METHODS, SITE } from "@/lib/constants";
+import { absoluteUrl } from "@/lib/site-url";
 import {
   addRuntimeOrder,
   applyVariantStockDelta,
@@ -176,8 +177,8 @@ export async function createCheckoutSession(
     amountInCents: total,
     email: order.customerEmail,
     description: `Trzy Wiatry ${orderNumber}`,
-    urlReturn: `${SITE.url}${confirmPath}`,
-    urlStatus: `${SITE.url}/api/webhooks/p24`,
+    urlReturn: absoluteUrl(confirmPath),
+    urlStatus: absoluteUrl("/api/webhooks/p24"),
   });
 
   if (hasP24Credentials()) {
@@ -190,6 +191,12 @@ export async function createCheckoutSession(
         message: `Zamówienie ${orderNumber} zapisane. Przekierowujemy do płatności…`,
       };
     }
+    return {
+      ok: true,
+      orderNumber,
+      redirectTo: confirmPath,
+      message: `Zamówienie ${orderNumber} zapisane, ale płatność P24 nie wystartowała. Spróbuj jeszcze raz albo napisz na ${SITE.email}.`,
+    };
   }
 
   return {

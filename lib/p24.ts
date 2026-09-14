@@ -1,7 +1,7 @@
 import { createHash } from "crypto";
 
-function crcSign(payload: string, crc: string) {
-  return createHash("sha384").update(JSON.stringify({ ...JSON.parse(payload), crc })).digest("hex");
+function p24Sign(fields: Record<string, string | number>) {
+  return createHash("sha384").update(JSON.stringify(fields)).digest("hex");
 }
 
 function p24Host() {
@@ -10,16 +10,20 @@ function p24Host() {
     : "https://sandbox.przelewy24.pl";
 }
 
-export function p24RegisterUrl() {
-  return `${p24Host()}/api/v1/transaction/register`;
+function merchantIds() {
+  const merchantId = Number(process.env.P24_MERCHANT_ID ?? 0);
+  const posId = Number(process.env.P24_POS_ID ?? merchantId);
+  return { merchantId, posId, crc: process.env.P24_CRC?.trim() ?? "" };
+}
+
+function apiAuth(posId: number) {
+  const apiKey = (process.env.P24_API_KEY || process.env.P24_REPORTS_KEY || "").trim();
+  return Buffer.from(`${posId}:${apiKey}`).toString("base64");
 }
 
 export function hasP24Credentials() {
-  return Boolean(
-    Number(process.env.P24_MERCHANT_ID ?? 0) &&
-      process.env.P24_CRC &&
-      (process.env.P24_API_KEY || process.env.P24_REPORTS_KEY),
-  );
+  const { merchantId, crc } = merchantIds();
+  return Boolean(merchantId && crc && (process.env.P24_API_KEY || process.env.P24_REPORTS_KEY));
 }
 
 /** Builds a Przelewy24 register payload. Live keys live in env — never in the client. */
@@ -31,18 +35,7 @@ export function buildP24Session(input: {
   urlReturn: string;
   urlStatus: string;
 }) {
-  const merchantId = Number(process.env.P24_MERCHANT_ID ?? 0);
-  const posId = Number(process.env.P24_POS_ID ?? merchantId);
-  const crc = process.env.P24_CRC ?? "";
-
-  const signPayload = JSON.stringify({
-    sessionId: input.sessionId,
-    merchantId,
-    amount: input.amountInCents,
-    currency: "PLN",
-    crc,
-  });
-
+  const { merchantId, posId, crc } = merchantIds();
   return {
     merchantId,
     posId,
@@ -53,32 +46,44 @@ export function buildP24Session(input: {
     email: input.email,
     country: "PL",
     language: "pl",
+    encoding: "UTF-8",
     urlReturn: input.urlReturn,
     urlStatus: input.urlStatus,
-    sign: crc ? crcSign(signPayload, crc) : "demo-sign",
+    sign: p24Sign({
+      sessionId: input.sessionId,
+      merchantId,
+      amount: input.amountInCents,
+      currency: "PLN",
+      crc,
+    }),
   };
 }
 
 export async function registerP24Transaction(session: ReturnType<typeof buildP24Session>) {
   if (!hasP24Credentials()) return { ok: false as const, reason: "missing-keys" as const };
 
-  const apiKey = process.env.P24_API_KEY || process.env.P24_REPORTS_KEY || "";
-  const auth = Buffer.from(`${session.posId}:${apiKey}`).toString("base64");
-
   try {
-    const response = await fetch(p24RegisterUrl(), {
+    const response = await fetch(`${p24Host()}/api/v1/transaction/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Basic ${auth}`,
+        Authorization: `Basic ${apiAuth(session.posId)}`,
       },
       body: JSON.stringify(session),
     });
-    const json = (await response.json()) as { data?: { token?: string } };
-    const token = json.data?.token;
-    if (!token) return { ok: false as const, reason: "register-failed" as const };
+    const json = (await response.json().catch(() => null)) as {
+      data?: { token?: string };
+      error?: string;
+      message?: string;
+    } | null;
+    const token = json?.data?.token;
+    if (!token) {
+      console.error("[p24] register failed", response.status, json?.error ?? json?.message ?? "no-token");
+      return { ok: false as const, reason: "register-failed" as const };
+    }
     return { ok: true as const, redirectUrl: `${p24Host()}/trnRequest/${token}` };
-  } catch {
+  } catch (error) {
+    console.error("[p24] register network", error);
     return { ok: false as const, reason: "register-failed" as const };
   }
 }
@@ -99,12 +104,12 @@ export type P24Notification = {
 
 /** CRC check for the P24 status webhook — reject unsigned payloads in production. */
 export function p24NotificationValid(body: P24Notification) {
-  const crc = process.env.P24_CRC ?? "";
+  const { crc } = merchantIds();
   const sessionId = body.sessionId ?? body.p24_session_id;
   if (!crc) return process.env.NODE_ENV !== "production";
   if (!sessionId || !body.sign || body.orderId == null || body.amount == null) return false;
 
-  const payload = JSON.stringify({
+  const expected = p24Sign({
     merchantId: Number(body.merchantId),
     posId: Number(body.posId),
     sessionId,
@@ -116,6 +121,53 @@ export function p24NotificationValid(body: P24Notification) {
     statement: body.statement ?? "",
     crc,
   });
-  const expected = createHash("sha384").update(payload).digest("hex");
   return expected === body.sign;
+}
+
+/**
+ * P24 only settles funds after PUT /transaction/verify.
+ * Sign fields differ from register: sessionId, orderId, amount, currency, crc.
+ */
+export async function verifyP24Transaction(input: {
+  sessionId: string;
+  orderId: number;
+  amount: number;
+}) {
+  const { merchantId, posId, crc } = merchantIds();
+  if (!crc) return false;
+
+  try {
+    const response = await fetch(`${p24Host()}/api/v1/transaction/verify`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Basic ${apiAuth(posId)}`,
+      },
+      body: JSON.stringify({
+        merchantId,
+        posId,
+        sessionId: input.sessionId,
+        amount: input.amount,
+        currency: "PLN",
+        orderId: input.orderId,
+        sign: p24Sign({
+          sessionId: input.sessionId,
+          orderId: input.orderId,
+          amount: input.amount,
+          currency: "PLN",
+          crc,
+        }),
+      }),
+    });
+    const json = (await response.json().catch(() => null)) as {
+      data?: { status?: string };
+      responseCode?: number;
+    } | null;
+    const ok = response.ok && (json?.data?.status === "success" || json?.responseCode === 0);
+    if (!ok) console.error("[p24] verify failed", response.status);
+    return ok;
+  } catch (error) {
+    console.error("[p24] verify network", error);
+    return false;
+  }
 }

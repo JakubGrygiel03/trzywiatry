@@ -37,6 +37,11 @@ const values = {
   CUSTOMER_SESSION_SECRET: local.CUSTOMER_SESSION_SECRET,
   RESEND_API_KEY: local.RESEND_API_KEY,
   NEWSLETTER_FROM_EMAIL: local.NEWSLETTER_FROM_EMAIL,
+  P24_MERCHANT_ID: local.P24_MERCHANT_ID,
+  P24_POS_ID: local.P24_POS_ID,
+  P24_CRC: local.P24_CRC,
+  P24_API_KEY: local.P24_API_KEY,
+  P24_SANDBOX: local.P24_SANDBOX,
 };
 
 const publicNames = new Set([
@@ -47,30 +52,33 @@ const publicNames = new Set([
   "ADMIN_EMAIL",
 ]);
 
+const p24Only = process.argv.includes("--p24-only");
+const p24Names = new Set(["P24_MERCHANT_ID", "P24_POS_ID", "P24_CRC", "P24_API_KEY", "P24_SANDBOX"]);
+const environments = ["production", "preview", "development"];
+
+function vercel(args, input) {
+  return spawnSync("npx.cmd", ["vercel", ...args, "--scope", "jakub-grygiel", "--project", "trzywiatry", "--yes"], {
+    encoding: "utf8",
+    input,
+    shell: true,
+    windowsHide: true,
+  });
+}
+
 for (const [name, value] of Object.entries(values)) {
+  if (p24Only && !p24Names.has(name)) continue;
   if (!value) {
     console.log("SKIP_EMPTY", name);
     continue;
   }
+  if (p24Names.has(name)) {
+    for (const envName of environments) {
+      vercel(["env", "rm", name, envName]);
+    }
+  }
   const flag = publicNames.has(name) ? "--no-sensitive" : "--sensitive";
-  const result = spawnSync(
-    "npx.cmd",
-    [
-      "vercel",
-      "env",
-      "add",
-      name,
-      "production,preview,development",
-      "--scope",
-      "jakub-grygiel",
-      "--project",
-      "trzywiatry",
-      "--yes",
-      flag,
-    ],
-    { encoding: "utf8", input: `${value}\n`, shell: true, windowsHide: true },
-  );
+  const result = vercel(["env", "add", name, "production,preview,development", flag], `${value}\n`);
   const out = `${result.error?.message || ""}\n${result.stdout || ""}${result.stderr || ""}`.replaceAll(value, "[redacted]");
   if (result.status === 0) console.log("ADDED", name);
-  else console.log("FAILED", name, result.status, out.slice(-500).trim());
+  else console.log("FAILED", name, result.status, out.slice(-400).trim());
 }
