@@ -98,8 +98,20 @@ export const PRODUCT_IMAGE_OPTIONS = [
 export const SHIPPING_METHODS = [
   { id: "inpost", label: "Paczkomat InPost", priceInCents: 2000 },
   { id: "kurier", label: "Kurier", priceInCents: 3000 },
-  { id: "odbior", label: "Odbiór w pracowni", priceInCents: 0 },
 ] as const;
+
+/** Labels for methods no longer offered at checkout (historical orders). */
+export const LEGACY_SHIPPING_LABELS: Record<string, string> = {
+  odbior: "Odbiór w pracowni",
+};
+
+export function shippingMethodLabel(methodId: string) {
+  return (
+    SHIPPING_METHODS.find((method) => method.id === methodId)?.label ??
+    LEGACY_SHIPPING_LABELS[methodId] ??
+    methodId
+  );
+}
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   pending: "Oczekuje na płatność",

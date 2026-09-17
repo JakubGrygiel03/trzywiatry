@@ -100,9 +100,7 @@ export async function createCheckoutSession(
   const settings = getRuntimeSettings();
   const shipping = SHIPPING_METHODS.find((method) => method.id === parsed.data.shippingMethod);
   const shippingCost =
-    goods >= settings.freeShippingThresholdCents && parsed.data.shippingMethod !== "odbior"
-      ? 0
-      : (shipping?.priceInCents ?? 0);
+    goods >= settings.freeShippingThresholdCents ? 0 : (shipping?.priceInCents ?? 0);
   const giftCost = giftWrap ? settings.giftWrapPriceCents : 0;
   const promo = (settings.promoCode ?? "").trim().toUpperCase();
   const discount =

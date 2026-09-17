@@ -9,7 +9,7 @@ export const checkoutSchema = z
     street: plainText("Ulica", 120, 3),
     postalCode: z.string().trim().regex(/^\d{2}-\d{3}$/, "Kod pocztowy: 00-000"),
     city: plainText("Miasto", 60, 2),
-    shippingMethod: z.enum(["inpost", "kurier", "odbior"]),
+    shippingMethod: z.enum(["inpost", "kurier"]),
     inpostLocker: z.string().trim().max(180).optional(),
     giftMessage: plainText("Dedykacja", 280).optional(),
     discountCode: z

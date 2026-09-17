@@ -142,6 +142,8 @@ export type CartItem = {
 };
 
 export type ShippingMethod = "inpost" | "kurier" | "odbior";
+/** Methods selectable in checkout — personal pickup withdrawn. */
+export type CheckoutShippingMethod = "inpost" | "kurier";
 
 export type StoredOrderItem = {
   productId: string;

@@ -1,4 +1,4 @@
-import { ORDER_STATUS_LABELS, SHIPPING_METHODS } from "@/lib/constants";
+import { ORDER_STATUS_LABELS, shippingMethodLabel } from "@/lib/constants";
 import { wrapEmail } from "@/lib/email/render";
 import { formatPLN } from "@/lib/format";
 import { sendEmail } from "@/lib/resend";
@@ -35,7 +35,7 @@ export async function notifyStudio(input: { subject: string; html: string; reply
 }
 
 function shippingLabel(order: StoredOrder) {
-  return SHIPPING_METHODS.find((method) => method.id === order.shippingMethod)?.label ?? order.shippingMethod;
+  return shippingMethodLabel(order.shippingMethod);
 }
 
 export async function notifyStudioNewOrder(order: StoredOrder) {

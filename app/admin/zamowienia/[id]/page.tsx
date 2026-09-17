@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { updateOrderStatus } from "@/app/actions/admin";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/field";
-import { ORDER_STATUS_LABELS, SHIPPING_METHODS } from "@/lib/constants";
+import { ORDER_STATUS_LABELS, shippingMethodLabel } from "@/lib/constants";
 import { ensureOrdersHydrated } from "@/lib/data/order-persist";
 import { getOrderById } from "@/lib/data/runtime-store";
 import { formatPLN } from "@/lib/format";
@@ -23,9 +23,7 @@ export default async function AdminOrderDetailPage({
   const order = getOrderById(id);
   if (!order) notFound();
 
-  const shippingLabel =
-    SHIPPING_METHODS.find((method) => method.id === order.shippingMethod)?.label ??
-    order.shippingMethod;
+  const shippingLabel = shippingMethodLabel(order.shippingMethod);
 
   return (
     <div className="max-w-xl space-y-6">

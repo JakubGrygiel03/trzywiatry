@@ -10,7 +10,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = pageMetadata({
   title: "Dostawa i zwroty",
   description:
-    "Paczkomaty InPost, kurier i odbiór z pracowni. Pakowanie zero stłuczek i zasady zwrotów w Trzy Wiatry.",
+    "Paczkomaty InPost i kurier. Pakowanie zero stłuczek i zasady zwrotów w Trzy Wiatry.",
   path: "/dostawa-i-zwroty",
 });
 
@@ -25,13 +25,13 @@ export default function ShippingPage() {
         <SurfacePageIntro
           eyebrow="Logistyka"
           title="Dostawa i zwroty"
-          description="Pakujemy z wkładkami i podwójnym kartonem — zero stłuczek. InPost, kurier albo odbiór w Gdańsku."
+          description="Pakujemy z wkładkami i podwójnym kartonem — zero stłuczek. Paczkomat InPost albo kurier."
         />
         <SurfaceProse>
           <p>
             Darmowa dostawa od {freeFrom} (Polska, bez przesyłek gabarytowych). Poniżej progu: Paczkomat{" "}
             {inpost ? formatPLN(inpost.priceInCents) : "20 zł"}, kurier{" "}
-            {kurier ? formatPLN(kurier.priceInCents) : "30 zł"}, odbiór w pracowni — 0 zł.
+            {kurier ? formatPLN(kurier.priceInCents) : "30 zł"}.
           </p>
           <p>
             Produkty dostępne wysyłamy w 1–5 dni roboczych, produkty na zamówienie w 3–14 dni roboczych.

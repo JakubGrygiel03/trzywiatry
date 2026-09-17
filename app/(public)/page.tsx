@@ -1,6 +1,7 @@
 import { JsonLd } from "@/components/seo/json-ld";
 import { localBusinessJsonLd } from "@/lib/seo";
 import { HomeSectionStack } from "@/components/home/home-section-stack";
+import { MaintenanceNotice } from "@/components/home/maintenance-notice";
 import { SurfaceCanvas } from "@/components/layout/surface-canvas";
 import { findHomeSection } from "@/lib/cms/home-layout";
 import { getHomeLayout } from "@/lib/data/home-layout";
@@ -16,6 +17,7 @@ export default async function HomePage() {
   return (
     <SurfaceCanvas>
       <JsonLd data={localBusinessJsonLd()} />
+      <MaintenanceNotice />
       <HomeSectionStack
         sections={sections}
         workshopsEnabled={workshopsEnabled}

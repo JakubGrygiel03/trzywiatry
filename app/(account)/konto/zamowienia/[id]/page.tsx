@@ -5,7 +5,7 @@ import { OrderTimeline } from "@/components/account/order-timeline";
 import { SurfaceCanvas } from "@/components/layout/surface-canvas";
 import { AccountTile, AccountTileBody } from "@/components/account/account-tile";
 import { Container } from "@/components/ui/badge";
-import { SHIPPING_METHODS } from "@/lib/constants";
+import { shippingMethodLabel } from "@/lib/constants";
 import { getCustomerSession } from "@/lib/customer-session";
 import { getCustomerOrder } from "@/lib/data/orders";
 import { formatDate, formatPLN } from "@/lib/format";
@@ -21,8 +21,7 @@ export default async function CustomerOrderPage({ params }: { params: Promise<{ 
   const order = await getCustomerOrder(id, user);
   if (!order) notFound();
 
-  const shippingLabel =
-    SHIPPING_METHODS.find((method) => method.id === order.shippingMethod)?.label ?? order.shippingMethod;
+  const shippingLabel = shippingMethodLabel(order.shippingMethod);
 
   return (
     <SurfaceCanvas>

@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 const HINTS: Record<(typeof SHIPPING_METHODS)[number]["id"], string> = {
   inpost: "Odbiór 24/7 — paczkomat wybierzesz na mapie.",
   kurier: "Dostawa pod wskazany adres.",
-  odbior: "Życzliwa 13/4, Gdańsk — umówimy odbiór.",
 };
 
 export function CheckoutShipping({
