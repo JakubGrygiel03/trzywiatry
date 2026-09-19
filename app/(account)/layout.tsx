@@ -25,12 +25,14 @@ export default async function AccountLayout({ children }: { children: ReactNode 
   return (
     <SiteSettingsProvider settings={settings}>
       <div
-        className="site-shell flex min-h-screen flex-col"
+        className="site-shell flex min-h-screen w-full max-w-full flex-col"
         data-announcement={announcementHidden ? "off" : "on"}
       >
         <SiteHeader />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <div className="site-frame flex min-h-0 flex-1 flex-col">
+          <main className="min-w-0 max-w-full flex-1 overflow-x-clip">{children}</main>
+          <Footer />
+        </div>
         <CartDrawer />
         <CookieConsent />
         <Suspense fallback={null}>

@@ -14,14 +14,13 @@
   --site-chrome: 5.75rem;
 }
 
-/* Phone rubber-band / sideways drag must not reveal empty gutters. */
-html {
-  overflow-x: clip;
-  max-width: 100%;
-}
-
+/*
+ * Do NOT set overflow-x on html/body — Android/Messenger WebViews then treat
+ * position:fixed as relative to the document and leave a side gutter.
+ */
+html,
 body {
-  overflow-x: clip;
+  width: 100%;
   max-width: 100%;
   overscroll-behavior-x: none;
 }
@@ -35,7 +34,29 @@ body {
 /* First-screen hero subtracts announcement + nav; laptop nav is taller. */
 .site-shell {
   --site-chrome: 5.75rem;
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Page content only — keeps marquee / wide grids from widening the viewport. */
+.site-frame {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow-x: clip;
+}
+
+.site-frame > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Long CMS strings / images must not inflate the layout width. */
+.site-frame img,
+.site-frame video,
+.site-frame iframe,
+.site-frame pre,
+.site-frame table {
   max-width: 100%;
 }
 
@@ -150,10 +171,14 @@ body::before {
 }
 
 .site-chrome {
+  width: 100%;
+  max-width: 100%;
   background-color: #ffffff !important;
 }
 
 .site-chrome__nav {
+  width: 100%;
+  max-width: 100%;
   background-color: #ffffff !important;
 }
 

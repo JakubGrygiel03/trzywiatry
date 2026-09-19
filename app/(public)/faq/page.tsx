@@ -8,26 +8,26 @@ import type { Metadata } from "next";
 export const metadata: Metadata = pageMetadata({
   title: "FAQ",
   description:
-    "Czas realizacji, tolerancja rękodzieła, pielęgnacja drewna i gliny, bilety na warsztaty — pytania do pracowni Trzy Wiatry.",
+    "Czas wysyłki, różnice w rękodziele, pielęgnacja drewna oraz zmiana terminu warsztatu — odpowiedzi pracowni Trzy Wiatry.",
   path: "/faq",
 });
 
 const faqs = [
   {
-    q: "Ile czeka się na zamówienie?",
-    a: "To, co jest na stanie, pakujemy w 2–4 dni robocze. Naczynia na zamówienie — zwykle 3–5 tygodni, bo czekają na dwa ognie.",
+    q: "Jak długo czeka się na zamówienie?",
+    a: "Produkty dostępne od ręki wysyłamy w 2–4 dni robocze. Jeśli coś robimy na zamówienie, zwykle trwa to 3–5 tygodni — naczynie musi przejść dwa wypały w piecu.",
   },
   {
-    q: "Czy kubki są identyczne?",
-    a: "Nie. Rękodzieło ma tolerancję pojemności i szkliwa. Podajemy pojemność nominalną (80, 180, 250 ml) — odchyłka kilku mililitrów to ślad toczenia, nie wada.",
+    q: "Czy każdy kubek wygląda tak samo?",
+    a: "Nie — to rękodzieło, więc każdy egzemplarz jest trochę inny. Pojemność podajemy w przybliżeniu (np. 80, 180, 250 ml); różnica kilku mililitrów jest normalna. Kolor i faktura szkliwa też mogą lekko odbiegać od zdjęcia.",
   },
   {
-    q: "Czy drewno pęka?",
-    a: "Drewno pracuje z wilgocią w domu. Olejujemy deski, ale trzymaj je z dala od zmywarki i kaloryfera.",
+    q: "Czy drewniane produkty mogą pęknąć?",
+    a: "Drewno reaguje na wilgoć i temperaturę w domu, więc przy złej pielęgnacji może pękać. Deski olejujemy, ale nie wkładaj ich do zmywarki i nie stawiaj przy kaloryferze ani na mokrym blacie.",
   },
   {
-    q: "Czy mogę oddać warsztat?",
-    a: "Do 7 dni przed terminem przeniesiemy Cię na inny wolny slot. Bilet jest imienny.",
+    q: "Czy mogę zmienić termin warsztatu?",
+    a: "Tak — jeśli zgłosisz się najpóźniej 7 dni przed zajęciami, przeniesiemy Cię na inny wolny termin. Bilet jest imienny, więc nie da się go swobodnie przekazać innej osobie.",
   },
 ];
 
@@ -38,7 +38,7 @@ export default function FaqPage() {
         <SurfacePageIntro
           eyebrow="Pytania"
           title="FAQ"
-          description="Najczęstsze pytania o czas realizacji, rękodzieło i warsztaty."
+          description="Krótko: kiedy wyślemy paczkę, czemu kubki różnią się od zdjęć i jak zmienić termin warsztatu."
         />
         <JsonLd
           data={[

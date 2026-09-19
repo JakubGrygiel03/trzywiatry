@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 const TILE_BASE =
-  "overflow-hidden rounded-[28px] border shadow-[0_18px_48px_-36px_rgb(1_1_1_/_0.45)]";
+  "min-w-0 max-w-full overflow-hidden rounded-[28px] border shadow-[0_18px_48px_-36px_rgb(1_1_1_/_0.45)]";
 
 const TILE_TONES = {
   /** White content panel — the only “card” ground besides cream page */

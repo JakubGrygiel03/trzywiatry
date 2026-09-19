@@ -55,7 +55,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   ];
 
   return (
-    <article className="py-8 md:py-10">
+    <article className="min-w-0 overflow-x-clip py-8 md:py-10">
       <JsonLd
         data={[
           {

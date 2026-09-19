@@ -13,7 +13,7 @@ export async function Navbar() {
 
   return (
     <header className="site-chrome__nav border-b border-czarny/8" style={{ backgroundColor: "#ffffff" }}>
-      <div className="relative mx-auto flex h-14 max-w-7xl min-w-0 items-center justify-between gap-2 px-6 md:h-[4.5rem] md:px-14 lg:px-16 xl:px-20">
+      <div className="relative mx-auto flex h-14 w-full min-w-0 max-w-7xl items-center justify-between gap-2 px-6 md:h-[4.5rem] md:px-14 lg:px-16 xl:px-20">
         <Logo priority />
         <nav className="hidden min-w-0 items-center gap-8 md:flex lg:gap-11">
           {links.map((link) => (

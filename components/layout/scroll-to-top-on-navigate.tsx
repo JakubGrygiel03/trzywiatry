@@ -11,7 +11,19 @@ function scrollKey(pathname: string, query: string) {
 function forceTop() {
   window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   document.documentElement.scrollTop = 0;
+  document.documentElement.scrollLeft = 0;
   document.body.scrollTop = 0;
+  document.body.scrollLeft = 0;
+}
+
+/** Messenger / Android WebViews often leave a leftover scrollX → uneven side gutters. */
+function lockScrollX() {
+  if (window.scrollX === 0 && document.documentElement.scrollLeft === 0 && document.body.scrollLeft === 0) {
+    return;
+  }
+  window.scrollTo({ top: window.scrollY, left: 0, behavior: "auto" });
+  document.documentElement.scrollLeft = 0;
+  document.body.scrollLeft = 0;
 }
 
 /**
@@ -47,19 +59,31 @@ export function ScrollToTopOnNavigate() {
   }, []);
 
   // Persist scroll while the user stays on a route (so “wstecz” can restore it).
+  // Also kill leftover scrollX — that reads as “more padding on the left”.
   useEffect(() => {
     const key = scrollKey(pathname, query);
     function save() {
+      lockScrollX();
       try {
         sessionStorage.setItem(key, String(window.scrollY));
       } catch {
         /* private mode */
       }
     }
+    function onResize() {
+      lockScrollX();
+    }
     window.addEventListener("scroll", save, { passive: true });
+    window.addEventListener("resize", onResize, { passive: true });
+    window.visualViewport?.addEventListener("resize", onResize, { passive: true });
+    window.visualViewport?.addEventListener("scroll", onResize, { passive: true });
+    lockScrollX();
     return () => {
       save();
       window.removeEventListener("scroll", save);
+      window.removeEventListener("resize", onResize);
+      window.visualViewport?.removeEventListener("resize", onResize);
+      window.visualViewport?.removeEventListener("scroll", onResize);
     };
   }, [pathname, query]);
 

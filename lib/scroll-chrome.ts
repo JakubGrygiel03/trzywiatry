@@ -11,7 +11,7 @@ export function scrollElementBelowChrome(
   behavior: ScrollBehavior = "smooth",
 ) {
   const top = el.getBoundingClientRect().top + window.scrollY - getSiteChromeOffset();
-  window.scrollTo({ top: Math.max(0, top), behavior });
+  window.scrollTo({ top: Math.max(0, top), left: 0, behavior });
 }
 
 /** Hash target (`#id`) or top of page, always clear of sticky nav. */

@@ -16,7 +16,7 @@ export function CartLineItem({ item }: { item: CartItem }) {
   const photo = getProductPhoto(product ?? { images: [] }, item.image);
 
   return (
-    <div className="flex gap-3">
+    <div className="flex items-start gap-3">
       <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-krem">
         {photo ? (
           <Image src={photo} alt={item.name} fill className="object-cover" sizes="80px" />
@@ -26,19 +26,15 @@ export function CartLineItem({ item }: { item: CartItem }) {
           <div className="h-full w-full bg-krem" />
         )}
       </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <p className="truncate text-sm">{item.name}</p>
-            <p className="text-xs text-szary">{item.variantTitle}</p>
-          </div>
-          <button type="button" onClick={() => removeItem(item.variantId)} aria-label="Usuń">
-            <X className="h-4 w-4 text-szary" />
-          </button>
+
+      <div className="min-w-0 flex-1 space-y-2">
+        <div>
+          <p className="truncate text-sm">{item.name}</p>
+          <p className="text-xs text-szary">{item.variantTitle}</p>
         </div>
-        <div className="mt-2 flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 rounded-full border border-czarny/10 px-2 py-1">
-            <button type="button" onClick={() => setQuantity(item.variantId, item.quantity - 1)}>
+            <button type="button" onClick={() => setQuantity(item.variantId, item.quantity - 1)} aria-label="Zmniejsz ilość">
               <Minus className="h-3 w-3" />
             </button>
             <span className="font-heading text-xs">{item.quantity}</span>
@@ -46,6 +42,7 @@ export function CartLineItem({ item }: { item: CartItem }) {
               type="button"
               disabled={item.quantity >= item.stockQuantity}
               onClick={() => setQuantity(item.variantId, item.quantity + 1)}
+              aria-label="Zwiększ ilość"
             >
               <Plus className="h-3 w-3" />
             </button>
@@ -53,6 +50,16 @@ export function CartLineItem({ item }: { item: CartItem }) {
           <p className="font-heading text-xs">{formatPLN(item.unitPriceInCents * item.quantity)}</p>
         </div>
       </div>
+
+      {/* Fixed right column — same X position on every line */}
+      <button
+        type="button"
+        onClick={() => removeItem(item.variantId)}
+        aria-label={`Usuń ${item.name}`}
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-szary transition-colors hover:bg-krem hover:text-czarny"
+      >
+        <X className="h-4 w-4" strokeWidth={1.75} />
+      </button>
     </div>
   );
 }

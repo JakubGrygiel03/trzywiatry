@@ -35,15 +35,18 @@ export function CartDrawer() {
   useEffect(() => {
     if (!isOpen) {
       document.body.style.removeProperty("overflow");
+      document.body.style.removeProperty("touch-action");
       return;
     }
     document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") closeCart();
     }
     window.addEventListener("keydown", onKeyDown);
     return () => {
       document.body.style.removeProperty("overflow");
+      document.body.style.removeProperty("touch-action");
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [isOpen, closeCart]);
@@ -67,7 +70,7 @@ export function CartDrawer() {
             role="dialog"
             aria-modal="true"
             aria-label="Koszyk"
-            className={`fixed inset-y-0 right-0 ${CART_Z} flex h-dvh w-full max-w-md flex-col bg-bialy shadow-[0_0_40px_rgb(1_1_1/0.08)]`}
+            className={`fixed inset-0 ${CART_Z} flex h-dvh w-full max-w-none flex-col bg-bialy shadow-[0_0_40px_rgb(1_1_1/0.08)] sm:inset-y-0 sm:left-auto sm:right-0 sm:max-w-md`}
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
