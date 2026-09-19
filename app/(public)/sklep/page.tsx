@@ -54,16 +54,25 @@ export default async function ShopPage({
   if (!lane) return <ShopHub />;
 
   const laneMeta = SHOP_LANES[lane];
-  const minZl = params.cena_od ? Number(params.cena_od) : undefined;
-  const maxZl = params.cena_do ? Number(params.cena_do) : undefined;
+  const rawMinZl = params.cena_od ? Number(params.cena_od) : undefined;
+  const rawMaxZl = params.cena_do ? Number(params.cena_do) : undefined;
+  const minZl =
+    rawMinZl != null && Number.isFinite(rawMinZl) ? Math.max(0, Math.floor(rawMinZl)) : undefined;
+  const maxZl =
+    rawMaxZl != null && Number.isFinite(rawMaxZl) ? Math.max(0, Math.floor(rawMaxZl)) : undefined;
+  const priceMin = minZl != null && maxZl != null ? Math.min(minZl, maxZl) : minZl;
+  const priceMax = minZl != null && maxZl != null ? Math.max(minZl, maxZl) : maxZl;
+  const capacityRaw = params.pojemnosc ? Number(params.pojemnosc) : undefined;
+  const capacity =
+    capacityRaw != null && Number.isFinite(capacityRaw) && capacityRaw > 0 ? capacityRaw : undefined;
 
   const filtered = filterCatalog({
-    capacity: params.pojemnosc ? Number(params.pojemnosc) : undefined,
+    capacity,
     domain,
     category: params.kategoria,
     domains: laneMeta.domains,
-    minPriceCents: minZl != null && !Number.isNaN(minZl) ? minZl * 100 : undefined,
-    maxPriceCents: maxZl != null && !Number.isNaN(maxZl) ? maxZl * 100 : undefined,
+    minPriceCents: priceMin != null ? priceMin * 100 : undefined,
+    maxPriceCents: priceMax != null ? priceMax * 100 : undefined,
   });
   const products = sortCatalog(filtered, params.sortuj);
 
@@ -107,9 +116,17 @@ export default async function ShopPage({
               <CatalogToolbar total={total} from={from} to={to} />
             </Suspense>
             {pageProducts.length === 0 ? (
-              <p className="rounded-[22px] border border-dashed border-czarny/15 bg-bialy/80 px-4 py-5 text-sm text-czarny/55">
-                Zdejmij jeden warunek z listy po lewej.
-              </p>
+              <div className="space-y-3 rounded-[22px] border border-dashed border-czarny/15 bg-bialy/80 px-4 py-5">
+                <p className="text-sm text-czarny/55">
+                  Brak produktów dla wybranych filtrów — lista jest pusta.
+                </p>
+                <a
+                  href={`/sklep?sklep=${lane}`}
+                  className="inline-flex font-heading text-[11px] uppercase tracking-[0.14em] text-czerwony underline decoration-czerwony/30 underline-offset-4"
+                >
+                  Wyczyść filtry
+                </a>
+              </div>
             ) : (
               <>
                 <div className="grid gap-x-5 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">

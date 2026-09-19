@@ -7,6 +7,7 @@ import {
   parseCustomerSessionValue,
   type CustomerUser,
 } from "@/lib/customer-auth";
+import { verifyCustomerSessionCookie } from "@/lib/customer-session-token";
 
 export { CUSTOMER_COOKIE };
 
@@ -31,6 +32,15 @@ export async function getCustomerSession(): Promise<CustomerUser | null> {
   const store = await cookies();
   const raw = store.get(CUSTOMER_COOKIE)?.value;
   return parseCustomerSessionValue(raw);
+}
+
+/**
+ * Nav chrome only — signed cookie check, no customers Supabase hydrate.
+ * Account routes should keep using getCustomerSession().
+ */
+export async function peekCustomerSession(): Promise<{ id: string } | null> {
+  const store = await cookies();
+  return verifyCustomerSessionCookie(store.get(CUSTOMER_COOKIE)?.value);
 }
 
 export async function requireCustomerSession() {

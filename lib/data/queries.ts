@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { capacityMatchesFilter } from "@/lib/constants";
 import { getProductUpsells } from "@/lib/data/recommendations";
 import {
   getRuntimeBlogPosts,
@@ -178,16 +179,16 @@ export function filterCatalog(filters: {
     if (filters.minPriceCents != null && product.priceInCents < filters.minPriceCents) return false;
     if (filters.maxPriceCents != null && product.priceInCents > filters.maxPriceCents) return false;
     if (filters.capacity) {
-      const sizes = [
-        product.capacityMl,
-        ...product.variants.map((variant) => variant.capacityMl),
-      ].filter((ml): ml is number => typeof ml === "number");
+      // Prefer product-level capacity (what the card represents). Variants only
+      // when the product has no size of its own — avoids glaze SKUs with a stray ml.
+      const sizes =
+        typeof product.capacityMl === "number"
+          ? [product.capacityMl]
+          : product.variants
+              .map((variant) => variant.capacityMl)
+              .filter((ml): ml is number => typeof ml === "number");
       if (sizes.length === 0) return false;
-      return sizes.some((ml) => {
-        if (filters.capacity === 400) return ml >= 400;
-        if (filters.capacity === 180) return ml >= 160 && ml <= 180;
-        return ml === filters.capacity;
-      });
+      return sizes.some((ml) => capacityMatchesFilter(ml, filters.capacity!));
     }
     return true;
   });

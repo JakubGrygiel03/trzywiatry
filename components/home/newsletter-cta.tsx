@@ -3,7 +3,7 @@ import { Reveal } from "@/components/motion/reveal";
 import { Container } from "@/components/ui/badge";
 import type { NewsletterPayload } from "@/lib/cms/home-layout";
 import { getSettings } from "@/lib/data/queries";
-import { interpolateStudioCopy } from "@/lib/data/settings";
+import { interpolatePublicStudioCopy } from "@/lib/data/settings";
 
 export function NewsletterCta({ payload }: { payload?: NewsletterPayload }) {
   const settings = getSettings();
@@ -43,7 +43,7 @@ export function NewsletterCta({ payload }: { payload?: NewsletterPayload }) {
                     {copy.title}
                   </h2>
                   <p className="text-sm leading-relaxed text-bialy md:text-base">
-                    {interpolateStudioCopy(copy.body, settings)}
+                    {interpolatePublicStudioCopy(copy.body, settings)}
                   </p>
                 </div>
                 <div className="rounded-2xl bg-bialy px-3.5 py-3.5 text-czarny shadow-sm md:px-4 md:py-4">

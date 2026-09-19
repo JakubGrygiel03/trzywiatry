@@ -18,7 +18,19 @@ export function getCachedContentPage<K extends ContentPageKey>(key: K): ContentO
   return readCached(key) ?? defaultContentOverlay(key);
 }
 
+/**
+ * Storefront read — memory after atelier hydrate (no extra Supabase round-trip).
+ * Kontakt / O nas / B2B were slow because every view re-fetched `page_layouts`.
+ */
 export const getContentPage = cache(async function getContentPage<K extends ContentPageKey>(
+  key: K,
+): Promise<ContentOverlayMap[K]> {
+  await ensureAtelierHydrated();
+  return getCachedContentPage(key);
+});
+
+/** Admin editor — pull latest overlay from Supabase when present. */
+export async function getContentPageFresh<K extends ContentPageKey>(
   key: K,
 ): Promise<ContentOverlayMap[K]> {
   await ensureAtelierHydrated();
@@ -28,7 +40,7 @@ export const getContentPage = cache(async function getContentPage<K extends Cont
     return remote;
   }
   return getCachedContentPage(key);
-});
+}
 
 export async function persistContentPage(key: ContentPageKey, overlay: ContentOverlayMap[ContentPageKey]) {
   const next = normalizeContentOverlay(key, overlay);

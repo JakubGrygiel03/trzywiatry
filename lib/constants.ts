@@ -26,6 +26,18 @@ export const CAPACITY_FILTERS = [
   { label: "400 ml+", value: 400, hint: "Misa / duży kubek" },
 ] as const;
 
+/** Whether a single capacity (ml) belongs to a sidebar chip value. */
+export function capacityMatchesFilter(ml: number, filterValue: number): boolean {
+  if (filterValue === 400) return ml >= 400;
+  // Flat white band — include nearby 200 ml czarki, never 250+.
+  if (filterValue === 180) return ml >= 160 && ml <= 200;
+  // Espresso / small cup — seed also has 100 & 120 ml.
+  if (filterValue === 80) return ml >= 60 && ml <= 120;
+  // Cappuccino band — seed has 220 ml next to 250.
+  if (filterValue === 250) return ml >= 220 && ml <= 270;
+  return ml === filterValue;
+}
+
 export const DOMAIN_LABELS: Record<ProductDomain, string> = {
   ceramika: "Ceramika",
   drewno: "Drewno",

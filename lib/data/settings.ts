@@ -1,4 +1,5 @@
 import { interpolateComponentCopy } from "@/lib/cms/site-components";
+import { scrubPublicPromoCopy } from "@/lib/cms/tokens";
 import type { StudioSettings } from "@/lib/types";
 
 export const defaultStudioSettings: StudioSettings = {
@@ -17,7 +18,7 @@ export const defaultStudioSettings: StudioSettings = {
   newsletterEyebrow: "Newsletter",
   newsletterTitle: "−15% na pierwsze naczynie",
   newsletterBody:
-    "Kod {code} przychodzi mailem. Zero spamu — nowe wypusty, kolekcje i przerwy twórcze.",
+    "Kod rabatowy przychodzi mailem. Zero spamu — nowe wypusty, kolekcje i przerwy twórcze.",
   newsletterFormLabel: "Podaj e-mail",
   newsletterButtonLabel: "Odbierz −15%",
 };
@@ -29,9 +30,18 @@ export function interpolatePromoCode(text: string, code?: string) {
   return interpolateComponentCopy(text, { code });
 }
 
+/** Emails / checkout — may include the live promo code. */
 export function interpolateStudioCopy(text: string, settings: StudioSettings) {
   return interpolateComponentCopy(text, {
     code: settings.promoCode,
     freeShippingThresholdCents: settings.freeShippingThresholdCents,
   });
+}
+
+/** Storefront copy — never leaks promoCode; only free-shipping token is filled. */
+export function interpolatePublicStudioCopy(text: string, settings: StudioSettings) {
+  const withShipping = interpolateComponentCopy(text, {
+    freeShippingThresholdCents: settings.freeShippingThresholdCents,
+  });
+  return scrubPublicPromoCopy(withShipping, settings.promoCode);
 }

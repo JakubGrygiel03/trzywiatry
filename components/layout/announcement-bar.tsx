@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { connection } from "next/server";
-import { interpolateStudioCopy } from "@/lib/data/settings";
+import { interpolatePublicStudioCopy } from "@/lib/data/settings";
 import { getSettings } from "@/lib/data/queries";
 import { buildVacationBannerMessage } from "@/lib/vacation-message";
 
@@ -14,7 +14,7 @@ export async function AnnouncementBar() {
   const isVacation = settings.announcementType === "vacation";
   const message = isVacation
     ? buildVacationBannerMessage(settings)
-    : interpolateStudioCopy(settings.announcementText, settings);
+    : interpolatePublicStudioCopy(settings.announcementText, settings);
 
   return (
     <div
@@ -23,12 +23,12 @@ export async function AnnouncementBar() {
     >
       <p className="mx-auto max-w-5xl font-heading text-[10px] uppercase leading-snug tracking-[0.08em] text-bialy/95 md:tracking-[0.16em]">
         {message}
-        {settings.promoCode && settings.announcementType === "promo" ? (
+        {settings.announcementType === "promo" ? (
           <>
             {" "}
-            · kod{" "}
+            ·{" "}
             <Link href="/sklep" className="text-ceglany underline decoration-ceglany/50 underline-offset-4">
-              {settings.promoCode}
+              Sklep
             </Link>
           </>
         ) : null}

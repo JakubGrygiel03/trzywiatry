@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function PriceFilter({
   floorZl,
@@ -17,8 +17,12 @@ export function PriceFilter({
 }) {
   const [minZl, setMinZl] = useState(initialMin);
   const [maxZl, setMaxZl] = useState(initialMax);
+  const minRef = useRef(initialMin);
+  const maxRef = useRef(initialMax);
 
   useEffect(() => {
+    minRef.current = initialMin;
+    maxRef.current = initialMax;
     setMinZl(initialMin);
     setMaxZl(initialMax);
   }, [initialMin, initialMax]);
@@ -36,6 +40,8 @@ export function PriceFilter({
 
   function commit(nextMin: number, nextMax: number) {
     const pair = clampPair(nextMin, nextMax);
+    minRef.current = pair.min;
+    maxRef.current = pair.max;
     setMinZl(pair.min);
     setMaxZl(pair.max);
     onCommit(pair.min, pair.max);
@@ -55,9 +61,13 @@ export function PriceFilter({
           max={ceilZl}
           value={minZl}
           aria-label="Minimalna cena"
-          onChange={(event) => setMinZl(Math.min(Number(event.target.value), maxZl))}
-          onMouseUp={() => commit(minZl, maxZl)}
-          onTouchEnd={() => commit(minZl, maxZl)}
+          onChange={(event) => {
+            const next = Math.min(Number(event.target.value), maxRef.current);
+            minRef.current = next;
+            setMinZl(next);
+          }}
+          onPointerUp={(event) => commit(Number(event.currentTarget.value), maxRef.current)}
+          onKeyUp={(event) => commit(Number(event.currentTarget.value), maxRef.current)}
           className="price-range absolute inset-0 z-20 w-full appearance-none bg-transparent"
         />
         <input
@@ -66,9 +76,13 @@ export function PriceFilter({
           max={ceilZl}
           value={maxZl}
           aria-label="Maksymalna cena"
-          onChange={(event) => setMaxZl(Math.max(Number(event.target.value), minZl))}
-          onMouseUp={() => commit(minZl, maxZl)}
-          onTouchEnd={() => commit(minZl, maxZl)}
+          onChange={(event) => {
+            const next = Math.max(Number(event.target.value), minRef.current);
+            maxRef.current = next;
+            setMaxZl(next);
+          }}
+          onPointerUp={(event) => commit(minRef.current, Number(event.currentTarget.value))}
+          onKeyUp={(event) => commit(minRef.current, Number(event.currentTarget.value))}
           className="price-range absolute inset-0 z-10 w-full appearance-none bg-transparent"
         />
       </div>
@@ -80,8 +94,12 @@ export function PriceFilter({
           value={minZl}
           min={floorZl}
           max={ceilZl}
-          onChange={setMinZl}
-          onCommit={() => commit(minZl, maxZl)}
+          onChange={(value) => {
+            const next = Math.min(value, maxRef.current);
+            minRef.current = next;
+            setMinZl(next);
+          }}
+          onCommit={(value) => commit(value, maxRef.current)}
         />
         <PriceField
           id="cena-do"
@@ -89,8 +107,12 @@ export function PriceFilter({
           value={maxZl}
           min={floorZl}
           max={ceilZl}
-          onChange={setMaxZl}
-          onCommit={() => commit(minZl, maxZl)}
+          onChange={(value) => {
+            const next = Math.max(value, minRef.current);
+            maxRef.current = next;
+            setMaxZl(next);
+          }}
+          onCommit={(value) => commit(minRef.current, value)}
         />
       </div>
     </div>
@@ -112,7 +134,7 @@ function PriceField({
   min: number;
   max: number;
   onChange: (value: number) => void;
-  onCommit: () => void;
+  onCommit: (value: number) => void;
 }) {
   return (
     <label htmlFor={id} className="flex h-10 items-center gap-1.5 rounded-full border border-szary bg-krem px-3">
@@ -126,7 +148,12 @@ function PriceField({
         value={value}
         aria-label={`${label} cena`}
         onChange={(event) => onChange(Number(event.target.value) || min)}
-        onBlur={onCommit}
+        onBlur={(event) => onCommit(Number(event.target.value) || min)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.currentTarget.blur();
+          }
+        }}
         className="w-full bg-transparent text-sm text-czarny outline-none"
       />
       <span className="text-xs text-czarny/45">zł</span>

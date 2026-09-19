@@ -1,6 +1,5 @@
 "use client";
 
-import { CmsTokenField } from "@/components/admin/cms-token-field";
 import { CtaFields } from "@/components/admin/home/home-field-bits";
 import { HomeBannerFields } from "@/components/admin/home/home-banner-fields";
 import { HomeGlazeFields } from "@/components/admin/home/home-glaze-fields";
@@ -97,13 +96,12 @@ function NewsletterFields({
       <AdminField label="Tytuł" htmlFor={`${section.id}-title`}>
         <AdminInput id={`${section.id}-title`} value={p.title} onChange={(e) => onChange({ ...section, payload: { ...p, title: e.target.value } })} />
       </AdminField>
-      <AdminField label="Tekst belki" htmlFor={`${section.id}-body`}>
-        <CmsTokenField
+      <AdminField label="Tekst belki" htmlFor={`${section.id}-body`} hint="Bez jawnego kodu — klient dostaje go tylko mailem po zapisie.">
+        <AdminTextarea
           id={`${section.id}-body`}
-          multiline
-          tokens={["code"]}
+          rows={3}
           value={p.body}
-          onChange={(body) => onChange({ ...section, payload: { ...p, body } })}
+          onChange={(e) => onChange({ ...section, payload: { ...p, body: e.target.value } })}
         />
       </AdminField>
       <div className="grid gap-4 sm:grid-cols-2">

@@ -88,9 +88,9 @@ export default async function ShopSettingsPage({
 
         <AdminFormSection title="Promocje i dostawa">
           <AdminField
-            label="Kod rabatowy (banner, newsletter i kasa)"
+            label="Kod rabatowy (e-mail newslettera i kasa)"
             htmlFor="promoCode"
-            hint="Zmiana tu podmienia {code} we wszystkich komponentach — nie wpisuj nazwy promocji w treść paska."
+            hint="Nie pokazujemy kodu na stronie — wychodzi tylko mailem po zapisie i działa w kasie. Nie wklejaj go do paska ani belki newslettera."
           >
             <AdminInput id="promoCode" name="promoCode" defaultValue={settings.promoCode} />
           </AdminField>

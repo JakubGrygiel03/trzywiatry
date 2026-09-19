@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/layout/logo";
+import { MailtoLink } from "@/components/layout/mailto-link";
 import { SITE } from "@/lib/constants";
 
 const helpLinks = [
@@ -14,7 +15,7 @@ const contactLink = helpLinks[3]!;
 
 function FooterLink({ href, children }: { href: string; children: string }) {
   return (
-    <Link href={href} className="transition-colors hover:text-czerwony">
+    <Link href={href} prefetch className="relative z-[1] transition-colors hover:text-czerwony">
       {children}
     </Link>
   );
@@ -28,15 +29,15 @@ export function Footer() {
     <footer className="footer-frame relative overflow-hidden border-t border-czarny/10 bg-bialy">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.05]"
+        className="pointer-events-none absolute inset-0 z-0 opacity-[0.04]"
         style={{
           backgroundImage: "url(/brand/wzory/a.png)",
           backgroundRepeat: "repeat",
-          backgroundSize: "360px auto",
+          backgroundSize: "280px auto",
         }}
       />
 
-      <div className="relative mx-auto flex max-w-7xl flex-col gap-4 px-6 py-6 md:px-14 lg:px-16 xl:px-20">
+      <div className="relative z-[1] mx-auto flex max-w-7xl flex-col gap-4 px-6 py-6 md:px-14 lg:px-16 xl:px-20">
         {/* Mobile: 1) FAQ/Pielęgnacja/Dostawa 2) Kontakt/mail/IG 3) logo → line. Desktop: logo | links. */}
         <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <nav
@@ -53,14 +54,12 @@ export function Footer() {
               </div>
               <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-center">
                 <FooterLink href={contactLink.href}>{contactLink.label}</FooterLink>
-                <a href={`mailto:${SITE.email}`} className="min-w-0 truncate transition-colors hover:text-czerwony">
-                  {SITE.email}
-                </a>
+                <MailtoLink email={SITE.email} className="min-w-0 truncate" />
                 <a
                   href={SITE.instagram}
                   target="_blank"
                   rel="noreferrer"
-                  className="shrink-0 transition-colors hover:text-czerwony"
+                  className="relative z-[1] shrink-0 transition-colors hover:text-czerwony"
                 >
                   Instagram
                 </a>
@@ -73,14 +72,12 @@ export function Footer() {
                   {link.label}
                 </FooterLink>
               ))}
-              <a href={`mailto:${SITE.email}`} className="transition-colors hover:text-czerwony">
-                {SITE.email}
-              </a>
+              <MailtoLink email={SITE.email} />
               <a
                 href={SITE.instagram}
                 target="_blank"
                 rel="noreferrer"
-                className="transition-colors hover:text-czerwony"
+                className="relative z-[1] transition-colors hover:text-czerwony"
               >
                 Instagram
               </a>

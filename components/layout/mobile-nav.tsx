@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SITE } from "@/lib/constants";
+import { MailtoLink } from "@/components/layout/mailto-link";
 import { drawerTransition, fadeTransition, motionEase } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
@@ -145,9 +146,7 @@ export function MobileNav({
                     Instagram
                   </a>
                   <span aria-hidden>·</span>
-                  <a href={`mailto:${SITE.email}`} className="truncate hover:text-czerwony">
-                    {SITE.email}
-                  </a>
+                  <MailtoLink email={SITE.email} className="truncate" />
                 </div>
               </motion.div>
             </div>

@@ -4,7 +4,6 @@ import { newsletterSchema } from "@/lib/validations/forms";
 import { addSubscriber } from "@/lib/mailerlite";
 import { saveAtelierSnapshot, ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 import { getRuntimeSettings, runtimeStore } from "@/lib/data/runtime-store";
-import { interpolateStudioCopy } from "@/lib/data/settings";
 import { renderEmailTemplate } from "@/lib/email/render";
 import { sendEmail } from "@/lib/resend";
 
@@ -39,7 +38,7 @@ export async function subscribeNewsletter(_: { ok: boolean; message: string }, f
   return {
     ok: true,
     message: code
-      ? interpolateStudioCopy("Kod {code} jest w drodze. Sprawdź skrzynkę. / Your code is on the way — check your inbox.", settings)
+      ? "Kod rabatowy jest w drodze mailem. Sprawdź skrzynkę. / Your discount code is on its way — check your inbox."
       : "Jesteś na liście. Sprawdź skrzynkę. / You're on the list — check your inbox.",
   };
 }

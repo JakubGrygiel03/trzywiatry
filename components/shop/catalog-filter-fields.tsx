@@ -81,10 +81,12 @@ export function CatalogFilterFields({
           initialMax={maxParam ? Number(maxParam) : ceilZl}
           onCommit={(minZl, maxZl) => {
             onPush((next) => {
-              if (minZl <= floorZl) next.delete("cena_od");
-              else next.set("cena_od", String(minZl));
-              if (maxZl >= ceilZl) next.delete("cena_do");
-              else next.set("cena_do", String(maxZl));
+              const lo = Math.min(minZl, maxZl);
+              const hi = Math.max(minZl, maxZl);
+              if (lo <= floorZl) next.delete("cena_od");
+              else next.set("cena_od", String(lo));
+              if (hi >= ceilZl) next.delete("cena_do");
+              else next.set("cena_do", String(hi));
             });
           }}
         />

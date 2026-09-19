@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getPublicNavLinks } from "@/lib/constants";
-import { getCustomerSession } from "@/lib/customer-session";
+import { peekCustomerSession } from "@/lib/customer-session";
 import { getSettings } from "@/lib/data/queries";
 import { CartTrigger } from "@/components/layout/cart-trigger";
 import { Logo } from "@/components/layout/logo";
@@ -9,7 +9,7 @@ import { MobileNav } from "@/components/layout/mobile-nav";
 export async function Navbar() {
   const settings = getSettings();
   const links = getPublicNavLinks(settings.workshopsEnabled);
-  const customer = await getCustomerSession();
+  const customer = await peekCustomerSession();
 
   return (
     <header className="site-chrome__nav border-b border-czarny/8" style={{ backgroundColor: "#ffffff" }}>

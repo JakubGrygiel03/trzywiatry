@@ -4,7 +4,7 @@ import { ContentPageEditor } from "@/components/admin/content-pages/content-page
 import { AdminAlert } from "@/components/admin/ui/admin-alert";
 import { AdminPageHeader } from "@/components/admin/ui/admin-page-header";
 import { CONTENT_PAGE_META, isContentPageKey } from "@/lib/cms/content-pages";
-import { getContentPage } from "@/lib/data/content-pages";
+import { getContentPageFresh } from "@/lib/data/content-pages";
 
 export default async function AdminContentPageEditor({
   params,
@@ -17,7 +17,7 @@ export default async function AdminContentPageEditor({
   const { zapisano, blad } = await searchParams;
   if (!isContentPageKey(key)) notFound();
 
-  const overlay = await getContentPage(key);
+  const overlay = await getContentPageFresh(key);
   const meta = CONTENT_PAGE_META[key];
 
   return (

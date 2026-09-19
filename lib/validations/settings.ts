@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { hasHardcodedPromo } from "@/lib/cms/tokens";
+import { revealsPromoOnStorefront } from "@/lib/cms/tokens";
 import { isoDateSchema, plainText, promoCodeSchema } from "@/lib/validations/safe-input";
 
 export const newsletterCmsSchema = z.object({
@@ -27,11 +27,11 @@ export const studioSettingsFormSchema = z
     workshopsEnabled: z.boolean(),
   })
   .superRefine((data, ctx) => {
-    if (hasHardcodedPromo(data.announcementText, data.promoCode)) {
+    if (revealsPromoOnStorefront(data.announcementText, data.promoCode)) {
       ctx.addIssue({
         code: "custom",
         path: ["announcementText"],
-        message: "W bannerze jest kod wpisany na sztywno. Wstaw pigułkę {code}.",
+        message: "Nie pokazuj kodu na pasku — klient dostaje go mailem. Zostaw −15% bez nazwy hasła.",
       });
     }
     if (data.vacationStart && data.vacationEnd && data.vacationEnd < data.vacationStart) {

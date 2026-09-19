@@ -82,8 +82,25 @@ if (!runtimeStore.contentPages) {
 
 // Old seed baked the campaign into the sentence — tokens + chip follow the admin field.
 const announcement = runtimeStore.settings.announcementText ?? "";
-if (announcement.includes("WIOSNA") || announcement.includes("hasło {code}")) {
+if (announcement.includes("WIOSNA") || announcement.includes("hasło {code}") || announcement.includes("{code}")) {
   runtimeStore.settings.announcementText = defaultStudioSettings.announcementText;
+}
+
+// Promo code must stay email-only — scrub legacy storefront copy that leaked {code}/WIOSNA.
+const newsletterBody = runtimeStore.settings.newsletterBody ?? "";
+if (newsletterBody.includes("{code}") || newsletterBody.includes("WIOSNA")) {
+  runtimeStore.settings.newsletterBody = defaultStudioSettings.newsletterBody;
+}
+if (Array.isArray(runtimeStore.homeLayout)) {
+  runtimeStore.homeLayout = runtimeStore.homeLayout.map((section) => {
+    if (section.type !== "newsletter") return section;
+    const body = section.payload.body ?? "";
+    if (!body.includes("{code}") && !body.includes("WIOSNA")) return section;
+    return {
+      ...section,
+      payload: { ...section.payload, body: defaultStudioSettings.newsletterBody },
+    };
+  });
 }
 
 if (!Array.isArray(runtimeStore.orders)) {

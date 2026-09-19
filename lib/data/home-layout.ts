@@ -12,7 +12,14 @@ export function getCachedHomeLayout(): HomeSection[] {
   return defaultHomeLayout();
 }
 
+/** Storefront — use atelier memory; skip a second `page_layouts` fetch on every home view. */
 export async function getHomeLayout(): Promise<HomeSection[]> {
+  await ensureAtelierHydrated();
+  return getCachedHomeLayout();
+}
+
+/** Admin home editor — refresh from Supabase when available. */
+export async function getHomeLayoutFresh(): Promise<HomeSection[]> {
   await ensureAtelierHydrated();
   const remote = await fetchHomeLayoutFromSupabase();
   if (remote) {

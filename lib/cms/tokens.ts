@@ -35,3 +35,26 @@ export function hasHardcodedPromo(text: string, promoCode?: string) {
   if (!code || code.length < 2) return false;
   return text.includes(code) && !text.includes("{code}");
 }
+
+/** True when storefront copy would leak the campaign code (token or literal). */
+export function revealsPromoOnStorefront(text: string, promoCode?: string) {
+  if (text.includes("{code}")) return true;
+  return hasHardcodedPromo(text, promoCode) || Boolean(promoCode && text.includes(promoCode));
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Public UI must never show the live promo code — it goes out only by email / checkout.
+ * Replaces {code} and any literal campaign string with a neutral phrase.
+ */
+export function scrubPublicPromoCopy(text: string, promoCode?: string) {
+  let out = text.replace(/\b[Kk]od\s*\{code\}/g, "Kod rabatowy").replaceAll("{code}", "rabatowy");
+  const code = promoCode?.trim();
+  if (code && code.length >= 2) {
+    out = out.replace(new RegExp(`\\b${escapeRegExp(code)}\\b`, "gi"), "rabatowy");
+  }
+  return out;
+}

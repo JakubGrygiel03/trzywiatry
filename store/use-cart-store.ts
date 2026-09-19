@@ -21,6 +21,43 @@ type CartState = {
   clear: () => void;
 };
 
+type PersistedCart = {
+  items: CartItem[];
+  hasGiftWrapping: boolean;
+  giftMessage: string;
+};
+
+/** Drop legacy keys that used to persist isOpen:true and trap the UI. */
+function scrubLegacyCartStorage() {
+  if (typeof window === "undefined") return;
+  try {
+    const legacyRaw = window.localStorage.getItem("trzywiatry-cart");
+    const hasV3 = window.localStorage.getItem("trzywiatry-cart-v3");
+    if (legacyRaw && !hasV3) {
+      const parsed = JSON.parse(legacyRaw) as {
+        state?: Partial<PersistedCart & { isOpen?: boolean }>;
+      };
+      const legacy = parsed.state ?? (parsed as Partial<PersistedCart>);
+      window.localStorage.setItem(
+        "trzywiatry-cart-v3",
+        JSON.stringify({
+          state: {
+            items: Array.isArray(legacy.items) ? legacy.items : [],
+            hasGiftWrapping: Boolean(legacy.hasGiftWrapping),
+            giftMessage: typeof legacy.giftMessage === "string" ? legacy.giftMessage : "",
+          },
+          version: 0,
+        }),
+      );
+    }
+    window.localStorage.removeItem("trzywiatry-cart");
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
+scrubLegacyCartStorage();
+
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
@@ -61,27 +98,38 @@ export const useCartStore = create<CartState>()(
         }),
       setGiftWrapping: (value) => set({ hasGiftWrapping: value, giftMessage: value ? get().giftMessage : "" }),
       setGiftMessage: (value) => set({ giftMessage: value }),
-      clear: () => set({ items: [], hasGiftWrapping: false, giftMessage: "" }),
+      clear: () => set({ items: [], hasGiftWrapping: false, giftMessage: "", isOpen: false }),
     }),
     {
-      name: "trzywiatry-cart",
-      version: 2,
-      // Never persist drawer open state — it trapped users after reload.
-      partialize: (state) => ({
+      // New key: old “trzywiatry-cart” could reopen the drawer forever via isOpen.
+      name: "trzywiatry-cart-v3",
+      version: 1,
+      partialize: (state): PersistedCart => ({
         items: state.items,
         hasGiftWrapping: state.hasGiftWrapping,
         giftMessage: state.giftMessage,
       }),
       migrate: (persisted) => {
-        const prev = (persisted ?? {}) as Partial<CartState>;
+        const raw = (persisted ?? {}) as Partial<PersistedCart & { isOpen?: boolean; state?: PersistedCart }>;
+        const saved = raw.state ?? raw;
         return {
-          items: prev.items ?? [],
-          hasGiftWrapping: prev.hasGiftWrapping ?? false,
-          giftMessage: prev.giftMessage ?? "",
+          items: Array.isArray(saved.items) ? saved.items : [],
+          hasGiftWrapping: Boolean(saved.hasGiftWrapping),
+          giftMessage: typeof saved.giftMessage === "string" ? saved.giftMessage : "",
+        } satisfies PersistedCart;
+      },
+      merge: (persisted, current) => {
+        const saved = (persisted ?? {}) as Partial<PersistedCart>;
+        return {
+          ...current,
+          items: Array.isArray(saved.items) ? saved.items : current.items,
+          hasGiftWrapping: typeof saved.hasGiftWrapping === "boolean" ? saved.hasGiftWrapping : current.hasGiftWrapping,
+          giftMessage: typeof saved.giftMessage === "string" ? saved.giftMessage : current.giftMessage,
+          isOpen: false,
         };
       },
-      onRehydrateStorage: () => (state) => {
-        state?.closeCart();
+      onRehydrateStorage: () => () => {
+        useCartStore.setState({ isOpen: false });
       },
     },
   ),

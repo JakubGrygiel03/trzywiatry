@@ -290,7 +290,7 @@ export function defaultNewsletterPayload(): NewsletterPayload {
   return {
     eyebrow: "Newsletter",
     title: "−15% na pierwsze naczynie",
-    body: "Kod {code} przychodzi mailem. Zero spamu — nowe wypusty, kolekcje i przerwy twórcze.",
+    body: "Kod rabatowy przychodzi mailem. Zero spamu — nowe wypusty, kolekcje i przerwy twórcze.",
     formLabel: "Podaj e-mail",
     buttonLabel: "Odbierz −15%",
   };

@@ -6,7 +6,7 @@ import {
   type HomeSection,
   type HomeSectionType,
 } from "@/lib/cms/home-layout";
-import { hasHardcodedPromo } from "@/lib/cms/tokens";
+import { revealsPromoOnStorefront } from "@/lib/cms/tokens";
 import { firstZodMessage, plainText, safeHrefSchema } from "@/lib/validations/safe-input";
 
 const ctaSchema = z.object({
@@ -325,8 +325,8 @@ export function explainHomeLayoutIssues(sections: unknown, promoCode?: string) {
   const parsed = homeLayoutSchema.safeParse(sections);
   if (!parsed.success) return firstZodMessage(parsed.error, "Sprawdź tytuły i linki w sekcjach.");
   const newsletter = parsed.data.find((section) => section.type === "newsletter");
-  if (newsletter?.type === "newsletter" && hasHardcodedPromo(newsletter.payload.body, promoCode)) {
-    return "W newsletterze jest kod wpisany na sztywno. Wstaw pigułkę {code}.";
+  if (newsletter?.type === "newsletter" && revealsPromoOnStorefront(newsletter.payload.body, promoCode)) {
+    return "Kod rabatowy ma iść tylko mailem — nie wpisuj go ani {code} w belce newslettera. Np. „Kod rabatowy przychodzi mailem…”.";
   }
   return null;
 }

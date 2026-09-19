@@ -2,7 +2,7 @@ import Link from "next/link";
 import { HomeLayoutEditor } from "@/components/admin/home/home-layout-editor";
 import { AdminAlert } from "@/components/admin/ui/admin-alert";
 import { AdminPageHeader } from "@/components/admin/ui/admin-page-header";
-import { getHomeLayout } from "@/lib/data/home-layout";
+import { getHomeLayoutFresh } from "@/lib/data/home-layout";
 import { getHeroPhotoOptions, getSettings } from "@/lib/data/queries";
 
 export default async function AdminHomeLayoutPage({
@@ -11,7 +11,7 @@ export default async function AdminHomeLayoutPage({
   searchParams: Promise<{ zapisano?: string; blad?: string }>;
 }) {
   const { zapisano, blad } = await searchParams;
-  const sections = await getHomeLayout();
+  const sections = await getHomeLayoutFresh();
   const promoCode = getSettings().promoCode;
 
   return (
