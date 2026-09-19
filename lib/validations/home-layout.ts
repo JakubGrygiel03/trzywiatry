@@ -69,11 +69,31 @@ export const homeSectionSchema = z.discriminatedUnion("type", [
       marginBottom: z.coerce.number().min(0).max(160),
       panelGap: z.coerce.number().min(0).max(24),
       panelInset: z.coerce.number().min(0).max(48).optional().default(0),
-      mobilePanel: z.coerce.number().int().min(0).max(2).optional().default(1),
+      mobilePanel: z
+        .coerce
+        .number()
+        .int()
+        .min(0)
+        .max(2)
+        .transform((value): 0 | 1 | 2 => (value === 0 || value === 2 ? value : 1))
+        .optional()
+        .default(1),
       tabletPanels: z
         .tuple([
-          z.coerce.number().int().min(0).max(2),
-          z.coerce.number().int().min(0).max(2),
+          z
+            .coerce
+            .number()
+            .int()
+            .min(0)
+            .max(2)
+            .transform((value): 0 | 1 | 2 => (value === 1 || value === 2 ? value : 0)),
+          z
+            .coerce
+            .number()
+            .int()
+            .min(0)
+            .max(2)
+            .transform((value): 0 | 1 | 2 => (value === 0 || value === 1 ? value : 2)),
         ])
         .optional()
         .default([0, 2]),
