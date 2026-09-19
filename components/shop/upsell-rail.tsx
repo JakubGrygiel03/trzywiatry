@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AtelierFrame } from "@/components/visual/atelier-frame";
 import { formatPLN } from "@/lib/format";
 import { getProductPhoto } from "@/lib/media";
+import { onProductNavigateClick } from "@/lib/scroll-to-top";
 import type { UpsellSuggestion } from "@/lib/data/recommendations";
 import { useCartStore } from "@/store/use-cart-store";
 
@@ -48,6 +49,9 @@ export function UpsellRail({
             >
               <Link
                 href={`/sklep/${product.slug}`}
+                scroll
+                prefetch
+                onClick={onProductNavigateClick}
                 className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-krem"
               >
                 {photo ? (
@@ -63,6 +67,9 @@ export function UpsellRail({
                   </p>
                   <Link
                     href={`/sklep/${product.slug}`}
+                    scroll
+                    prefetch
+                    onClick={onProductNavigateClick}
                     className="mt-0.5 block truncate text-sm font-medium leading-snug"
                   >
                     {product.name}

@@ -51,6 +51,12 @@ body {
   max-width: 100%;
 }
 
+/* Product PDP: image load must not yank scroll to the middle of the page. */
+.product-pdp,
+.overflow-anchor-none {
+  overflow-anchor: none;
+}
+
 /* Long CMS strings / images must not inflate the layout width. */
 .site-frame img,
 .site-frame video,

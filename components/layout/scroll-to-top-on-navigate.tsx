@@ -116,10 +116,15 @@ export function ScrollToTopOnNavigate() {
     }
 
     // Forward Link navigation — hammer top a few times (layout / images can fight one frame).
-    // Shop pagination (?strona=) especially tends to keep scroll at the bottom pager.
+    // Product PDP: tall gallery used to open mid-page on phones (scroll anchoring).
     forceTop();
     const frame = window.requestAnimationFrame(() => scrollToHashOrTop("auto"));
-    const delays = pathname.startsWith("/sklep") ? [0, 40, 100, 200] : [0, 80];
+    const isProductPdp = /^\/sklep\/[^/]+\/?$/.test(pathname);
+    const delays = isProductPdp
+      ? [0, 30, 80, 160, 320, 600]
+      : pathname.startsWith("/sklep")
+        ? [0, 40, 100, 200]
+        : [0, 80];
     const timers = delays.map((ms) =>
       window.setTimeout(() => {
         if (!window.location.hash) forceTop();

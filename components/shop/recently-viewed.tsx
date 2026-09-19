@@ -5,13 +5,13 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { SurfaceTile, SurfaceTileBody } from "@/components/ui/surface-tile";
 import { formatPLNExact } from "@/lib/format";
+import { onProductNavigateClick } from "@/lib/scroll-to-top";
 import { useRecentlyViewedStore } from "@/store/use-recently-viewed-store";
 
 export function RecentlyViewed({
   excludeId,
   limit = 3,
 }: {
-  /** Hide the product currently being viewed on PDP. */
   excludeId?: string;
   limit?: number;
 }) {
@@ -38,6 +38,9 @@ export function RecentlyViewed({
             <li key={item.id}>
               <Link
                 href={`/sklep/${item.slug}`}
+                scroll
+                prefetch
+                onClick={onProductNavigateClick}
                 className="group flex gap-3 rounded-xl border border-czarny/8 bg-krem/50 p-2.5 transition-colors hover:border-czerwony/40"
               >
                 <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-krem">

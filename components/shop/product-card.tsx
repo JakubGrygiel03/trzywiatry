@@ -1,6 +1,6 @@
 import Image from "next/image";
-import Link from "next/link";
 import { ProductCardCartButton } from "@/components/shop/product-card-cart-button";
+import { ProductNavigateLink } from "@/components/shop/product-navigate-link";
 import { PriceBubble } from "@/components/ui/badge";
 import { categoryFrame } from "@/lib/category-frame";
 import { variantColors } from "@/lib/product-variants";
@@ -43,7 +43,7 @@ export function ProductCard({
         frame.card,
       )}
     >
-      <Link href={`/sklep/${product.slug}`} prefetch className="block space-y-2">
+      <ProductNavigateLink href={`/sklep/${product.slug}`} className="block space-y-2">
         <div className={cn("relative aspect-square overflow-hidden bg-krem", frame.photo)}>
           {photo ? (
             <Image
@@ -78,7 +78,7 @@ export function ProductCard({
           ) : null}
           <PriceBubble>{formatPLN(product.priceInCents)}</PriceBubble>
         </div>
-      </Link>
+      </ProductNavigateLink>
       {status !== "sold_out" ? <ProductCardCartButton product={product} /> : null}
     </article>
   );

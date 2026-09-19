@@ -1,20 +1,22 @@
 /** Shared phone helpers for storefront forms (PL default, 9 national digits). */
 
+import {
+  findPhoneCountry,
+  PHONE_COUNTRIES,
+  type PhoneCountry,
+} from "@/lib/phone-countries";
+
+export type { PhoneCountry };
+export {
+  PHONE_COUNTRIES,
+  PHONE_COUNTRIES_SORTED,
+  filterPhoneCountries,
+  findPhoneCountry,
+} from "@/lib/phone-countries";
+
 export const NATIONAL_PHONE_DIGITS = 9;
 
-export const PHONE_COUNTRIES = [
-  { dial: "48", label: "Polska", hint: "+48" },
-  { dial: "49", label: "Niemcy", hint: "+49" },
-  { dial: "420", label: "Czechy", hint: "+420" },
-  { dial: "421", label: "Słowacja", hint: "+421" },
-  { dial: "380", label: "Ukraina", hint: "+380" },
-  { dial: "44", label: "Wielka Brytania", hint: "+44" },
-  { dial: "1", label: "USA / Kanada", hint: "+1" },
-  { dial: "33", label: "Francja", hint: "+33" },
-  { dial: "39", label: "Włochy", hint: "+39" },
-] as const;
-
-export type PhoneCountryDial = (typeof PHONE_COUNTRIES)[number]["dial"];
+export type PhoneCountryDial = string;
 
 /** Digits only, max 9 — display as 123-456-789. */
 export function formatNationalPhone(raw: string): string {
@@ -36,9 +38,12 @@ export function toE164(dial: string, nationalFormatted: string): string {
 }
 
 /** Split a stored E.164 / free-text phone into dial + national display. */
-export function splitPhone(value: string): { dial: string; national: string } {
+export function splitPhone(value: string): { dial: string; iso: string; national: string } {
   const trimmed = value.trim();
-  if (!trimmed) return { dial: "48", national: "" };
+  if (!trimmed) {
+    const pl = findPhoneCountry("48", "PL");
+    return { dial: pl.dial, iso: pl.iso, national: "" };
+  }
 
   const digits = trimmed.replace(/\D/g, "");
   const sorted = [...PHONE_COUNTRIES].sort((a, b) => b.dial.length - a.dial.length);
@@ -47,17 +52,19 @@ export function splitPhone(value: string): { dial: string; national: string } {
     if (digits.startsWith(country.dial) && digits.length > country.dial.length) {
       return {
         dial: country.dial,
+        iso: country.iso,
         national: formatNationalPhone(digits.slice(country.dial.length)),
       };
     }
   }
 
-  // Bare PL mobile (9 digits, often starts with 5/6/7/8)
   if (digits.length === NATIONAL_PHONE_DIGITS) {
-    return { dial: "48", national: formatNationalPhone(digits) };
+    const pl = findPhoneCountry("48", "PL");
+    return { dial: pl.dial, iso: pl.iso, national: formatNationalPhone(digits) };
   }
 
-  return { dial: "48", national: formatNationalPhone(digits) };
+  const pl = findPhoneCountry("48", "PL");
+  return { dial: pl.dial, iso: pl.iso, national: formatNationalPhone(digits) };
 }
 
 /** Human-readable phone for emails / admin: +48 123 456 789 */

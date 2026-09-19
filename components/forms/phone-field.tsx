@@ -1,12 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { CountryDialPicker } from "@/components/forms/country-dial-picker";
 import { Input, Label } from "@/components/ui/field";
 import {
   formatNationalPhone,
   nationalDigitsOnly,
   phoneLiveError,
-  PHONE_COUNTRIES,
   splitPhone,
   toE164,
   NATIONAL_PHONE_DIGITS,
@@ -33,6 +33,7 @@ export function PhoneField({
   labelClassName,
 }: PhoneFieldProps) {
   const initial = useMemo(() => splitPhone(defaultValue), [defaultValue]);
+  const [iso, setIso] = useState(initial.iso);
   const [dial, setDial] = useState(initial.dial);
   const [national, setNational] = useState(initial.national);
   const [touched, setTouched] = useState(false);
@@ -51,29 +52,15 @@ export function PhoneField({
       </Label>
 
       <div className="flex gap-2">
-        <label className="sr-only" htmlFor={`${name}-dial`}>
-          Kod kraju
-        </label>
-        <select
-          id={`${name}-dial`}
-          value={dial}
-          onChange={(event) => {
-            setDial(event.target.value);
+        <CountryDialPicker
+          valueIso={iso}
+          onChange={(country) => {
+            setIso(country.iso);
+            setDial(country.dial);
             setTouched(true);
           }}
-          onBlur={() => setTouched(true)}
-          className={cn(
-            "w-[7.5rem] shrink-0 rounded-2xl border border-czarny/10 bg-bialy px-2 text-sm outline-none focus:border-czerwony sm:w-[9rem]",
-            inputClassName ?? "h-11",
-          )}
-          aria-label="Kod kraju"
-        >
-          {PHONE_COUNTRIES.map((country) => (
-            <option key={country.dial} value={country.dial}>
-              {country.hint} · {country.label}
-            </option>
-          ))}
-        </select>
+          buttonClassName={inputClassName}
+        />
 
         <Input
           id={`${name}-national`}
@@ -104,7 +91,7 @@ export function PhoneField({
       <input type="hidden" name={name} value={required || digits.length > 0 ? e164 : ""} readOnly />
 
       <p id={`${name}-hint`} className="text-xs text-czarny/45">
-        Wybierz kierunek (domyślnie Polska +48), potem {NATIONAL_PHONE_DIGITS} cyfr z kreskami co trzy.
+        Wybierz kraj (domyślnie Polska +48) — możesz wyszukać po nazwie — potem {NATIONAL_PHONE_DIGITS} cyfr.
       </p>
       {error ? (
         <p id={`${name}-error`} className="text-xs text-czerwony" role="alert">
