@@ -1,4 +1,4 @@
-import { CheckoutForm } from "@/components/checkout/checkout-form";
+import { CheckoutGate } from "@/components/checkout/checkout-gate";
 import { SurfacePageIntro } from "@/components/layout/surface-page";
 import { Container } from "@/components/ui/badge";
 import { SurfaceTile, SurfaceTileBody } from "@/components/ui/surface-tile";
@@ -40,7 +40,7 @@ export default async function CheckoutPage() {
             </SurfaceTileBody>
           </SurfaceTile>
         ) : null}
-        <CheckoutForm
+        <CheckoutGate
           defaultEmail={customer?.email ?? ""}
           defaultName={customer?.name ?? ""}
           paymentsLive={hasP24Credentials()}

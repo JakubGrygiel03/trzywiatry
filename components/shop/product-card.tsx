@@ -16,10 +16,13 @@ export function ProductCard({
   framed = false,
   /** Cream on white home panels; white on cream shop canvas. */
   tone = "paper",
+  /** Eager-load above-the-fold photos so the next row is not a blank cream tile. */
+  imagePriority = false,
 }: {
   product: Product;
   framed?: boolean;
   tone?: "paper" | "cream";
+  imagePriority?: boolean;
 }) {
   const stock = product.variants.reduce((sum, variant) => {
     if (!variant.isAvailable) return sum;
@@ -40,7 +43,7 @@ export function ProductCard({
         frame.card,
       )}
     >
-      <Link href={`/sklep/${product.slug}`} className="block space-y-2">
+      <Link href={`/sklep/${product.slug}`} prefetch className="block space-y-2">
         <div className={cn("relative aspect-square overflow-hidden bg-krem", frame.photo)}>
           {photo ? (
             <Image
@@ -49,6 +52,9 @@ export function ProductCard({
               fill
               className="img-hover-soft object-cover will-change-transform"
               sizes="(max-width: 768px) 50vw, 33vw"
+              priority={imagePriority}
+              loading={imagePriority ? "eager" : "lazy"}
+              decoding="async"
             />
           ) : null}
           {framed ? (

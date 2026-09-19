@@ -27,19 +27,21 @@ type PersistedCart = {
   giftMessage: string;
 };
 
+const CART_KEY = "trzywiatry-cart-v3";
+
 /** Drop legacy keys that used to persist isOpen:true and trap the UI. */
 function scrubLegacyCartStorage() {
   if (typeof window === "undefined") return;
   try {
     const legacyRaw = window.localStorage.getItem("trzywiatry-cart");
-    const hasV3 = window.localStorage.getItem("trzywiatry-cart-v3");
+    const hasV3 = window.localStorage.getItem(CART_KEY);
     if (legacyRaw && !hasV3) {
       const parsed = JSON.parse(legacyRaw) as {
         state?: Partial<PersistedCart & { isOpen?: boolean }>;
       };
       const legacy = parsed.state ?? (parsed as Partial<PersistedCart>);
       window.localStorage.setItem(
-        "trzywiatry-cart-v3",
+        CART_KEY,
         JSON.stringify({
           state: {
             items: Array.isArray(legacy.items) ? legacy.items : [],
@@ -56,7 +58,48 @@ function scrubLegacyCartStorage() {
   }
 }
 
-scrubLegacyCartStorage();
+function readPersistedCart(): PersistedCart {
+  if (typeof window === "undefined") {
+    return { items: [], hasGiftWrapping: false, giftMessage: "" };
+  }
+  try {
+    const raw = window.localStorage.getItem(CART_KEY);
+    if (!raw) return { items: [], hasGiftWrapping: false, giftMessage: "" };
+    const parsed = JSON.parse(raw) as { state?: Partial<PersistedCart> } & Partial<PersistedCart>;
+    const saved = parsed.state ?? parsed;
+    return {
+      items: Array.isArray(saved.items) ? saved.items : [],
+      hasGiftWrapping: Boolean(saved.hasGiftWrapping),
+      giftMessage: typeof saved.giftMessage === "string" ? saved.giftMessage : "",
+    };
+  } catch {
+    return { items: [], hasGiftWrapping: false, giftMessage: "" };
+  }
+}
+
+/** Sync read of persisted lines — used to skip checkout chrome when the cart is empty. */
+export function peekPersistedCartItems(): CartItem[] {
+  return readPersistedCart().items;
+}
+
+let didSyncHydrate = false;
+
+/**
+ * Apply localStorage into the store synchronously (no async persist race).
+ * Safe to call many times — runs once per page load.
+ */
+export function ensureCartHydratedSync() {
+  if (typeof window === "undefined" || didSyncHydrate) return;
+  didSyncHydrate = true;
+  scrubLegacyCartStorage();
+  const saved = readPersistedCart();
+  useCartStore.setState({
+    items: saved.items,
+    hasGiftWrapping: saved.hasGiftWrapping,
+    giftMessage: saved.giftMessage,
+    isOpen: false,
+  });
+}
 
 export const useCartStore = create<CartState>()(
   persist(
@@ -101,9 +144,10 @@ export const useCartStore = create<CartState>()(
       clear: () => set({ items: [], hasGiftWrapping: false, giftMessage: "", isOpen: false }),
     }),
     {
-      // New key: old “trzywiatry-cart” could reopen the drawer forever via isOpen.
-      name: "trzywiatry-cart-v3",
+      name: CART_KEY,
       version: 1,
+      // Next.js: we hydrate sync ourselves — avoid async persist race + long “Ładowanie…”.
+      skipHydration: true,
       partialize: (state): PersistedCart => ({
         items: state.items,
         hasGiftWrapping: state.hasGiftWrapping,
@@ -128,12 +172,14 @@ export const useCartStore = create<CartState>()(
           isOpen: false,
         };
       },
-      onRehydrateStorage: () => () => {
-        useCartStore.setState({ isOpen: false });
-      },
     },
   ),
 );
+
+// Client bundle: fill cart before first React paint of cart UI.
+if (typeof window !== "undefined") {
+  ensureCartHydratedSync();
+}
 
 export function cartSubtotal(items: CartItem[]) {
   return items.reduce((sum, item) => sum + item.unitPriceInCents * item.quantity, 0);

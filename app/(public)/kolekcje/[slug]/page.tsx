@@ -40,8 +40,8 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
         <Container className="space-y-12">
           <SectionHeading description={collection.description} title="Naczynia w tym ogniu" />
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
+            {products.map((product, index) => (
+              <ProductCard key={product.id} product={product} imagePriority={index < 6} />
             ))}
           </div>
         </Container>

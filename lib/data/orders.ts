@@ -8,7 +8,9 @@ export function orderBelongsToCustomer(
   order: StoredOrder,
   user: { id: string; email: string },
 ) {
-  if (order.userId) return order.userId === user.id;
+  if (order.userId && order.userId === user.id) return true;
+  // Legacy / guest checkouts with the same e-mail still show under the account.
+  if (!order.userId && order.customerEmail.toLowerCase() === user.email.toLowerCase()) return true;
   return false;
 }
 

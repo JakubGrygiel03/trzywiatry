@@ -12,7 +12,7 @@ export const drawerTransition = {
 };
 
 export const revealTransition = {
-  duration: 0.35,
+  duration: 0.22,
   ease: motionEase,
 };
 
@@ -22,4 +22,12 @@ export const crossfadeTransition = {
   ease: motionEase,
 };
 
-export const revealViewport = { once: true, amount: 0.15, margin: "0px 0px -40px 0px" as const };
+/**
+ * Reveal early — positive bottom margin grows the “in view” zone below the fold
+ * so the next row is already visible before the customer thinks the list ended.
+ */
+export const revealViewport = {
+  once: true,
+  amount: 0.01,
+  margin: "0px 0px 35% 0px" as const,
+};

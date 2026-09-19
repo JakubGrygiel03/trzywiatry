@@ -9,10 +9,9 @@ import { CartLineItem } from "@/components/cart/cart-line-item";
 import { CartUpsell } from "@/components/cart/cart-upsell";
 import { FreeShippingMeter, GiftWrappingCard } from "@/components/cart/gift-and-shipping";
 import { useSiteSettings } from "@/components/cms/site-settings-provider";
-import { AtelierFrame } from "@/components/visual/atelier-frame";
 import { drawerTransition, fadeTransition } from "@/lib/motion";
 import { formatPLN } from "@/lib/format";
-import { cartGiftWrapCost, cartSubtotal, useCartStore } from "@/store/use-cart-store";
+import { cartGiftWrapCost, cartSubtotal, ensureCartHydratedSync, useCartStore } from "@/store/use-cart-store";
 
 /** Above sticky chrome (60) and cookie bar (90). */
 const CART_Z = "z-[100]";
@@ -27,8 +26,9 @@ export function CartDrawer() {
   const gift = cartGiftWrapCost(hasGiftWrapping, giftWrapPriceCents);
   const reduceMotion = useReducedMotion();
 
-  // Hard reset: never boot with a leftover open drawer (old localStorage / HMR).
+  // Hard reset drawer open flag only — cart lines hydrate sync from localStorage.
   useEffect(() => {
+    ensureCartHydratedSync();
     useCartStore.setState({ isOpen: false });
   }, []);
 
@@ -95,12 +95,9 @@ export function CartDrawer() {
             </div>
             <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-6">
               {items.length === 0 ? (
-                <div className="space-y-4">
-                  <AtelierFrame kind="cup" glaze="mist" className="aspect-square min-h-[12rem]" />
-                  <p className="text-sm leading-relaxed text-szary">
-                    Koszyk jest pusty. Wpadnij do sklepu po czarkę albo deskę.
-                  </p>
-                </div>
+                <p className="text-sm leading-relaxed text-szary">
+                  Koszyk jest pusty. Wpadnij do sklepu po czarkę albo deskę.
+                </p>
               ) : (
                 items.map((item) => <CartLineItem key={item.variantId} item={item} />)
               )}
@@ -113,16 +110,30 @@ export function CartDrawer() {
               ) : null}
             </div>
             <div className="shrink-0 space-y-3 border-t border-czarny/8 px-6 py-5">
-              <div className="flex justify-between text-sm">
-                <span>Suma częściowa</span>
-                <span className="font-heading">{formatPLN(subtotal + gift)}</span>
-              </div>
-              <Button asChild className="w-full" onClick={closeCart}>
-                <Link href="/zamowienie">Do kasy</Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full" onClick={closeCart}>
-                <Link href="/koszyk">Pełny koszyk</Link>
-              </Button>
+              {items.length > 0 ? (
+                <>
+                  <div className="flex justify-between text-sm">
+                    <span>Suma częściowa</span>
+                    <span className="font-heading">{formatPLN(subtotal + gift)}</span>
+                  </div>
+                  <Button asChild className="w-full" onClick={closeCart}>
+                    <Link href="/zamowienie" prefetch>
+                      Do kasy
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="w-full" onClick={closeCart}>
+                    <Link href="/koszyk" prefetch>
+                      Pełny koszyk
+                    </Link>
+                  </Button>
+                </>
+              ) : (
+                <Button asChild className="w-full" onClick={closeCart}>
+                  <Link href="/sklep" prefetch>
+                    Przejdź do sklepu
+                  </Link>
+                </Button>
+              )}
             </div>
           </motion.aside>
         </>

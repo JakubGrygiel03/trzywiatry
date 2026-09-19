@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { requestCustomerPasswordReset, type AccountFormState } from "@/app/actions/account";
+import { EmailField } from "@/components/forms/email-field";
 import { Button } from "@/components/ui/button";
-import { Input, Label } from "@/components/ui/field";
 
 const initial: AccountFormState = { ok: false, message: "" };
 
@@ -12,11 +12,8 @@ export function CustomerForgotPasswordForm() {
   const [state, action, pending] = useActionState(requestCustomerPasswordReset, initial);
 
   return (
-    <form action={action} className="space-y-5">
-      <div className="space-y-2">
-        <Label htmlFor="email">E-mail konta</Label>
-        <Input id="email" name="email" type="email" autoComplete="email" required />
-      </div>
+    <form action={action} className="space-y-5" noValidate>
+      <EmailField name="email" label="E-mail konta" placeholder="jan@example.pl" />
       <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Wysyłam…" : "Wyślij link resetu"}
       </Button>

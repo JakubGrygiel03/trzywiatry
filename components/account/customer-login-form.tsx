@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { LoginFormShell } from "@/components/forms/login-form-shell";
+import { EmailField } from "@/components/forms/email-field";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/field";
 import { cn } from "@/lib/utils";
@@ -21,19 +24,14 @@ export function CustomerLoginForm({ error, defaultEmail = "" }: { error?: string
         emptyMessage="Uzupełnij e-mail i hasło."
         className="space-y-5"
       >
-        <div className="space-y-2">
-          <Label htmlFor="email" className="text-czerwony/80">
-            E-mail
-          </Label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            defaultValue={defaultEmail}
-            className={cn(creamField)}
-          />
-        </div>
+        <EmailField
+          name="email"
+          label="E-mail"
+          defaultValue={defaultEmail}
+          placeholder="jan@example.pl"
+          inputClassName={creamField}
+          labelClassName="text-czerwony/80"
+        />
         <div className="space-y-2">
           <Label htmlFor="password" className="text-czerwony/80">
             Hasło

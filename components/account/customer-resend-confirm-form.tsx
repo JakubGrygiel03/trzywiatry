@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { requestCustomerEmailConfirm, type AccountFormState } from "@/app/actions/account";
+import { EmailField } from "@/components/forms/email-field";
 import { Button } from "@/components/ui/button";
-import { Input, Label } from "@/components/ui/field";
 
 const initial: AccountFormState = { ok: false, message: "" };
 
@@ -18,24 +18,19 @@ export function CustomerResendConfirmForm({
   const [state, action, pending] = useActionState(requestCustomerEmailConfirm, initial);
 
   return (
-    <form action={action} className="space-y-5">
+    <form action={action} className="space-y-5" noValidate>
       {firstMailFailed ? (
         <p className="rounded-xl bg-czerwony/10 px-4 py-3 text-sm text-czarny">
           Pierwszy mail nie wyszedł (Resend w trybie testowym). Wyślij link ponownie — lokalnie pokażemy go też na
           stronie.
         </p>
       ) : null}
-      <div className="space-y-2">
-        <Label htmlFor="email">E-mail z rejestracji</Label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-          defaultValue={defaultEmail}
-        />
-      </div>
+      <EmailField
+        name="email"
+        label="E-mail z rejestracji"
+        defaultValue={defaultEmail}
+        placeholder="jan@example.pl"
+      />
       <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Wysyłam…" : "Nie dostałem maila — wyślij ponownie"}
       </Button>

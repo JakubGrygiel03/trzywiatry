@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { bi } from "@/lib/i18n/public";
+import { NATIONAL_PHONE_DIGITS, PHONE_COUNTRIES } from "@/lib/phone";
 
 const CONTROL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F]/;
 const HTML_MARK = /[<>]/;
@@ -71,16 +72,31 @@ export const emailSchema = z
   .max(120, bi("E-mail jest za długi.", "Email is too long."))
   .email(bi("Podaj prawidłowy e-mail.", "Enter a valid email."));
 
-/** E.164-ish: country code welcome, Polish digits not required. */
+/** E.164 from PhoneField (+48 + 9 national digits). Also accepts spaced/dashed input. */
 export const phoneSchema = z
   .string()
   .trim()
-  .max(24, bi("Numer jest za długi.", "Phone number is too long."))
-  .refine((value) => /^[+]?[\d\s()./-]{8,24}$/.test(value), bi("Tylko cyfry, spacje i +.", "Use digits, spaces and + only."))
-  .refine((value) => {
-    const digits = value.replace(/\D/g, "");
-    return digits.length >= 8 && digits.length <= 15;
-  }, bi("Podaj numer z kierunkiem, np. +48 123 456 789.", "Include country code, e.g. +48 123 456 789."));
+  .transform((value) => value.replace(/[\s()./-]/g, ""))
+  .refine((value) => /^\+\d{10,15}$/.test(value), {
+    message: bi("Podaj numer z kierunkiem, np. +48 123 456 789.", "Include country code, e.g. +48 123 456 789."),
+  })
+  .refine(
+    (value) => {
+      const digits = value.slice(1);
+      const sorted = [...PHONE_COUNTRIES].sort((a, b) => b.dial.length - a.dial.length);
+      for (const country of sorted) {
+        if (!digits.startsWith(country.dial)) continue;
+        return digits.length === country.dial.length + NATIONAL_PHONE_DIGITS;
+      }
+      return false;
+    },
+    {
+      message: bi(
+        "Numer krajowy: dokładnie 9 cyfr (np. 123-456-789).",
+        "National number: exactly 9 digits (e.g. 123-456-789).",
+      ),
+    },
+  );
 
 export const taxIdSchema = z
   .string()

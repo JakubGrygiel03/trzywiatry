@@ -3,6 +3,9 @@
 import { X } from "lucide-react";
 import { useActionState, useEffect, useState } from "react";
 import { submitB2BInquiry, type B2BFormState } from "@/app/actions/b2b";
+import { EmailField } from "@/components/forms/email-field";
+import { PhoneField } from "@/components/forms/phone-field";
+import { TextField } from "@/components/forms/text-field";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea } from "@/components/ui/field";
 
@@ -26,7 +29,6 @@ export function B2BForm({ intro }: { intro?: string }) {
     };
   }, [dialogOpen]);
 
-  // Remount with restored defaults after error; clear only after success.
   const formKey = state.ok
     ? `ok-${state.message}`
     : values
@@ -42,7 +44,11 @@ export function B2BForm({ intro }: { intro?: string }) {
           </p>
         ) : null}
         <div className="grid gap-5 md:grid-cols-2">
-          <Field name="companyName" label="Nazwa firmy / Company" defaultValue={values?.companyName} />
+          <TextField
+            name="companyName"
+            label="Nazwa firmy / Company"
+            defaultValue={values?.companyName}
+          />
           <Field
             name="nip"
             label="NIP / VAT"
@@ -50,24 +56,13 @@ export function B2BForm({ intro }: { intro?: string }) {
             required={false}
             defaultValue={values?.nip}
           />
-          <Field
+          <TextField
             name="contactPerson"
             label="Osoba kontaktowa / Contact"
             defaultValue={values?.contactPerson}
           />
-          <Field
-            name="email"
-            label="E-mail"
-            type="email"
-            placeholder="you@email.com"
-            defaultValue={values?.email}
-          />
-          <Field
-            name="phone"
-            label="Telefon / Phone"
-            placeholder="+49 151 0000000"
-            defaultValue={values?.phone}
-          />
+          <EmailField name="email" label="E-mail" defaultValue={values?.email} placeholder="jan@firma.pl" />
+          <PhoneField name="phone" label="Telefon / Phone" defaultValue={values?.phone} />
           <Field
             name="estimatedQuantity"
             label="Szacowana ilość / Quantity"

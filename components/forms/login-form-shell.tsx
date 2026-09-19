@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent, type ReactNode } from "react";
+import { emailLiveError } from "@/lib/validations/live-fields";
 
 export function LoginFormShell({
   action,
@@ -13,24 +14,30 @@ export function LoginFormShell({
   className?: string;
   children: ReactNode;
 }) {
-  const [emptyError, setEmptyError] = useState("");
+  const [formError, setFormError] = useState("");
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     const data = new FormData(event.currentTarget);
     const email = String(data.get("email") ?? "").trim();
     const password = String(data.get("password") ?? "");
-    if (!email || !password) {
+    const emailErr = emailLiveError(email, { required: true, touched: true });
+    if (emailErr) {
       event.preventDefault();
-      setEmptyError(emptyMessage);
+      setFormError(emailErr);
       return;
     }
-    setEmptyError("");
+    if (!password) {
+      event.preventDefault();
+      setFormError(emptyMessage);
+      return;
+    }
+    setFormError("");
   }
 
   return (
     <form action={action} method="post" noValidate className={className} onSubmit={onSubmit}>
       {children}
-      {emptyError ? <p className="text-sm text-czerwony">{emptyError}</p> : null}
+      {formError ? <p className="text-sm text-czerwony">{formError}</p> : null}
     </form>
   );
 }

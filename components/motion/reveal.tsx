@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { revealTransition, revealViewport } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
-/** Soft fade + slight rise on enter — for section presence, not decoration. */
+/** Soft fade + slight rise — triggers early so lists never look “empty below”. */
 export function Reveal({
   children,
   className,
@@ -24,10 +24,10 @@ export function Reveal({
   return (
     <motion.div
       className={cn(className)}
-      initial={{ opacity: 0, y: 6 }}
+      initial={{ opacity: 0.35, y: 8 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={revealViewport}
-      transition={{ ...revealTransition, delay }}
+      transition={{ ...revealTransition, delay: Math.min(delay, 0.08) }}
     >
       {children}
     </motion.div>

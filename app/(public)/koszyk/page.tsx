@@ -6,6 +6,7 @@ import { CartStockNotice } from "@/components/cart/cart-stock-notice";
 import { CartUpsell } from "@/components/cart/cart-upsell";
 import { FreeShippingMeter, GiftWrappingCard } from "@/components/cart/gift-and-shipping";
 import { useSiteSettings } from "@/components/cms/site-settings-provider";
+import { useCartEmptyFast } from "@/hooks/use-cart-hydration";
 import { SurfacePageIntro } from "@/components/layout/surface-page";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/badge";
@@ -16,6 +17,7 @@ import { cartGiftWrapCost, cartSubtotal, useCartStore } from "@/store/use-cart-s
 export default function CartPage() {
   const items = useCartStore((state) => state.items);
   const hasGiftWrapping = useCartStore((state) => state.hasGiftWrapping);
+  const { ready, empty } = useCartEmptyFast();
   const { giftWrapPriceCents } = useSiteSettings();
   const subtotal = cartSubtotal(items);
   const gift = cartGiftWrapCost(hasGiftWrapping, giftWrapPriceCents);
@@ -24,12 +26,20 @@ export default function CartPage() {
     <div className="py-8 md:py-10">
       <Container className="space-y-4 md:space-y-5">
         <SurfacePageIntro eyebrow="Koszyk" title="Twoje naczynia" />
-        {items.length === 0 ? (
+        {!ready ? (
+          <SurfaceTile>
+            <SurfaceTileBody>
+              <div className="h-4 w-40 animate-pulse rounded-full bg-czarny/8" aria-hidden />
+            </SurfaceTileBody>
+          </SurfaceTile>
+        ) : empty ? (
           <SurfaceTile>
             <SurfaceTileBody className="space-y-4">
               <p className="text-[15px] text-czarny/60">Koszyk jest pusty.</p>
               <Button asChild variant="secondary">
-                <Link href="/sklep">Przejdź do sklepu</Link>
+                <Link href="/sklep" prefetch>
+                  Przejdź do sklepu
+                </Link>
               </Button>
             </SurfaceTileBody>
           </SurfaceTile>
@@ -55,7 +65,9 @@ export default function CartPage() {
                   <span className="font-heading">{formatPLN(subtotal + gift)}</span>
                 </div>
                 <Button asChild className="w-full">
-                  <Link href="/zamowienie">Przejdź do kasy</Link>
+                  <Link href="/zamowienie" prefetch>
+                    Przejdź do kasy
+                  </Link>
                 </Button>
               </SurfaceTileBody>
             </SurfaceTile>

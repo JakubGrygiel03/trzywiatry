@@ -1,5 +1,6 @@
 import { Mail, MapPin, Phone } from "lucide-react";
 import { FacebookIcon, InstagramIcon } from "@/components/brand/social-icons";
+import { OutboundSocialLink } from "@/components/layout/outbound-social-link";
 import { SITE } from "@/lib/constants";
 import type { ReactNode } from "react";
 
@@ -28,6 +29,9 @@ function Detail({
   );
 }
 
+const socialBtn =
+  "inline-flex h-11 items-center justify-center gap-2 rounded-full border border-czarny/10 bg-bialy text-czarny transition-colors hover:border-czerwony hover:text-czerwony";
+
 export function ContactDirect() {
   return (
     <div className="flex h-full flex-col">
@@ -53,24 +57,14 @@ export function ContactDirect() {
       </div>
 
       <div className="mt-8 grid grid-cols-2 gap-3">
-        <a
-          href={SITE.instagram}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-czarny/10 bg-bialy text-czarny transition-colors hover:border-czerwony hover:text-czerwony"
-        >
+        <OutboundSocialLink href={SITE.instagram} className={socialBtn} aria-label="Instagram Trzy Wiatry">
           <InstagramIcon className="size-4 shrink-0" />
           <span className="text-sm">Instagram</span>
-        </a>
-        <a
-          href={SITE.facebook}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-czarny/10 bg-bialy text-czarny transition-colors hover:border-czerwony hover:text-czerwony"
-        >
+        </OutboundSocialLink>
+        <OutboundSocialLink href={SITE.facebook} className={socialBtn} aria-label="Facebook Trzy Wiatry">
           <FacebookIcon className="size-4 shrink-0" />
           <span className="text-sm">Facebook</span>
-        </a>
+        </OutboundSocialLink>
       </div>
     </div>
   );

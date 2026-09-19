@@ -129,9 +129,13 @@ export default async function ShopPage({
               </div>
             ) : (
               <>
-                <div className="grid gap-x-5 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {pageProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} />
+                <div id="sklep-katalog" className="grid gap-x-5 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {pageProducts.map((product, index) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      imagePriority={index < 6}
+                    />
                   ))}
                 </div>
                 <Suspense>

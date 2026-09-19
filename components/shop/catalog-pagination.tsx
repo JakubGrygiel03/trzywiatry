@@ -5,6 +5,19 @@ import { useSearchParams } from "next/navigation";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
+function scrollShopToTop() {
+  window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+  const grid = document.getElementById("sklep-katalog");
+  if (grid) {
+    // After paint, pin to catalog start (under sticky chrome) if page is long.
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    });
+  }
+}
+
 export function CatalogPagination({
   page,
   totalPages,
@@ -74,8 +87,16 @@ function PageLink({
   return (
     <Link
       href={href}
+      scroll
       aria-label={label}
       aria-current={active ? "page" : undefined}
+      onClick={() => {
+        // Same-route ?strona= often keeps scroll at the pager — force top.
+        scrollShopToTop();
+        window.setTimeout(scrollShopToTop, 0);
+        window.setTimeout(scrollShopToTop, 50);
+        window.setTimeout(scrollShopToTop, 120);
+      }}
       className={cn(
         "flex h-9 w-9 items-center justify-center border text-sm transition-colors",
         active

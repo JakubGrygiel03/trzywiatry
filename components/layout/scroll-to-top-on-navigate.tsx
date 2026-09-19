@@ -116,20 +116,20 @@ export function ScrollToTopOnNavigate() {
     }
 
     // Forward Link navigation — hammer top a few times (layout / images can fight one frame).
+    // Shop pagination (?strona=) especially tends to keep scroll at the bottom pager.
     forceTop();
     const frame = window.requestAnimationFrame(() => scrollToHashOrTop("auto"));
-    const t0 = window.setTimeout(() => {
-      if (!window.location.hash) forceTop();
-      else scrollToHashOrTop("auto");
-    }, 0);
-    const t1 = window.setTimeout(() => {
-      if (!window.location.hash) forceTop();
-    }, 80);
+    const delays = pathname.startsWith("/sklep") ? [0, 40, 100, 200] : [0, 80];
+    const timers = delays.map((ms) =>
+      window.setTimeout(() => {
+        if (!window.location.hash) forceTop();
+        else scrollToHashOrTop("auto");
+      }, ms),
+    );
 
     return () => {
       window.cancelAnimationFrame(frame);
-      window.clearTimeout(t0);
-      window.clearTimeout(t1);
+      for (const id of timers) window.clearTimeout(id);
     };
   }, [pathname, query]);
 

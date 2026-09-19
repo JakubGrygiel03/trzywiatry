@@ -7,7 +7,8 @@ export const SITE = {
   phone: "666-022-555",
   phoneHref: "tel:+48666022555",
   instagram: "https://www.instagram.com/trzy_wiatry/",
-  facebook: "https://www.facebook.com/profile.php?id=61585627986049",
+  /** m.facebook.com opens more reliably from phone / Messenger WebViews. */
+  facebook: "https://m.facebook.com/profile.php?id=61585627986049",
   owner: "Jędrzej Słomiak",
   nip: "5833536856",
   regon: "541629383",

@@ -27,11 +27,16 @@ export function FeaturedDrops({ payload = defaultFeaturedPayload() }: { payload?
           </Button>
         </div>
       </Reveal>
+      {/* No per-card Reveal — products must paint immediately so the grid never looks finished early. */}
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {products.map((product) => (
-          <Reveal key={product.id}>
-            <ProductCard product={product} framed tone="cream" />
-          </Reveal>
+        {products.map((product, index) => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            framed
+            tone="cream"
+            imagePriority={index < 4}
+          />
         ))}
       </div>
     </HomeSection>

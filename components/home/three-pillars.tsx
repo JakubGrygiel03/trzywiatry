@@ -22,7 +22,7 @@ export function ThreePillars({
       />
       <div className="grid gap-3 md:grid-cols-3">
         {pillars.map((pillar, index) => (
-          <Reveal key={`${pillar.title}-${pillar.href}`} delay={index * 0.06}>
+          <Reveal key={`${pillar.title}-${pillar.href}`} delay={index * 0.03}>
             <Link
               href={pillar.href}
               className="group relative block overflow-hidden rounded-2xl border border-czarny/10 bg-bialy p-6 transition-colors duration-300 hover:border-czerwony md:p-7"

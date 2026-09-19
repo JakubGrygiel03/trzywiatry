@@ -1,9 +1,14 @@
 "use client";
 
 import { ShoppingBag } from "lucide-react";
-import { cartCount, useCartStore } from "@/store/use-cart-store";
+import { useLayoutEffect } from "react";
+import { cartCount, ensureCartHydratedSync, useCartStore } from "@/store/use-cart-store";
 
 export function CartTrigger() {
+  useLayoutEffect(() => {
+    ensureCartHydratedSync();
+  }, []);
+
   const items = useCartStore((state) => state.items);
   const isOpen = useCartStore((state) => state.isOpen);
   const toggleCart = useCartStore((state) => state.toggleCart);

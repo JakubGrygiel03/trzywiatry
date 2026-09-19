@@ -1,10 +1,13 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { submitContact } from "@/app/actions/contact";
+import { EmailField } from "@/components/forms/email-field";
+import { PhoneField } from "@/components/forms/phone-field";
+import { TextField } from "@/components/forms/text-field";
 import { Button } from "@/components/ui/button";
-import { Input, Label, Textarea } from "@/components/ui/field";
+import { Label, Textarea } from "@/components/ui/field";
 
 const initial = { ok: false, message: "" };
 const labelClass = "font-sans text-sm font-normal normal-case tracking-normal text-czarny/75";
@@ -12,12 +15,13 @@ const labelClass = "font-sans text-sm font-normal normal-case tracking-normal te
 export function ContactForm({ intro }: { intro?: string }) {
   const [state, action, pending] = useActionState(submitContact, initial);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
+  const [formKey, setFormKey] = useState(0);
 
   useEffect(() => {
     if (state.ok && state.message) {
       setDialogOpen(true);
-      formRef.current?.reset();
+      // Controlled Phone/Email/Text fields ignore form.reset() — remount clears them.
+      setFormKey((key) => key + 1);
     }
   }, [state]);
 
@@ -32,31 +36,32 @@ export function ContactForm({ intro }: { intro?: string }) {
 
   return (
     <>
-      <form ref={formRef} action={action} className="flex h-full flex-col" lang="pl">
+      <form key={formKey} action={action} className="flex h-full flex-col" lang="pl" noValidate>
         {intro ? (
           <p className="mb-6 text-sm leading-relaxed text-czarny/55" lang="en">
             {intro}
           </p>
         ) : null}
         <div className="grid flex-1 gap-5 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="name" className={labelClass}>
-              Imię / Name <span className="text-czerwony">*</span>
-            </Label>
-            <Input id="name" name="name" required autoComplete="name" placeholder="Anna / John" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="phone" className={labelClass}>
-              Telefon / Phone
-            </Label>
-            <Input id="phone" name="phone" type="tel" autoComplete="tel" placeholder="+48 123 456 789" />
-          </div>
-          <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="email" className={labelClass}>
-              E-mail <span className="text-czerwony">*</span>
-            </Label>
-            <Input id="email" name="email" type="email" required autoComplete="email" placeholder="you@email.com" />
-          </div>
+          <TextField
+            name="name"
+            label="Imię / Name"
+            placeholder="Anna / John"
+            labelClassName={labelClass}
+          />
+          <PhoneField
+            name="phone"
+            label="Telefon / Phone"
+            required={false}
+            labelClassName={labelClass}
+          />
+          <EmailField
+            name="email"
+            label="E-mail"
+            className="sm:col-span-2"
+            labelClassName={labelClass}
+            placeholder="jan@example.pl"
+          />
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="message" className={labelClass}>
               Wiadomość / Message <span className="text-czerwony">*</span>
@@ -65,6 +70,7 @@ export function ContactForm({ intro }: { intro?: string }) {
               id="message"
               name="message"
               required
+              minLength={5}
               className="min-h-40"
               placeholder="Write in English if you prefer."
             />

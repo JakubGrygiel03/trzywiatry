@@ -3,7 +3,9 @@
 import { CheckoutField } from "@/components/checkout/checkout-field";
 import { CheckoutPayBox } from "@/components/checkout/checkout-pay-box";
 import { CheckoutShipping } from "@/components/checkout/checkout-shipping";
-import { InpostLockerPicker } from "@/components/checkout/inpost-locker-picker";
+import { EmailField } from "@/components/forms/email-field";
+import { PhoneField } from "@/components/forms/phone-field";
+import { TextField } from "@/components/forms/text-field";
 import { Label, Textarea } from "@/components/ui/field";
 import { SurfaceTile, SurfaceTileBody, SurfaceTileHeader } from "@/components/ui/surface-tile";
 import { useActionState, useEffect, useState } from "react";
@@ -13,6 +15,21 @@ import { SHIPPING_METHODS } from "@/lib/constants";
 import { formatPLN } from "@/lib/format";
 import { cartGiftWrapCost, cartSubtotal, useCartStore } from "@/store/use-cart-store";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+
+const creamField =
+  "h-12 rounded-2xl border-czarny/8 bg-krem placeholder:text-czarny/35 focus:border-czerwony focus:bg-bialy";
+
+const InpostLockerPicker = dynamic(
+  () =>
+    import("@/components/checkout/inpost-locker-picker").then((mod) => ({
+      default: mod.InpostLockerPicker,
+    })),
+  {
+    ssr: false,
+    loading: () => <p className="text-sm text-czarny/50">Ładowanie paczkomatów…</p>,
+  },
+);
 
 const initial: CheckoutState = { ok: false, message: "" };
 
@@ -34,7 +51,6 @@ export function CheckoutForm({
   const [postalCode, setPostalCode] = useState("");
   const [city, setCity] = useState("");
   const [locker, setLocker] = useState("");
-  const [cartReady, setCartReady] = useState(false);
   const settings = useSiteSettings();
   const subtotal = cartSubtotal(items);
   const gift = cartGiftWrapCost(hasGiftWrapping, settings.giftWrapPriceCents);
@@ -45,37 +61,20 @@ export function CheckoutForm({
       : `Doliczymy koszt dostawy, jeśli nie osiągniesz ${thresholdLabel}.`;
 
   useEffect(() => {
-    const api = useCartStore.persist;
-    if (!api?.hasHydrated || !api.onFinishHydration) {
-      setCartReady(true);
-      return;
-    }
-    const finish = () => setCartReady(true);
-    if (api.hasHydrated()) finish();
-    return api.onFinishHydration(finish);
-  }, []);
-
-  useEffect(() => {
     if (!state.ok || !state.redirectTo) return;
     clear();
     window.location.assign(state.redirectTo);
   }, [state.ok, state.redirectTo, clear]);
 
-  if (!cartReady) {
-    return (
-      <SurfaceTile>
-        <SurfaceTileBody>
-          <p className="text-sm text-czarny/50">Ładowanie koszyka…</p>
-        </SurfaceTileBody>
-      </SurfaceTile>
-    );
-  }
-
+  // Safety net — CheckoutGate usually catches empty carts first.
   if (items.length === 0 && !state.ok) {
     return (
       <SurfaceTile>
-        <SurfaceTileBody>
+        <SurfaceTileBody className="space-y-4">
           <p className="text-sm text-czarny/50">Koszyk jest pusty.</p>
+          <Link href="/sklep" className="text-sm text-czerwony underline-offset-2 hover:underline">
+            Przejdź do sklepu
+          </Link>
         </SurfaceTileBody>
       </SurfaceTile>
     );
@@ -95,7 +94,7 @@ export function CheckoutForm({
   }
 
   return (
-    <form action={action} className="grid gap-4 md:gap-5 lg:grid-cols-[1.2fr_0.8fr]">
+    <form action={action} className="grid gap-4 md:gap-5 lg:grid-cols-[1.2fr_0.8fr]" noValidate>
       <input
         type="hidden"
         name="cart"
@@ -108,30 +107,41 @@ export function CheckoutForm({
         <SurfaceTile>
           <SurfaceTileHeader eyebrow="Dane" title="Dostawa" />
           <SurfaceTileBody className="space-y-5">
-            <CheckoutField name="customerName" label="Imię i nazwisko / Full name" defaultValue={defaultName} />
-            <div className="space-y-2">
-              <CheckoutField
-                name="customerEmail"
-                label="E-mail"
-                type="email"
-                autoComplete="email"
-                defaultValue={defaultEmail}
-                placeholder="you@email.com"
-              />
-              <p className="text-xs text-czarny/50">
-                Na ten adres wyślemy potwierdzenie zamówienia
-                {defaultEmail ? "." : ". Możesz też "}
-                {!defaultEmail ? (
-                  <>
-                    <Link href="/konto/rejestracja" className="text-czerwony underline-offset-2 hover:underline">
-                      założyć konto
-                    </Link>
-                    , żeby śledzić historię zakupów.
-                  </>
-                ) : null}
+            <TextField
+              name="customerName"
+              label="Imię i nazwisko / Full name"
+              defaultValue={defaultName}
+              inputClassName={creamField}
+              labelClassName="text-czerwony/80"
+            />
+            <EmailField
+              name="customerEmail"
+              label="E-mail"
+              defaultValue={defaultEmail}
+              placeholder="jan@example.pl"
+              inputClassName={creamField}
+              labelClassName="text-czerwony/80"
+              hint={
+                defaultEmail
+                  ? "Na ten adres wyślemy potwierdzenie zamówienia."
+                  : undefined
+              }
+            />
+            {!defaultEmail ? (
+              <p className="-mt-3 text-xs text-czarny/50">
+                Na ten adres wyślemy potwierdzenie. Możesz też{" "}
+                <Link href="/konto/rejestracja" className="text-czerwony underline-offset-2 hover:underline">
+                  założyć konto
+                </Link>
+                , żeby śledzić historię zakupów.
               </p>
-            </div>
-            <CheckoutField name="customerPhone" label="Telefon / Phone" type="tel" placeholder="+48 123 456 789" />
+            ) : null}
+            <PhoneField
+              name="customerPhone"
+              label="Telefon / Phone"
+              inputClassName={creamField}
+              labelClassName="text-czerwony/80"
+            />
             <CheckoutField name="street" label="Ulica i numer" />
             <div className="grid gap-5 sm:grid-cols-2">
               <CheckoutField
