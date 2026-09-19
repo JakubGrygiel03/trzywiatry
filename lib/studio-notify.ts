@@ -1,4 +1,4 @@
-import { ORDER_STATUS_LABELS, shippingMethodLabel } from "@/lib/constants";
+import { ORDER_STATUS_LABELS, SITE, shippingMethodLabel } from "@/lib/constants";
 import { wrapEmail } from "@/lib/email/render";
 import { formatPLN } from "@/lib/format";
 import { sendEmail } from "@/lib/resend";
@@ -11,7 +11,8 @@ import type { B2BInput } from "@/lib/validations/b2b";
 const DEFAULT_STUDIO_INBOX = "trzywiatrystudio@gmail.com";
 
 export function studioNotifyInboxes() {
-  const raw = process.env.STUDIO_NOTIFY_EMAIL?.trim() || DEFAULT_STUDIO_INBOX;
+  const raw =
+    process.env.STUDIO_NOTIFY_EMAIL?.trim() || `${DEFAULT_STUDIO_INBOX},${SITE.email}`;
   return [...new Set(raw.split(",").map((item) => item.trim().toLowerCase()).filter(Boolean))];
 }
 

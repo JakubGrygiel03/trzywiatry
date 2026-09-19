@@ -4,17 +4,18 @@ import { contactSchema, workshopBookingSchema } from "@/lib/validations/forms";
 import { getWorkshopById, getWorkshopBySlug, remainingSeats } from "@/lib/data/queries";
 import { saveAtelierSnapshot, ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 import { getRuntimeSettings, runtimeStore } from "@/lib/data/runtime-store";
+import { SITE } from "@/lib/constants";
 import { renderEmailTemplate } from "@/lib/email/render";
-import { sendEmail } from "@/lib/resend";
+import { customerMailFailureMessage, sendEmail } from "@/lib/resend";
 import { notifyStudioContact, notifyStudioWorkshop } from "@/lib/studio-notify";
 
 export async function submitContact(_: { ok: boolean; message: string }, formData: FormData) {
   await ensureAtelierHydrated();
   const parsed = contactSchema.safeParse({
-    name: formData.get("name"),
+    name: String(formData.get("name") ?? ""),
     phone: String(formData.get("phone") ?? "").trim() || undefined,
-    email: formData.get("email"),
-    message: formData.get("message"),
+    email: String(formData.get("email") ?? ""),
+    message: String(formData.get("message") ?? ""),
   });
 
   if (!parsed.success) {
@@ -28,12 +29,40 @@ export async function submitContact(_: { ok: boolean; message: string }, formDat
   });
   await saveAtelierSnapshot();
 
-  await notifyStudioContact(parsed.data);
+  const ack = renderEmailTemplate("contact_ack", {
+    customerName: parsed.data.name,
+    studioEmail: SITE.email,
+  });
+
+  const [studio, customer] = await Promise.all([
+    notifyStudioContact(parsed.data),
+    sendEmail({
+      to: parsed.data.email,
+      subject: ack.subject,
+      html: ack.html,
+      replyTo: SITE.email,
+    }),
+  ]);
+
+  if (!studio.ok) {
+    return {
+      ok: false,
+      message: `Zapisaliśmy wiadomość w panelu, ale mail do pracowni nie wyszedł. ${customerMailFailureMessage(studio.error)}`,
+    };
+  }
+
+  if (!customer.ok) {
+    return {
+      ok: true,
+      message:
+        "Wiadomość poszła do pracowni, ale potwierdzenie na Twój e-mail nie wyszło — sprawdź spam albo napisz ponownie. / Message reached the studio, but your confirmation email did not send.",
+    };
+  }
 
   return {
     ok: true,
     message:
-      "Wiadomość poszła do pracowni. Odpowiemy jak tylko zejdziemy od koła. / Message received — we will reply as soon as we step away from the wheel.",
+      "Wiadomość poszła do pracowni. Potwierdzenie wysłaliśmy na Twój e-mail. / Message received — we also sent a confirmation to your inbox.",
   };
 }
 

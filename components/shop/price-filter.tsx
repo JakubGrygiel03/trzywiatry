@@ -47,6 +47,18 @@ export function PriceFilter({
     onCommit(pair.min, pair.max);
   }
 
+  function setMinLive(next: number) {
+    const value = Math.min(next, maxRef.current);
+    minRef.current = value;
+    setMinZl(value);
+  }
+
+  function setMaxLive(next: number) {
+    const value = Math.max(next, minRef.current);
+    maxRef.current = value;
+    setMaxZl(value);
+  }
+
   return (
     <div className="space-y-3">
       <div className="relative h-5">
@@ -61,14 +73,12 @@ export function PriceFilter({
           max={ceilZl}
           value={minZl}
           aria-label="Minimalna cena"
-          onChange={(event) => {
-            const next = Math.min(Number(event.target.value), maxRef.current);
-            minRef.current = next;
-            setMinZl(next);
-          }}
-          onPointerUp={(event) => commit(Number(event.currentTarget.value), maxRef.current)}
-          onKeyUp={(event) => commit(Number(event.currentTarget.value), maxRef.current)}
-          className="price-range absolute inset-0 z-20 w-full appearance-none bg-transparent"
+          onChange={(event) => setMinLive(Number(event.target.value))}
+          onPointerUp={() => commit(minRef.current, maxRef.current)}
+          onKeyUp={() => commit(minRef.current, maxRef.current)}
+          className={`price-range absolute inset-0 w-full appearance-none bg-transparent ${
+            minZl > maxZl - (span > 40 ? 8 : 2) ? "z-10" : "z-20"
+          }`}
         />
         <input
           type="range"
@@ -76,14 +86,12 @@ export function PriceFilter({
           max={ceilZl}
           value={maxZl}
           aria-label="Maksymalna cena"
-          onChange={(event) => {
-            const next = Math.max(Number(event.target.value), minRef.current);
-            maxRef.current = next;
-            setMaxZl(next);
-          }}
-          onPointerUp={(event) => commit(minRef.current, Number(event.currentTarget.value))}
-          onKeyUp={(event) => commit(minRef.current, Number(event.currentTarget.value))}
-          className="price-range absolute inset-0 z-10 w-full appearance-none bg-transparent"
+          onChange={(event) => setMaxLive(Number(event.target.value))}
+          onPointerUp={() => commit(minRef.current, maxRef.current)}
+          onKeyUp={() => commit(minRef.current, maxRef.current)}
+          className={`price-range absolute inset-0 w-full appearance-none bg-transparent ${
+            minZl > maxZl - (span > 40 ? 8 : 2) ? "z-30" : "z-10"
+          }`}
         />
       </div>
 
@@ -92,26 +100,14 @@ export function PriceFilter({
           id="cena-od"
           label="Od"
           value={minZl}
-          min={floorZl}
-          max={ceilZl}
-          onChange={(value) => {
-            const next = Math.min(value, maxRef.current);
-            minRef.current = next;
-            setMinZl(next);
-          }}
+          fallback={floorZl}
           onCommit={(value) => commit(value, maxRef.current)}
         />
         <PriceField
           id="cena-do"
           label="Do"
           value={maxZl}
-          min={floorZl}
-          max={ceilZl}
-          onChange={(value) => {
-            const next = Math.max(value, minRef.current);
-            maxRef.current = next;
-            setMaxZl(next);
-          }}
+          fallback={ceilZl}
           onCommit={(value) => commit(minRef.current, value)}
         />
       </div>
@@ -119,42 +115,59 @@ export function PriceFilter({
   );
 }
 
+/** Draft text while typing — empty field is allowed until blur/Enter. */
 function PriceField({
   id,
   label,
   value,
-  min,
-  max,
-  onChange,
+  fallback,
   onCommit,
 }: {
   id: string;
   label: string;
   value: number;
-  min: number;
-  max: number;
-  onChange: (value: number) => void;
+  fallback: number;
   onCommit: (value: number) => void;
 }) {
+  const [draft, setDraft] = useState(String(value));
+  const focused = useRef(false);
+
+  useEffect(() => {
+    if (!focused.current) setDraft(String(value));
+  }, [value]);
+
+  function finish() {
+    focused.current = false;
+    const parsed = draft.trim() === "" ? fallback : Number(draft);
+    const next = Number.isFinite(parsed) ? Math.floor(parsed) : fallback;
+    setDraft(String(next));
+    onCommit(next);
+  }
+
   return (
     <label htmlFor={id} className="flex h-10 items-center gap-1.5 rounded-full border border-szary bg-krem px-3">
       <span className="font-heading text-[9px] uppercase tracking-[0.14em] text-czerwony">{label}</span>
       <input
         id={id}
-        type="number"
+        type="text"
         inputMode="numeric"
-        min={min}
-        max={max}
-        value={value}
+        pattern="[0-9]*"
+        value={draft}
         aria-label={`${label} cena`}
-        onChange={(event) => onChange(Number(event.target.value) || min)}
-        onBlur={(event) => onCommit(Number(event.target.value) || min)}
+        onFocus={() => {
+          focused.current = true;
+        }}
+        onChange={(event) => {
+          // Allow wipe + retype (e.g. 60 → "" → 100). Digits only.
+          setDraft(event.target.value.replace(/\D/g, ""));
+        }}
+        onBlur={finish}
         onKeyDown={(event) => {
           if (event.key === "Enter") {
             event.currentTarget.blur();
           }
         }}
-        className="w-full bg-transparent text-sm text-czarny outline-none"
+        className="w-full bg-transparent text-sm text-czarny outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />
       <span className="text-xs text-czarny/45">zł</span>
     </label>

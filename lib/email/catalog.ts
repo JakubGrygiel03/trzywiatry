@@ -8,6 +8,7 @@ export const EMAIL_TEMPLATE_KEYS = [
   "order_cancelled",
   "newsletter_welcome",
   "workshop_ticket",
+  "contact_ack",
   "customer_welcome",
   "customer_password_reset",
 ] as const;
@@ -115,6 +116,17 @@ export const EMAIL_TEMPLATES: Record<EmailTemplateKey, EmailTemplateMeta> = {
     tokens: ["workshopTitle", "seatsCount"],
     subject: "Bilet · {workshopTitle}",
     body: `<p>Rezerwacja potwierdzona: {workshopTitle}. Liczba miejsc: {seatsCount}.</p>`,
+  },
+  contact_ack: {
+    key: "contact_ack",
+    label: "Potwierdzenie kontaktu",
+    trigger: "Klient wysyła formularz na /kontakt.",
+    tokens: ["customerName", "studioEmail"],
+    subject: "Dostaliśmy Twoją wiadomość · Trzy Wiatry",
+    body: `<h1 style="font-size:22px">Wiadomość dotarła do pracowni</h1>
+<p>Cześć {customerName}, dziękujemy za kontakt.</p>
+<p>Odpowiemy jak tylko zejdziemy od koła — zwykle w ciągu 1–2 dni roboczych.</p>
+<p style="font-size:13px;color:#666">Jeśli coś pilnego: {studioEmail}</p>`,
   },
   customer_welcome: {
     key: "customer_welcome",

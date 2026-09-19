@@ -21,7 +21,7 @@ export async function AnnouncementBar() {
       className={`shrink-0 px-4 py-1.5 text-center ${isVacation ? "bg-czerwony" : "bg-czarny"}`}
       role="status"
     >
-      <p className="mx-auto max-w-5xl font-heading text-[10px] uppercase leading-snug tracking-[0.08em] text-bialy/95 md:tracking-[0.16em]">
+      <p className="mx-auto max-w-5xl break-words font-heading text-[10px] uppercase leading-snug tracking-[0.08em] text-bialy/95 md:tracking-[0.16em]">
         {message}
         {settings.announcementType === "promo" ? (
           <>

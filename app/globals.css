@@ -14,6 +14,18 @@
   --site-chrome: 5.75rem;
 }
 
+/* Phone rubber-band / sideways drag must not reveal empty gutters. */
+html {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
+body {
+  overflow-x: clip;
+  max-width: 100%;
+  overscroll-behavior-x: none;
+}
+
 @media (min-width: 768px) {
   :root {
     --site-chrome: 6.25rem;
@@ -23,6 +35,8 @@
 /* First-screen hero subtracts announcement + nav; laptop nav is taller. */
 .site-shell {
   --site-chrome: 5.75rem;
+  overflow-x: clip;
+  max-width: 100%;
 }
 
 .site-shell[data-announcement="off"] {
@@ -257,8 +271,10 @@ h4 {
 .hero-kadr {
   display: flex;
   flex-direction: column;
-  overflow: visible;
+  overflow-x: clip;
+  overflow-y: visible;
   width: 100%;
+  max-width: 100%;
   scroll-margin-top: var(--site-chrome);
   padding: 0.85rem 1.25rem 0;
   background: var(--krem);
@@ -344,6 +360,7 @@ h4 {
 .hero-marquee {
   flex-shrink: 0;
   overflow: hidden;
+  max-width: 100%;
   margin-top: 0.45rem;
   background: transparent;
   padding-block: 0.7rem;

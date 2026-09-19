@@ -8,7 +8,7 @@ export const blogPosts: BlogPost[] = [
     excerpt: "Krótka historia naszej nazwy — i jak logo z kartki weszło na ceramikę.",
     subtitle: "Krótka historia naszej nazwy.",
     author: "Jędrzej",
-    category: "Uncategorized",
+    category: "Pracownia",
     content:
       "Nazwa Trzy Wiatry przyszła do nas naturalnie — z domu, w którym niemal zawsze wieje z trzech stron.",
     coverImage: "/brand/photos/blog/logo-szkice.png",

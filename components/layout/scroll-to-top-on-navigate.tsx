@@ -8,8 +8,14 @@ function scrollKey(pathname: string, query: string) {
   return `tw-scroll:${pathname}${query ? `?${query}` : ""}`;
 }
 
+function forceTop() {
+  window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+}
+
 /**
- * Forward navigations: land at top / hash (clear of sticky chrome).
+ * Forward navigations: always land at top / hash.
  * Back / forward (popstate): restore the last scroll Y for that URL.
  */
 export function ScrollToTopOnNavigate() {
@@ -17,6 +23,7 @@ export function ScrollToTopOnNavigate() {
   const searchParams = useSearchParams();
   const query = searchParams.toString();
   const isPopState = useRef(false);
+  const ready = useRef(false);
 
   useEffect(() => {
     if ("scrollRestoration" in window.history) {
@@ -25,8 +32,18 @@ export function ScrollToTopOnNavigate() {
     function onPopState() {
       isPopState.current = true;
     }
+    function onPageShow(event: PageTransitionEvent) {
+      // bfcache / hard refresh — never leave a mid-page leftover.
+      if (event.persisted && !isPopState.current && !window.location.hash) {
+        forceTop();
+      }
+    }
     window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
+    window.addEventListener("pageshow", onPageShow);
+    return () => {
+      window.removeEventListener("popstate", onPopState);
+      window.removeEventListener("pageshow", onPageShow);
+    };
   }, []);
 
   // Persist scroll while the user stays on a route (so “wstecz” can restore it).
@@ -48,16 +65,24 @@ export function ScrollToTopOnNavigate() {
 
   useEffect(() => {
     const key = scrollKey(pathname, query);
+    const pop = isPopState.current;
+    isPopState.current = false;
 
-    if (isPopState.current) {
-      isPopState.current = false;
+    // First mount of the shell: still force top unless this is a back navigation.
+    if (!ready.current) {
+      ready.current = true;
+      if (!pop && !window.location.hash) {
+        forceTop();
+      }
+    }
+
+    if (pop) {
       let y = 0;
       try {
         y = Number(sessionStorage.getItem(key) || "0");
       } catch {
         y = 0;
       }
-      // Two frames: wait for the previous page to paint before restoring.
       const id = window.requestAnimationFrame(() => {
         window.requestAnimationFrame(() => {
           window.scrollTo({ top: Number.isFinite(y) ? y : 0, left: 0, behavior: "auto" });
@@ -66,10 +91,22 @@ export function ScrollToTopOnNavigate() {
       return () => window.cancelAnimationFrame(id);
     }
 
-    const id = window.requestAnimationFrame(() => {
-      scrollToHashOrTop("auto");
-    });
-    return () => window.cancelAnimationFrame(id);
+    // Forward Link navigation — hammer top a few times (layout / images can fight one frame).
+    forceTop();
+    const frame = window.requestAnimationFrame(() => scrollToHashOrTop("auto"));
+    const t0 = window.setTimeout(() => {
+      if (!window.location.hash) forceTop();
+      else scrollToHashOrTop("auto");
+    }, 0);
+    const t1 = window.setTimeout(() => {
+      if (!window.location.hash) forceTop();
+    }, 80);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(t0);
+      window.clearTimeout(t1);
+    };
   }, [pathname, query]);
 
   useEffect(() => {

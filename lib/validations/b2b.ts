@@ -9,7 +9,7 @@ export const b2bSchema = z.object({
   email: emailSchema,
   phone: phoneSchema,
   estimatedQuantity: plainText(bi("Szacowana ilość", "Estimated quantity"), 80, 1),
-  message: plainText(bi("Wiadomość", "Message"), 2000, 10),
+  message: plainText(bi("Opis współpracy", "Brief"), 2000, 5),
 });
 
 export type B2BInput = z.infer<typeof b2bSchema>;

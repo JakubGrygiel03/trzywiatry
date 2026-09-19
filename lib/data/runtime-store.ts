@@ -122,6 +122,13 @@ if (!Array.isArray(runtimeStore.catalog) || runtimeStore.catalog.length === 0) {
 
 if (!Array.isArray(runtimeStore.blogPosts) || runtimeStore.blogPosts.length === 0) {
   runtimeStore.blogPosts = structuredClone(seedBlogPosts);
+} else {
+  // Drop placeholder WordPress category from public topic lists.
+  for (const post of runtimeStore.blogPosts) {
+    if ((post.category ?? "").trim().toLowerCase() === "uncategorized") {
+      post.category = "Pracownia";
+    }
+  }
 }
 
 if (!Array.isArray(runtimeStore.workshops) || runtimeStore.workshops.length === 0) {

@@ -44,7 +44,14 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     ? post.blocks
     : [{ type: "paragraph" as const, text: post.content }];
   const categories = [
-    ...new Set(all.map((item) => item.category).filter(Boolean) as string[]),
+    ...new Set(
+      all
+        .map((item) => item.category)
+        .filter((category): category is string => {
+          if (!category?.trim()) return false;
+          return category.trim().toLowerCase() !== "uncategorized";
+        }),
+    ),
   ];
 
   return (

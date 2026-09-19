@@ -67,7 +67,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       lang="pl"
       className={`${geistSans.variable} ${spaceMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-papier text-czarny">
+      <body className="min-h-full max-w-full overflow-x-clip bg-papier text-czarny">
         <PwaRegister />
         {children}
       </body>

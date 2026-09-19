@@ -37,7 +37,13 @@ export function escapeHtml(value: string) {
 export function plainText(label: string, max: number, min = 0) {
   return z.string().trim().superRefine((value, ctx) => {
     if (min > 0 && value.length < min) {
-      ctx.addIssue({ code: "custom", message: `${label} nie może być puste.` });
+      ctx.addIssue({
+        code: "custom",
+        message:
+          value.length === 0
+            ? `${label} nie może być puste.`
+            : `${label}: wpisz co najmniej ${min} znaków.`,
+      });
       return;
     }
     if (value.length > max) {
