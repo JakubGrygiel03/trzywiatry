@@ -27,7 +27,7 @@ function productionFrom() {
 }
 
 function domainLooksVerified() {
-  return process.env.RESEND_DOMAIN_VERIFIED === "true";
+  return process.env.RESEND_DOMAIN_VERIFIED?.trim() === "true";
 }
 
 function fromCandidates() {

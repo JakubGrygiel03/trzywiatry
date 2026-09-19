@@ -112,7 +112,7 @@ export async function requestCustomerPasswordReset(
     return { ok: true, message: waiting };
   } catch (error) {
     console.error("[account] password reset", error);
-    return { ok: false, message: customerMailFailureMessage() };
+    return { ok: false, message: "Reset chwilowo niedostępny. Spróbuj za chwilę albo napisz do pracowni." };
   }
 }
 

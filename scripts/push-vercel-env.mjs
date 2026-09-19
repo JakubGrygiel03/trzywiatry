@@ -9,7 +9,7 @@ function loadEnv() {
     if (!t || t.startsWith("#")) continue;
     const i = t.indexOf("=");
     if (i < 1) continue;
-    env[t.slice(0, i)] = t.slice(i + 1).replace(/^['"]|['"]$/g, "").trim();
+    env[t.slice(0, i)] = t.slice(i + 1).replace(/^['"]|['"]$/g, "").trim().replace(/\\n$/g, "");
   }
   return env;
 }
@@ -36,6 +36,7 @@ const values = {
   ADMIN_DEMO_PASSWORD: local.ADMIN_DEMO_PASSWORD,
   CUSTOMER_SESSION_SECRET: local.CUSTOMER_SESSION_SECRET,
   RESEND_API_KEY: local.RESEND_API_KEY,
+  RESEND_DOMAIN_VERIFIED: local.RESEND_DOMAIN_VERIFIED,
   NEWSLETTER_FROM_EMAIL: local.NEWSLETTER_FROM_EMAIL,
   SMTP_HOST: local.SMTP_HOST,
   SMTP_PORT: local.SMTP_PORT,
@@ -48,12 +49,14 @@ const values = {
   P24_SANDBOX: local.P24_SANDBOX,
 };
 
-const publicNames = new Set([
-  "NEXT_PUBLIC_SITE_URL",
-  "NEXT_PUBLIC_SUPABASE_URL",
-  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-  "NEWSLETTER_FROM_EMAIL",
-  "ADMIN_EMAIL",
+const sensitiveNames = new Set([
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "ADMIN_DEMO_PASSWORD",
+  "CUSTOMER_SESSION_SECRET",
+  "RESEND_API_KEY",
+  "SMTP_PASS",
+  "P24_CRC",
+  "P24_API_KEY",
 ]);
 
 const p24Only = process.argv.includes("--p24-only");
@@ -61,11 +64,16 @@ const p24Names = new Set(["P24_MERCHANT_ID", "P24_POS_ID", "P24_CRC", "P24_API_K
 const environments = ["production", "preview", "development"];
 
 function vercel(args, input) {
-  return spawnSync("npx.cmd", ["vercel", ...args, "--scope", "jakub-grygiel", "--project", "trzywiatry", "--yes"], {
+  return spawnSync("npx.cmd", ["--yes", "vercel@39.0.0", ...args, "--scope", "jakub-grygiel"], {
     encoding: "utf8",
     input,
     shell: true,
     windowsHide: true,
+    env: {
+      ...process.env,
+      NODE_OPTIONS: "--use-system-ca",
+      VERCEL_CLI_SKIP_UPDATE_CHECK: "1",
+    },
   });
 }
 
@@ -75,14 +83,19 @@ for (const [name, value] of Object.entries(values)) {
     console.log("SKIP_EMPTY", name);
     continue;
   }
-  if (p24Names.has(name)) {
-    for (const envName of environments) {
-      vercel(["env", "rm", name, envName]);
+
+  let ok = 0;
+  for (const envName of environments) {
+    const args = ["env", "add", name, envName, "--force"];
+    if (sensitiveNames.has(name)) args.push("--sensitive");
+    const result = vercel(args, `${value}`);
+    if (result.status === 0) {
+      ok += 1;
+    } else {
+      const out = `${result.stdout || ""}${result.stderr || ""}`.replaceAll(value, "[redacted]");
+      console.log("FAILED", name, envName, out.slice(-300).trim());
     }
   }
-  const flag = publicNames.has(name) ? "--no-sensitive" : "--sensitive";
-  const result = vercel(["env", "add", name, "production,preview,development", flag], `${value}\n`);
-  const out = `${result.error?.message || ""}\n${result.stdout || ""}${result.stderr || ""}`.replaceAll(value, "[redacted]");
-  if (result.status === 0) console.log("ADDED", name);
-  else console.log("FAILED", name, result.status, out.slice(-400).trim());
+  if (ok === environments.length) console.log("ADDED", name);
+  else if (ok > 0) console.log("PARTIAL", name, `${ok}/${environments.length}`);
 }

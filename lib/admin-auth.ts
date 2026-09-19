@@ -17,8 +17,11 @@ type AdminAuthFile = {
 let memoryAuth: AdminAuthFile | null = null;
 
 function ensureDataDir() {
-  if (!existsSync(DATA_DIR)) {
-    mkdirSync(DATA_DIR, { recursive: true });
+  try {
+    if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
+    return true;
+  } catch {
+    return false;
   }
 }
 

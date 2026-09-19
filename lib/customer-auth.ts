@@ -28,7 +28,13 @@ export type CustomerUser = {
 type UsersFile = { users: CustomerUser[] };
 
 function ensureDataDir() {
-  if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
+  try {
+    if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
+    return true;
+  } catch {
+    // Vercel / serverless: read-only FS — persist via Supabase only.
+    return false;
+  }
 }
 
 function hashPassword(password: string) {
@@ -63,11 +69,12 @@ function readUsersFile(): UsersFile {
 
 function writeUsersFile(data: UsersFile) {
   usersCache = data.users;
-  ensureDataDir();
-  try {
-    writeFileSync(USERS_FILE, `${JSON.stringify(data, null, 2)}\n`, "utf8");
-  } catch {
-    // Vercel read-only FS — memory + Supabase remain.
+  if (ensureDataDir()) {
+    try {
+      writeFileSync(USERS_FILE, `${JSON.stringify(data, null, 2)}\n`, "utf8");
+    } catch {
+      // Vercel read-only FS — memory + Supabase remain.
+    }
   }
   pendingCustomerSave = writeAtelierState(ATELIER_STATE_KEYS.customers, data);
 }
