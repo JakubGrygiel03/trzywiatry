@@ -4,6 +4,8 @@ import { ChevronDown, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CatalogFilterFields, type CategoryCounts } from "@/components/shop/catalog-filter-fields";
+import { CatalogFilterRail } from "@/components/shop/catalog-filter-rail";
+import { PriceFilter } from "@/components/shop/price-filter";
 import type { ShopLaneId } from "@/lib/shop-lanes";
 import { cn } from "@/lib/utils";
 
@@ -52,7 +54,8 @@ export function CatalogFilters({
 
   return (
     <>
-      <div className="overflow-hidden rounded-2xl border border-czarny/10 bg-bialy shadow-[0_10px_28px_-22px_rgb(1_1_1_/_0.35)] lg:hidden">
+      {/* Phone: accordion with full filter fields */}
+      <div className="overflow-hidden rounded-2xl border border-czarny/10 bg-bialy shadow-[0_10px_28px_-22px_rgb(1_1_1_/_0.35)] md:hidden">
         <button
           type="button"
           aria-expanded={open}
@@ -100,6 +103,43 @@ export function CatalogFilters({
         ) : null}
       </div>
 
+      {/* Tablet: horizontal chip rail — pan-x only, products stay put */}
+      <CatalogFilterRail
+        lane={lane}
+        capacity={capacity}
+        domain={domain}
+        category={category}
+        hasActive={activeCount > 0}
+        categoryCounts={categoryCounts}
+        onClear={fieldProps.onClear}
+        onPush={pushParams}
+      />
+
+      <details className="hidden rounded-2xl border border-czarny/10 bg-bialy md:block lg:hidden">
+        <summary className="cursor-pointer list-none px-4 py-3 font-heading text-[11px] uppercase tracking-[0.16em] text-czerwony marker:content-none [&::-webkit-details-marker]:hidden">
+          Cena · przeciągnij zakres
+        </summary>
+        <div className="border-t border-czarny/8 px-4 py-4">
+          <PriceFilter
+            floorZl={fieldProps.floorZl}
+            ceilZl={fieldProps.ceilZl}
+            initialMin={minParam ? Number(minParam) : fieldProps.floorZl}
+            initialMax={maxParam ? Number(maxParam) : fieldProps.ceilZl}
+            onCommit={(minZl, maxZl) => {
+              pushParams((next) => {
+                const lo = Math.min(minZl, maxZl);
+                const hi = Math.max(minZl, maxZl);
+                if (lo <= fieldProps.floorZl) next.delete("cena_od");
+                else next.set("cena_od", String(lo));
+                if (hi >= fieldProps.ceilZl) next.delete("cena_do");
+                else next.set("cena_do", String(hi));
+              });
+            }}
+          />
+        </div>
+      </details>
+
+      {/* Desktop: sticky sidebar */}
       <aside className="hidden rounded-2xl border border-szary bg-bialy p-4 lg:sticky lg:top-24 lg:block">
         <div className="mb-5">
           <a
