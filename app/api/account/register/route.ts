@@ -68,6 +68,19 @@ export async function POST(request: Request) {
   if (!result.ok) {
     return redirectToRegister(request, "exists");
   }
-  await flushCustomersSave();
+
+  // Never hand out a session for an account that did not survive durable persist —
+  // that looked like “registered + logged in”, then “no account” on the next visit.
+  if (!(await flushCustomersSave())) {
+    console.error("[account/register] persist failed", result.user.email);
+    return redirectToRegister(request, "zapis");
+  }
+
+  await ensureCustomersHydrated({ force: true });
+  if (!findCustomerByEmail(result.user.email)) {
+    console.error("[account/register] missing after persist", result.user.email);
+    return redirectToRegister(request, "zapis");
+  }
+
   return sessionCookie(request, result.user);
 }

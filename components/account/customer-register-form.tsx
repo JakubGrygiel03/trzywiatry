@@ -11,6 +11,8 @@ import { emailLiveError, nameLiveError } from "@/lib/validations/live-fields";
 const SERVER_ERRORS: Record<string, string> = {
   dane: "Uzupełnij formularz.",
   exists: "Konto z tym e-mailem już istnieje. Zaloguj się.",
+  zapis:
+    "Nie udało się zapisać konta. Spróbuj jeszcze raz za chwilę — bez tego logowanie później nie zadziała.",
 };
 
 export function CustomerRegisterForm({ error }: { error?: string }) {

@@ -9,7 +9,8 @@ import { cn } from "@/lib/utils";
 
 const ERRORS: Record<string, string> = {
   dane: "Uzupełnij e-mail i hasło.",
-  haslo: "Nieprawidłowy e-mail lub hasło.",
+  haslo:
+    "Nieprawidłowy e-mail lub hasło. Jeśli konto było właśnie zakładane — użyj „Nie pamiętasz hasła?” albo zarejestruj się ponownie tym samym e-mailem.",
   gotowe: "Konto gotowe — możesz się zalogować.",
 };
 

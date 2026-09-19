@@ -1,7 +1,12 @@
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { ATELIER_STATE_KEYS, readAtelierState, writeAtelierState } from "@/lib/data/supabase-state";
+import {
+  ATELIER_STATE_KEYS,
+  hasSupabaseService,
+  readAtelierState,
+  writeAtelierState,
+} from "@/lib/data/supabase-state";
 import { verifyCustomerSessionCookie } from "@/lib/customer-session-token";
 
 export { getPublicSiteUrl as getSiteBaseUrl } from "@/lib/site-url";
@@ -67,16 +72,14 @@ function readUsersFile(): UsersFile {
   }
 }
 
-function writeUsersFile(data: UsersFile) {
-  usersCache = data.users;
-  if (ensureDataDir()) {
-    try {
-      writeFileSync(USERS_FILE, `${JSON.stringify(data, null, 2)}\n`, "utf8");
-    } catch {
-      // Vercel read-only FS — memory + Supabase remain.
-    }
+function writeUsersFileLocal(data: UsersFile) {
+  if (!ensureDataDir()) return false;
+  try {
+    writeFileSync(USERS_FILE, `${JSON.stringify(data, null, 2)}\n`, "utf8");
+    return true;
+  } catch {
+    return false;
   }
-  pendingCustomerSave = writeAtelierState(ATELIER_STATE_KEYS.customers, data);
 }
 
 let usersCache: CustomerUser[] | null = null;
@@ -87,16 +90,79 @@ let pendingCustomerSave: Promise<boolean> | null = null;
 function mergeCustomerLists(remote: CustomerUser[], local: CustomerUser[]) {
   const byEmail = new Map<string, CustomerUser>();
   for (const user of [...remote, ...local]) {
-    const prev = byEmail.get(user.email);
+    const key = normalizeEmail(user.email);
+    const prev = byEmail.get(key);
     if (!prev) {
-      byEmail.set(user.email, user);
+      byEmail.set(key, { ...user, email: key });
       continue;
     }
     const prevTs = Date.parse(prev.updatedAt) || 0;
     const nextTs = Date.parse(user.updatedAt) || 0;
-    byEmail.set(user.email, nextTs >= prevTs ? user : prev);
+    byEmail.set(key, nextTs >= prevTs ? { ...user, email: key } : prev);
   }
   return [...byEmail.values()];
+}
+
+function usersIncludeAll(haystack: CustomerUser[], needles: CustomerUser[]) {
+  return needles.every((needle) => {
+    const found = haystack.find((user) => user.email === normalizeEmail(needle.email));
+    if (!found) return false;
+    // Same account row (id) or at least as fresh as what we tried to save.
+    if (found.id === needle.id) return true;
+    return (Date.parse(found.updatedAt) || 0) >= (Date.parse(needle.updatedAt) || 0);
+  });
+}
+
+/**
+ * Merge with latest remote, write, re-read — retries so concurrent serverless
+ * instances do not wipe each other's signups (classic JSON-blob lost update).
+ */
+async function persistCustomersMerged(localUsers: CustomerUser[]): Promise<boolean> {
+  let pending = localUsers.map((user) => ({ ...user, email: normalizeEmail(user.email) }));
+  const canLocal = ensureDataDir();
+  const canRemote = hasSupabaseService();
+
+  if (!canRemote && !canLocal) {
+    console.error("[customers] no durable store (Supabase service key / .data)");
+    return false;
+  }
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const remote = canRemote ? await readAtelierState<UsersFile>(ATELIER_STATE_KEYS.customers) : null;
+    const remoteUsers = Array.isArray(remote?.users) ? remote.users : [];
+    const merged = mergeCustomerLists(remoteUsers, pending);
+    usersCache = merged;
+    const payload: UsersFile = { users: merged };
+    writeUsersFileLocal(payload);
+
+    if (canRemote) {
+      const ok = await writeAtelierState(ATELIER_STATE_KEYS.customers, payload);
+      if (!ok) {
+        console.error("[customers] supabase write failed", { attempt });
+        return false;
+      }
+      const check = await readAtelierState<UsersFile>(ATELIER_STATE_KEYS.customers);
+      const checkUsers = Array.isArray(check?.users) ? check.users : [];
+      if (usersIncludeAll(checkUsers, pending)) {
+        usersCache = mergeCustomerLists(checkUsers, pending);
+        return true;
+      }
+      // Lost update — fold remote back in and retry.
+      pending = mergeCustomerLists(checkUsers, pending);
+      continue;
+    }
+
+    return true;
+  }
+
+  console.error("[customers] persist retries exhausted");
+  return false;
+}
+
+function writeUsersFile(data: UsersFile) {
+  usersCache = data.users;
+  writeUsersFileLocal(data);
+  pendingCustomerSave = persistCustomersMerged(data.users);
 }
 
 async function loadCustomersFromStore() {
@@ -107,7 +173,7 @@ async function loadCustomersFromStore() {
     usersCache = merged;
     // Seed empty remote from local (common after first Vercel deploy).
     if (remote.users.length === 0 && local.length > 0) {
-      pendingCustomerSave = writeAtelierState(ATELIER_STATE_KEYS.customers, { users: merged });
+      pendingCustomerSave = persistCustomersMerged(merged);
     }
     return;
   }
@@ -322,4 +388,3 @@ export function parseCustomerSessionValue(raw: string | undefined) {
   if (!isCustomerEmailVerified(user)) return null;
   return user;
 }
-
