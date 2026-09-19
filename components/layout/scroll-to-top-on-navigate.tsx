@@ -120,7 +120,8 @@ export function ScrollToTopOnNavigate() {
     forceTop();
     const frame = window.requestAnimationFrame(() => scrollToHashOrTop("auto"));
     const isProductPdp = /^\/sklep\/[^/]+\/?$/.test(pathname);
-    const delays = isProductPdp
+    const isCollection = /^\/kolekcje\/[^/]+\/?$/.test(pathname);
+    const delays = isProductPdp || isCollection
       ? [0, 30, 80, 160, 320, 600]
       : pathname.startsWith("/sklep")
         ? [0, 40, 100, 200]

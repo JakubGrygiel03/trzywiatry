@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { ProductCard } from "@/components/shop/product-card";
+import { ScrollCollectionToTop } from "@/components/shop/scroll-collection-to-top";
 import { Container, SectionHeading } from "@/components/ui/badge";
 import { noIndexRobots, pageMetadata } from "@/lib/seo";
 import { getCollectionBySlug, getProductsByCollection } from "@/lib/data/queries";
@@ -26,6 +27,7 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
 
   return (
     <div>
+      <ScrollCollectionToTop slug={collection.slug} />
       <div className="relative h-[42vh] min-h-64">
         <Image src={collection.imageUrl} alt={collection.name} fill className="object-cover" priority sizes="100vw" />
         <div className="absolute inset-0 bg-gradient-to-t from-czarny/55 via-czarny/15 to-transparent" />

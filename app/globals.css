@@ -277,12 +277,19 @@ h4 {
 }
 
 /*
-  Full first-screen stage. Dual (md+) strip uses full height so two frames
-  fill the banner without large white letterboxing above/below.
+  Phone: mid-tall stage (next section still peeks). Use svh — not dvh —
+  so Safari/iPad chrome hide/show does not resize and reflow the page.
+  md+: full first-screen stage; still svh for the same stability.
 */
 .home-banner {
-  --banner-stage: calc(100dvh - var(--site-chrome));
+  --banner-stage: min(68svh, 26rem);
   --banner-strip: var(--banner-stage);
+}
+
+@media (min-width: 768px) {
+  .home-banner {
+    --banner-stage: calc(100svh - var(--site-chrome));
+  }
 }
 
 .home-banner__strip {
