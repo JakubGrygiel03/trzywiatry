@@ -28,7 +28,13 @@ export function HomeSectionStack({
 
         switch (section.type) {
           case "banner":
-            return <HomeBanner key={section.id} payload={section.payload} />;
+            return (
+              <div key={section.id}>
+                <HomeBanner payload={section.payload} />
+                {/* Pure white rail so banner doesn’t bleed into cream hero */}
+                <div className="h-3 w-full bg-bialy md:h-4" aria-hidden />
+              </div>
+            );
           case "hero":
             return (
               <Hero
