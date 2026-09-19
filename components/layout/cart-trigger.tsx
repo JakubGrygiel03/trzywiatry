@@ -5,15 +5,17 @@ import { cartCount, useCartStore } from "@/store/use-cart-store";
 
 export function CartTrigger() {
   const items = useCartStore((state) => state.items);
-  const openCart = useCartStore((state) => state.openCart);
+  const isOpen = useCartStore((state) => state.isOpen);
+  const toggleCart = useCartStore((state) => state.toggleCart);
   const count = cartCount(items);
 
   return (
     <button
       type="button"
-      onClick={openCart}
+      onClick={toggleCart}
       className="relative flex h-9 w-9 items-center justify-center rounded-full border border-czarny/10 transition-colors hover:border-czerwony hover:text-czerwony md:h-11 md:w-11"
-      aria-label={`Koszyk, ${count} produktów`}
+      aria-label={isOpen ? "Zamknij koszyk" : `Koszyk, ${count} produktów`}
+      aria-expanded={isOpen}
     >
       <ShoppingBag className="h-4 w-4 md:h-5 md:w-5" />
       {count > 0 ? (

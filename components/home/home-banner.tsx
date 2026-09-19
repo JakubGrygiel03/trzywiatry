@@ -4,18 +4,14 @@ import { useState } from "react";
 import type { CSSProperties } from "react";
 import Image from "next/image";
 import { defaultBannerPayload, type BannerPayload } from "@/lib/cms/home-layout";
+import { scrollElementBelowChrome } from "@/lib/scroll-chrome";
 import { cn } from "@/lib/utils";
 
 function scrollToMore(href: string) {
   const id = href.startsWith("#") ? href.slice(1) : "hero-atelier";
   const el = document.getElementById(id) ?? document.getElementById("hero-atelier");
   if (!el) return;
-
-  const chrome = document.querySelector(".site-chrome");
-  const offset = chrome instanceof HTMLElement ? chrome.getBoundingClientRect().height : 0;
-  const top = el.getBoundingClientRect().top + window.scrollY - offset;
-
-  window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+  scrollElementBelowChrome(el, "smooth");
 }
 
 function resolvePanels(payload: BannerPayload & { image?: string }): [string, string, string] {

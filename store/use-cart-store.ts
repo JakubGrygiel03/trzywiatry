@@ -63,7 +63,27 @@ export const useCartStore = create<CartState>()(
       setGiftMessage: (value) => set({ giftMessage: value }),
       clear: () => set({ items: [], hasGiftWrapping: false, giftMessage: "" }),
     }),
-    { name: "trzywiatry-cart" },
+    {
+      name: "trzywiatry-cart",
+      version: 2,
+      // Never persist drawer open state — it trapped users after reload.
+      partialize: (state) => ({
+        items: state.items,
+        hasGiftWrapping: state.hasGiftWrapping,
+        giftMessage: state.giftMessage,
+      }),
+      migrate: (persisted) => {
+        const prev = (persisted ?? {}) as Partial<CartState>;
+        return {
+          items: prev.items ?? [],
+          hasGiftWrapping: prev.hasGiftWrapping ?? false,
+          giftMessage: prev.giftMessage ?? "",
+        };
+      },
+      onRehydrateStorage: () => (state) => {
+        state?.closeCart();
+      },
+    },
   ),
 );
 

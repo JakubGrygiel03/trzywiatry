@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { X } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { CartLineItem } from "@/components/cart/cart-line-item";
@@ -12,6 +14,9 @@ import { drawerTransition, fadeTransition } from "@/lib/motion";
 import { formatPLN } from "@/lib/format";
 import { cartGiftWrapCost, cartSubtotal, useCartStore } from "@/store/use-cart-store";
 
+/** Above sticky site chrome (z-60) so backdrop + close stay clickable. */
+const CART_Z = "z-[70]";
+
 export function CartDrawer() {
   const items = useCartStore((state) => state.items);
   const isOpen = useCartStore((state) => state.isOpen);
@@ -22,6 +27,15 @@ export function CartDrawer() {
   const gift = cartGiftWrapCost(hasGiftWrapping, giftWrapPriceCents);
   const reduceMotion = useReducedMotion();
 
+  useEffect(() => {
+    if (!isOpen) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") closeCart();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isOpen, closeCart]);
+
   return (
     <AnimatePresence>
       {isOpen ? (
@@ -29,7 +43,7 @@ export function CartDrawer() {
           <motion.button
             type="button"
             aria-label="Zamknij koszyk"
-            className="fixed inset-0 z-50 bg-czarny/25"
+            className={`fixed inset-0 ${CART_Z} bg-czarny/25`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -37,7 +51,10 @@ export function CartDrawer() {
             onClick={closeCart}
           />
           <motion.aside
-            className="fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col bg-bialy shadow-[0_0_40px_rgb(1_1_1/0.08)]"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Koszyk"
+            className={`fixed right-0 top-0 ${CART_Z} flex h-full w-full max-w-md flex-col bg-bialy shadow-[0_0_40px_rgb(1_1_1/0.08)]`}
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
@@ -48,9 +65,10 @@ export function CartDrawer() {
               <button
                 type="button"
                 onClick={closeCart}
-                className="text-sm text-szary transition-colors hover:text-czarny"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-czarny/10 text-czarny/70 transition-colors hover:border-czarny/30 hover:text-czarny"
+                aria-label="Zamknij koszyk"
               >
-                Zamknij
+                <X className="h-4 w-4" />
               </button>
             </div>
             <div className="flex-1 space-y-6 overflow-y-auto px-6 py-6">

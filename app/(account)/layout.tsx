@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { Suspense } from "react";
 import { connection } from "next/server";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { SiteSettingsProvider } from "@/components/cms/site-settings-provider";
 import { CookieConsent } from "@/components/layout/cookie-consent";
 import { Footer } from "@/components/layout/footer";
+import { ScrollToTopOnNavigate } from "@/components/layout/scroll-to-top-on-navigate";
 import { SiteHeader } from "@/components/layout/site-header";
 import { ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 import { getSettings } from "@/lib/data/queries";
@@ -31,6 +33,9 @@ export default async function AccountLayout({ children }: { children: ReactNode 
         <Footer />
         <CartDrawer />
         <CookieConsent />
+        <Suspense fallback={null}>
+          <ScrollToTopOnNavigate />
+        </Suspense>
       </div>
     </SiteSettingsProvider>
   );

@@ -10,6 +10,14 @@
   --krem-ciemny: #f4efe8;
   --papier: #f4efe8;
   --nav: #ffffff;
+  /* Fallback for html scroll-padding (refined on .site-shell). */
+  --site-chrome: 5.75rem;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --site-chrome: 6.25rem;
+  }
 }
 
 /* First-screen hero subtracts announcement + nav; laptop nav is taller. */
@@ -48,6 +56,8 @@
 
 html {
   scroll-behavior: smooth;
+  /* Sticky announcement + nav — hash links / scrollIntoView stop below chrome */
+  scroll-padding-top: var(--site-chrome, 5.75rem);
   scrollbar-width: thin;
   scrollbar-color: rgb(156 100 78 / 0.45) transparent;
 }
@@ -239,12 +249,16 @@ h4 {
 
 /* Full-bleed hero band — different from inset section tiles below.
    Solid paper ground so photo tiles never float on the patterned canvas. */
+/* Any in-page #target clears sticky chrome (regulamin, hero, etc.) */
+[id] {
+  scroll-margin-top: var(--site-chrome);
+}
+
 .hero-kadr {
   display: flex;
   flex-direction: column;
   overflow: visible;
   width: 100%;
-  /* Sticky announcement + nav — hash / “Zobacz więcej” stop below chrome */
   scroll-margin-top: var(--site-chrome);
   padding: 0.85rem 1.25rem 0;
   background: var(--krem);
