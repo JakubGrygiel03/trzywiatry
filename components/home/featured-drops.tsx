@@ -28,8 +28,8 @@ export function FeaturedDrops({ payload = defaultFeaturedPayload() }: { payload?
         </div>
       </Reveal>
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {products.map((product, index) => (
-          <Reveal key={product.id} delay={Math.min(index, 3) * 0.05}>
+        {products.map((product) => (
+          <Reveal key={product.id}>
             <ProductCard product={product} framed tone="cream" />
           </Reveal>
         ))}

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { connection } from "next/server";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { SiteSettingsProvider } from "@/components/cms/site-settings-provider";
+import { CookieConsent } from "@/components/layout/cookie-consent";
 import { Footer } from "@/components/layout/footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { ensureAtelierHydrated } from "@/lib/data/atelier-persist";
@@ -23,6 +24,7 @@ export default async function PublicLayout({ children }: { children: ReactNode }
         <main className="flex-1">{children}</main>
         <Footer />
         <CartDrawer />
+        <CookieConsent />
       </div>
     </SiteSettingsProvider>
   );

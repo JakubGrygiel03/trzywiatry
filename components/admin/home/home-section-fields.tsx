@@ -2,6 +2,7 @@
 
 import { CmsTokenField } from "@/components/admin/cms-token-field";
 import { CtaFields } from "@/components/admin/home/home-field-bits";
+import { HomeBannerFields } from "@/components/admin/home/home-banner-fields";
 import { HomeGlazeFields } from "@/components/admin/home/home-glaze-fields";
 import { HomeHeroFields } from "@/components/admin/home/home-hero-fields";
 import { HomePillarsFields } from "@/components/admin/home/home-pillars-fields";
@@ -18,6 +19,7 @@ export function HomeSectionFields({
   onChange: (section: HomeSection) => void;
   heroPhotos: HeroPhotoOption[];
 }) {
+  if (section.type === "banner") return <HomeBannerFields section={section} onChange={onChange} />;
   if (section.type === "hero") {
     return <HomeHeroFields section={section} onChange={onChange} heroPhotos={heroPhotos} />;
   }

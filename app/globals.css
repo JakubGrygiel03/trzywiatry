@@ -151,6 +151,92 @@ h4 {
   letter-spacing: 0.06em;
 }
 
+/* Banner copy: hidden until hover (desktop) or tap (touch) */
+@keyframes home-banner-unveil {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0.35rem, 0);
+    filter: blur(7px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    filter: blur(0);
+  }
+}
+
+.home-banner__copy {
+  pointer-events: none;
+}
+
+.home-banner__copy-line {
+  opacity: 0;
+  transform: translate3d(0, 0.35rem, 0);
+  filter: blur(7px);
+  backface-visibility: hidden;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .home-banner:hover .home-banner__copy {
+    pointer-events: auto;
+  }
+
+  .home-banner:hover .home-banner__copy-line {
+    animation: home-banner-unveil 1.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .home-banner:hover .home-banner__copy-line--1 {
+    animation-delay: 0ms;
+  }
+  .home-banner:hover .home-banner__copy-line--2 {
+    animation-delay: 120ms;
+  }
+  .home-banner:hover .home-banner__copy-line--3 {
+    animation-delay: 240ms;
+  }
+  .home-banner:hover .home-banner__copy-line--4 {
+    animation-delay: 400ms;
+  }
+}
+
+/* Phone / tablet: reveal on tap */
+.home-banner.is-revealed .home-banner__copy {
+  pointer-events: auto;
+}
+
+.home-banner.is-revealed .home-banner__copy-line {
+  animation: home-banner-unveil 1.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.home-banner.is-revealed .home-banner__copy-line--1 {
+  animation-delay: 0ms;
+}
+.home-banner.is-revealed .home-banner__copy-line--2 {
+  animation-delay: 120ms;
+}
+.home-banner.is-revealed .home-banner__copy-line--3 {
+  animation-delay: 240ms;
+}
+.home-banner.is-revealed .home-banner__copy-line--4 {
+  animation-delay: 400ms;
+}
+
+/*
+  Full first-screen stage. Dual (md+) strip uses full height so two frames
+  fill the banner without large white letterboxing above/below.
+*/
+.home-banner {
+  --banner-stage: calc(100dvh - var(--site-chrome));
+  --banner-strip: var(--banner-stage);
+}
+
+.home-banner__strip {
+  position: relative;
+  width: 100%;
+  height: var(--banner-strip);
+  max-height: 100%;
+}
+
 /* Full-bleed hero band — different from inset section tiles below.
    Solid paper ground so photo tiles never float on the patterned canvas. */
 .hero-kadr {
@@ -158,6 +244,8 @@ h4 {
   flex-direction: column;
   overflow: visible;
   width: 100%;
+  /* Sticky announcement + nav — hash / “Zobacz więcej” stop below chrome */
+  scroll-margin-top: var(--site-chrome);
   padding: 0.85rem 1.25rem 0;
   background: var(--krem);
   border-bottom: 1px solid rgb(1 1 1 / 0.06);

@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     return redirectToRegister(request, parsed.error.issues[0]?.message ?? "dane");
   }
 
-  await ensureCustomersHydrated();
+  await ensureCustomersHydrated({ force: true });
   const existing = findCustomerByEmail(parsed.data.email);
   if (existing) {
     // Older unverified rows — unlock and send them to login instead of a dead confirm loop.

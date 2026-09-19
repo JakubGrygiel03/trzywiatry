@@ -53,7 +53,7 @@ export function Hero({
   const secondary = workshopsEnabled ? payload.workshopCta : payload.aboutCta;
 
   return (
-    <section className="hero-kadr">
+    <section className="hero-kadr" id="hero-atelier">
       <div className="hero-stage">
         <div className="hero-copy">
           <div className="hero-copy__stack">

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import type { ReactNode } from "react";
 import { PwaRegister } from "@/components/pwa/pwa-register";
 import { Geist, Space_Mono } from "next/font/google";
 import { SITE } from "@/lib/constants";
@@ -60,7 +61,7 @@ export const viewport: Viewport = {
   themeColor: "#9C644E",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="pl"

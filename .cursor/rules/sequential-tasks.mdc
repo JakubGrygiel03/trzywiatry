@@ -1,0 +1,33 @@
+---
+description: Hard FIFO — queue as many tasks as you want; finish every one in order
+alwaysApply: true
+---
+
+# Hard sequential queue (non-negotiable)
+
+The user may send **many prompts in a row** (5, 10, …). That is intentional. Do **not** ask them to wait or send one-at-a-time.
+
+## Goal
+
+Drain the entire queue: every pending request gets done. Order is FIFO. Never drop, skip, or “forget” later items because an earlier one finished or a newer one arrived.
+
+## Rules
+
+1. Collect pending user requests into an ordered todo list (FIFO). Put **only the first** as `in_progress`; all others stay `pending`.
+2. **Forbidden while a task is open:** starting the next prompt’s work, mixing later topics into the current turn, or abandoning unfinished earlier work.
+3. Finish the current task fully (code + one-line status). Mark `completed`, then immediately start the next `pending` item — keep going until the queue is empty.
+4. If a new message arrives mid-task: add it to the **end** of the queue, acknowledge briefly that it waits, **do not** context-switch.
+5. Hard interrupt only (“stop”, “anuluj”, “odpal locala / push teraz”) may pause; after that, resume the next pending item.
+6. Never run two feature threads in one turn (e.g. cookies + banner + password mixed together).
+
+## Response shape
+
+- Start of each item: `Robię k/N: …`
+- End of each item: `Gotowe k/N.` then continue with `Robię k+1/N: …` until N is done.
+- Do **not** stop after item 1 and wait for the user to re-send the rest.
+
+## Anti-pattern
+
+User queues: cookies → animacja → hasło → … (10 items)  
+Bad: jump to hasło; leave cookies half-done; ignore later prompts  
+Good: 1→2→3→…→10, each fully finished before the next

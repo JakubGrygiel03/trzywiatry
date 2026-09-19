@@ -4,6 +4,7 @@ import type { GlazeKey } from "@/lib/visual";
 export const HOME_PAGE_KEY = "home";
 
 export const HOME_SECTION_TYPES = [
+  "banner",
   "hero",
   "pillars",
   "featured",
@@ -15,6 +16,36 @@ export const HOME_SECTION_TYPES = [
 export type HomeSectionType = (typeof HOME_SECTION_TYPES)[number];
 
 export type HomeCta = { label: string; href: string };
+
+/** Full-bleed ÅOOMI-style triptych above hero — three panels + overlay copy. */
+export type BannerPayload = {
+  /** Left / center / right photo panels (thin white gutters between). */
+  panels: [string, string, string];
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  textAlign: "left" | "center" | "right";
+  textColor: "bialy" | "czarny";
+  /** Dark scrim over the photos so text stays readable (0–80). */
+  overlayOpacity: number;
+  /** Inner padding around the text block (px). */
+  contentPaddingX: number;
+  contentPaddingY: number;
+  /** Minimum section height in viewport units. */
+  minHeightVh: number;
+  marginTop: number;
+  marginBottom: number;
+  /** Gap between the three panels in px. */
+  panelGap: number;
+  /** White margin around the triptych (px) — insets photos from section edges. */
+  panelInset: number;
+  /** Which panel shows alone on phone / narrow screens (0 left, 1 center, 2 right). */
+  mobilePanel: 0 | 1 | 2;
+  /** Two panels below 1400px (tablet / typical laptop): left then right slot. */
+  tabletPanels: [0 | 1 | 2, 0 | 1 | 2];
+  ctaLabel: string;
+  ctaHref: string;
+};
 
 export type HeroPayload = {
   eyebrow: string;
@@ -77,6 +108,7 @@ export type NewsletterPayload = {
 };
 
 export type HomeSection =
+  | { id: string; type: "banner"; enabled: boolean; payload: BannerPayload }
   | { id: string; type: "hero"; enabled: boolean; payload: HeroPayload }
   | { id: string; type: "pillars"; enabled: boolean; payload: PillarsPayload }
   | { id: string; type: "featured"; enabled: boolean; payload: FeaturedPayload }
@@ -85,6 +117,7 @@ export type HomeSection =
   | { id: string; type: "newsletter"; enabled: boolean; payload: NewsletterPayload };
 
 export const HOME_SECTION_LABELS: Record<HomeSectionType, string> = {
+  banner: "Baner (3 kadry)",
   hero: "Hero",
   pillars: "Trzy filary",
   featured: "Bestsellery",
@@ -95,6 +128,7 @@ export const HOME_SECTION_LABELS: Record<HomeSectionType, string> = {
 
 export function defaultHomeLayout(): HomeSection[] {
   return [
+    { id: "s-banner", type: "banner", enabled: true, payload: defaultBannerPayload() },
     { id: "s-hero", type: "hero", enabled: true, payload: defaultHeroPayload() },
     { id: "s-pillars", type: "pillars", enabled: true, payload: defaultPillarsPayload() },
     { id: "s-featured", type: "featured", enabled: true, payload: defaultFeaturedPayload() },
@@ -102,6 +136,33 @@ export function defaultHomeLayout(): HomeSection[] {
     { id: "s-workshop", type: "workshop", enabled: true, payload: defaultWorkshopPayload() },
     { id: "s-newsletter", type: "newsletter", enabled: true, payload: defaultNewsletterPayload() },
   ];
+}
+
+export function defaultBannerPayload(): BannerPayload {
+  return {
+    panels: [
+      "/brand/photos/products/woo/czarki-kremowe-02.jpg",
+      "/brand/photos/products/woo/czajniczek-szesciokatny-02.jpg",
+      "/brand/photos/products/woo/czarki-zawijasy-pastelowe-02.jpg",
+    ],
+    eyebrow: "Pracownia",
+    title: "Trzy Wiatry",
+    subtitle: "Ceramika i drewno — slow craft z Gdańska.",
+    textAlign: "center",
+    textColor: "bialy",
+    overlayOpacity: 32,
+    contentPaddingX: 28,
+    contentPaddingY: 40,
+    minHeightVh: 100,
+    marginTop: 0,
+    marginBottom: 0,
+    panelGap: 10,
+    panelInset: 0,
+    mobilePanel: 1,
+    tabletPanels: [0, 2],
+    ctaLabel: "Zobacz więcej",
+    ctaHref: "#hero-atelier",
+  };
 }
 
 export function defaultHeroPayload(): HeroPayload {

@@ -44,12 +44,14 @@ export async function requestCustomerEmailConfirm(
   const waiting = "Nowy link poszedł na skrzynkę. Sprawdź pocztę i spam — ważny 24 godziny.";
 
   try {
-    await ensureCustomersHydrated();
+    await ensureCustomersHydrated({ force: true });
     const issued = issueEmailConfirmToken(parsed.data.email);
     if (!issued.ok) {
       return { ok: true, message: waiting };
     }
-    await flushCustomersSave();
+    if (!(await flushCustomersSave())) {
+      return { ok: false, message: "Nie udało się zapisać linku. Spróbuj za chwilę." };
+    }
 
     const origin = await getRequestOrigin();
     const confirmUrl = `${origin}/konto/potwierdz-email?token=${issued.token}`;
@@ -86,12 +88,14 @@ export async function requestCustomerPasswordReset(
     "Jeśli konto z tym adresem istnieje, wysłaliśmy link do resetu hasła. Sprawdź skrzynkę (i spam).";
 
   try {
-    await ensureCustomersHydrated();
+    await ensureCustomersHydrated({ force: true });
     const created = createCustomerPasswordResetToken(parsed.data.email);
     if (!created) {
       return { ok: true, message: waiting };
     }
-    await flushCustomersSave();
+    if (!(await flushCustomersSave())) {
+      return { ok: false, message: "Nie udało się zapisać tokenu resetu. Spróbuj za chwilę." };
+    }
 
     const resetUrl = `${await getRequestOrigin()}/konto/nowe-haslo?token=${created.token}`;
     const mailed = await sendCustomerPasswordResetEmail(created.user.email, resetUrl);
@@ -129,7 +133,7 @@ export async function resetCustomerPasswordAction(
     return { ok: false, message: parsed.error.issues[0]?.message ?? "Sprawdź formularz." };
   }
 
-  await ensureCustomersHydrated();
+  await ensureCustomersHydrated({ force: true });
   const result = setCustomerPasswordWithResetToken(parsed.data.token, parsed.data.password);
   if (!result.ok) {
     return {
@@ -141,7 +145,9 @@ export async function resetCustomerPasswordAction(
     };
   }
 
-  await flushCustomersSave();
+  if (!(await flushCustomersSave())) {
+    return { ok: false, message: "Hasło nie zostało zapisane. Spróbuj jeszcze raz z tym samym linkiem." };
+  }
   await setCustomerSession(result.user);
   redirect("/konto?haslo=1");
 }
@@ -164,12 +170,15 @@ export async function changeCustomerPasswordAction(
     return { ok: false, message: parsed.error.issues[0]?.message ?? "Sprawdź formularz." };
   }
 
+  await ensureCustomersHydrated({ force: true });
   const valid = verifyCustomerCredentials(user.email, parsed.data.currentPassword);
   if (!valid) {
     return { ok: false, message: "Obecne hasło jest nieprawidłowe." };
   }
 
   updateCustomerPassword(user.id, parsed.data.password);
-  await flushCustomersSave();
+  if (!(await flushCustomersSave())) {
+    return { ok: false, message: "Nie udało się zapisać hasła. Spróbuj ponownie." };
+  }
   return { ok: true, message: "Hasło zostało zmienione." };
 }

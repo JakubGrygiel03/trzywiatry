@@ -37,6 +37,51 @@ const sectionBase = z.object({
 
 export const homeSectionSchema = z.discriminatedUnion("type", [
   sectionBase.extend({
+    type: z.literal("banner"),
+    payload: z.object({
+      panels: z.tuple([
+        z
+          .string()
+          .max(400)
+          .refine((value) => value === "" || value.startsWith("/"), "Zdjęcie musi być z katalogu pracowni.")
+          .refine((value) => !value.includes(".."), "Nieprawidłowa ścieżka zdjęcia."),
+        z
+          .string()
+          .max(400)
+          .refine((value) => value === "" || value.startsWith("/"), "Zdjęcie musi być z katalogu pracowni.")
+          .refine((value) => !value.includes(".."), "Nieprawidłowa ścieżka zdjęcia."),
+        z
+          .string()
+          .max(400)
+          .refine((value) => value === "" || value.startsWith("/"), "Zdjęcie musi być z katalogu pracowni.")
+          .refine((value) => !value.includes(".."), "Nieprawidłowa ścieżka zdjęcia."),
+      ]),
+      eyebrow: plainText("Etykieta banera", 80),
+      title: plainText("Tytuł banera", 120, 1),
+      subtitle: plainText("Podtytuł banera", 320),
+      textAlign: z.enum(["left", "center", "right"]),
+      textColor: z.enum(["bialy", "czarny"]),
+      overlayOpacity: z.coerce.number().min(0).max(80),
+      contentPaddingX: z.coerce.number().min(8).max(120),
+      contentPaddingY: z.coerce.number().min(16).max(160),
+      minHeightVh: z.coerce.number().min(28).max(100),
+      marginTop: z.coerce.number().min(0).max(160),
+      marginBottom: z.coerce.number().min(0).max(160),
+      panelGap: z.coerce.number().min(0).max(24),
+      panelInset: z.coerce.number().min(0).max(48).optional().default(0),
+      mobilePanel: z.coerce.number().int().min(0).max(2).optional().default(1),
+      tabletPanels: z
+        .tuple([
+          z.coerce.number().int().min(0).max(2),
+          z.coerce.number().int().min(0).max(2),
+        ])
+        .optional()
+        .default([0, 2]),
+      ctaLabel: plainText("Przycisk banera", 60),
+      ctaHref: safeHrefSchema,
+    }),
+  }),
+  sectionBase.extend({
     type: z.literal("hero"),
     payload: z.object({
       eyebrow: plainText("Etykieta hero", 80),
@@ -143,14 +188,24 @@ export function normalizeHomeLayout(input: unknown): HomeSection[] {
   const ordered: HomeSection[] = [];
 
   for (const raw of incoming) {
-    const result = homeSectionSchema.safeParse(hydrateGlazeSection(raw));
+    const result = homeSectionSchema.safeParse(hydrateBannerSection(hydrateGlazeSection(raw)));
     if (!result.success || used.has(result.data.type)) continue;
     used.add(result.data.type);
     ordered.push(result.data);
   }
 
   for (const type of HOME_SECTION_TYPES) {
-    if (!used.has(type)) ordered.push(structuredClone(defaultsByType[type]));
+    if (used.has(type)) continue;
+    const section = structuredClone(defaultsByType[type]);
+    const desiredIndex = HOME_SECTION_TYPES.indexOf(type);
+    let insertAt = ordered.length;
+    for (let i = 0; i < ordered.length; i += 1) {
+      if (HOME_SECTION_TYPES.indexOf(ordered[i]!.type) > desiredIndex) {
+        insertAt = i;
+        break;
+      }
+    }
+    ordered.splice(insertAt, 0, section);
   }
 
   return ordered;
@@ -162,6 +217,88 @@ function hydrateGlazeSection(raw: unknown) {
   if (section.type !== "glaze") return raw;
   if (Array.isArray(section.payload?.lines) && section.payload.lines.length > 0) return raw;
   return { ...section, payload: { ...section.payload, lines: defaultGlazeLines() } };
+}
+
+/** Migrate legacy single `image` banner into three-panel triptych. */
+function hydrateBannerSection(raw: unknown) {
+  if (!raw || typeof raw !== "object") return raw;
+  const section = raw as {
+    type?: string;
+    payload?: {
+      panels?: unknown;
+      image?: string;
+      panelGap?: number;
+      panelInset?: number;
+      minHeightVh?: number;
+      mobilePanel?: number;
+      tabletPanels?: unknown;
+    };
+  };
+  if (section.type !== "banner" || !section.payload) return raw;
+
+  const defaultPanels = defaultHomeLayout().find((item) => item.type === "banner")!.payload.panels;
+  // Old default was 64vh; ÅOOMI triptych fills the first screen.
+  const minHeightVh =
+    typeof section.payload.minHeightVh !== "number" || section.payload.minHeightVh === 64
+      ? 100
+      : section.payload.minHeightVh;
+  // Visible white gutters between panels (3px was effectively flush).
+  const panelGap =
+    typeof section.payload.panelGap !== "number" ||
+    section.payload.panelGap === 0 ||
+    section.payload.panelGap === 3 ||
+    section.payload.panelGap === 4
+      ? 10
+      : section.payload.panelGap;
+  const panelInset =
+    typeof section.payload.panelInset !== "number" || section.payload.panelInset === 16
+      ? 0
+      : section.payload.panelInset;
+  const mobilePanel =
+    section.payload.mobilePanel === 0 ||
+    section.payload.mobilePanel === 1 ||
+    section.payload.mobilePanel === 2
+      ? section.payload.mobilePanel
+      : 1;
+  const tabletRaw = section.payload.tabletPanels;
+  const tabletPanels: [0 | 1 | 2, 0 | 1 | 2] =
+    Array.isArray(tabletRaw) &&
+    tabletRaw.length === 2 &&
+    (tabletRaw[0] === 0 || tabletRaw[0] === 1 || tabletRaw[0] === 2) &&
+    (tabletRaw[1] === 0 || tabletRaw[1] === 1 || tabletRaw[1] === 2)
+      ? [tabletRaw[0], tabletRaw[1]]
+      : [0, 2];
+
+  if (Array.isArray(section.payload.panels) && section.payload.panels.length === 3) {
+    return {
+      ...section,
+      payload: {
+        ...section.payload,
+        panelGap,
+        panelInset,
+        minHeightVh,
+        mobilePanel,
+        tabletPanels,
+      },
+    };
+  }
+
+  const legacy = section.payload.image?.trim();
+  const panels: [string, string, string] = legacy ? [legacy, legacy, legacy] : defaultPanels;
+  const { image: _legacyImage, ...rest } = section.payload as { image?: string } & Record<string, unknown>;
+
+  return {
+    ...section,
+    payload: {
+      ...rest,
+      panels,
+      panelGap,
+      panelInset,
+      minHeightVh,
+      mobilePanel,
+      tabletPanels,
+    },
+  };
 }
 
 export function explainHomeLayoutIssues(sections: unknown, promoCode?: string) {

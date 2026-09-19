@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     return redirectToCheck(request, "link");
   }
 
-  await ensureCustomersHydrated();
+  await ensureCustomersHydrated({ force: true });
   const result = confirmCustomerEmail(token);
   if (!result.ok) {
     return redirectToCheck(request, result.reason === "expired" ? "wygasl" : "link");

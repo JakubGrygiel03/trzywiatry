@@ -16,8 +16,9 @@ export async function getHomeLayout(): Promise<HomeSection[]> {
   await ensureAtelierHydrated();
   const remote = await fetchHomeLayoutFromSupabase();
   if (remote) {
-    runtimeStore.homeLayout = remote;
-    return remote;
+    const normalized = normalizeHomeLayout(remote);
+    runtimeStore.homeLayout = normalized;
+    return normalized;
   }
   return getCachedHomeLayout();
 }

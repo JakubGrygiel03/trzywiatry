@@ -1,6 +1,7 @@
 import { FeaturedDrops } from "@/components/home/featured-drops";
 import { GlazeLines } from "@/components/home/glaze-lines";
 import { Hero } from "@/components/home/hero";
+import { HomeBanner } from "@/components/home/home-banner";
 import { NewsletterCta } from "@/components/home/newsletter-cta";
 import { ThreePillars } from "@/components/home/three-pillars";
 import { WorkshopTeaser } from "@/components/home/workshop-teaser";
@@ -26,6 +27,8 @@ export function HomeSectionStack({
         if (section.type === "workshop" && (!workshopsEnabled || !nextWorkshop)) return null;
 
         switch (section.type) {
+          case "banner":
+            return <HomeBanner key={section.id} payload={section.payload} />;
           case "hero":
             return (
               <Hero

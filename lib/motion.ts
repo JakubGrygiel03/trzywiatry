@@ -12,7 +12,7 @@ export const drawerTransition = {
 };
 
 export const revealTransition = {
-  duration: 0.55,
+  duration: 0.35,
   ease: motionEase,
 };
 
@@ -22,4 +22,4 @@ export const crossfadeTransition = {
   ease: motionEase,
 };
 
-export const revealViewport = { once: true, margin: "-8% 0px" as const };
+export const revealViewport = { once: true, amount: 0.15, margin: "0px 0px -40px 0px" as const };

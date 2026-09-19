@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     return redirectToLogin(request, "dane");
   }
 
-  await ensureCustomersHydrated();
+  await ensureCustomersHydrated({ force: true });
   const user = verifyCustomerCredentials(parsed.data.email, parsed.data.password);
   if (!user) {
     return redirectToLogin(request, "haslo");

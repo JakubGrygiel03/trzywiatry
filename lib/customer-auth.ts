@@ -99,28 +99,41 @@ function mergeCustomerLists(remote: CustomerUser[], local: CustomerUser[]) {
   return [...byEmail.values()];
 }
 
-export async function ensureCustomersHydrated() {
+async function loadCustomersFromStore() {
+  const local = readUsersFile().users;
+  const remote = await readAtelierState<UsersFile>(ATELIER_STATE_KEYS.customers);
+  if (Array.isArray(remote?.users)) {
+    const merged = mergeCustomerLists(remote.users, local);
+    usersCache = merged;
+    // Seed empty remote from local (common after first Vercel deploy).
+    if (remote.users.length === 0 && local.length > 0) {
+      pendingCustomerSave = writeAtelierState(ATELIER_STATE_KEYS.customers, { users: merged });
+    }
+    return;
+  }
+  usersCache = local;
+}
+
+/**
+ * Load customers into memory. Pass `{ force: true }` before login / reset so a
+ * warm serverless instance does not keep a stale token or password hash.
+ */
+export async function ensureCustomersHydrated(options?: { force?: boolean }) {
+  if (options?.force) {
+    customersHydrate = null;
+    usersCache = null;
+  }
   if (!customersHydrate) {
-    customersHydrate = (async () => {
-      const local = readUsersFile().users;
-      const remote = await readAtelierState<UsersFile>(ATELIER_STATE_KEYS.customers);
-      if (Array.isArray(remote?.users)) {
-        const merged = mergeCustomerLists(remote.users, local);
-        usersCache = merged;
-        // Seed empty remote from local (common after first Vercel deploy).
-        if (remote.users.length === 0 && local.length > 0) {
-          pendingCustomerSave = writeAtelierState(ATELIER_STATE_KEYS.customers, { users: merged });
-        }
-        return;
-      }
-      usersCache = local;
-    })();
+    customersHydrate = loadCustomersFromStore();
   }
   await customersHydrate;
 }
 
 export async function flushCustomersSave() {
-  if (pendingCustomerSave) await pendingCustomerSave;
+  if (!pendingCustomerSave) return true;
+  const ok = await pendingCustomerSave;
+  pendingCustomerSave = null;
+  return ok;
 }
 
 function currentUsers(): CustomerUser[] {
