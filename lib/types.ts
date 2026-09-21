@@ -192,6 +192,8 @@ export type StoredOrder = {
   paymentProvider?: "p24" | "manual" | "none";
   /** P24 transaction orderId from webhook. */
   paymentId?: string;
+  /** Last sessionId sent to P24 (order number or retry suffix). */
+  p24SessionId?: string;
   /** P24 methodId from status notification (BLIK, card, bank…). */
   paymentMethodId?: number;
   /** Human label cached at webhook time. */

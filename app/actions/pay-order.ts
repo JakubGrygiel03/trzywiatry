@@ -3,8 +3,8 @@
 import { redirect } from "next/navigation";
 import { buildP24Session, registerP24Transaction } from "@/lib/p24";
 import { resolvePaymentAccess } from "@/lib/payment-access";
-import { ensureOrdersHydrated } from "@/lib/data/order-persist";
-import { getOrderByNumber } from "@/lib/data/runtime-store";
+import { ensureOrdersHydrated, flushOrdersSave } from "@/lib/data/order-persist";
+import { getOrderByNumber, setOrderP24SessionInStore } from "@/lib/data/runtime-store";
 import { getPublicSiteUrl } from "@/lib/site-url";
 
 function confirmPath(orderNumber: string, orderId: string, extra: Record<string, string> = {}) {
@@ -42,7 +42,11 @@ export async function startPendingOrderPayment(formData: FormData) {
     }),
   );
 
-  if (registered.ok) redirect(registered.redirectUrl);
+  if (registered.ok) {
+    setOrderP24SessionInStore(order.id, sessionId);
+    await flushOrdersSave();
+    redirect(registered.redirectUrl);
+  }
 
   const payCode =
     registered.reason === "auth-failed" ? "auth" : registered.reason === "network-failed" ? "net" : "0";

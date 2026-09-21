@@ -391,6 +391,7 @@ export function updateOrderStatusInStore(
     paymentMethodId?: number;
     paymentMethodLabel?: string;
     paymentProvider?: StoredOrder["paymentProvider"];
+    p24SessionId?: string;
   },
 ): StoredOrder | null {
   const index = runtimeStore.orders.findIndex((order) => order.id === id);
@@ -423,6 +424,7 @@ export function updateOrderStatusInStore(
     paymentId: payment?.paymentId ?? current.paymentId,
     paymentMethodId: payment?.paymentMethodId ?? current.paymentMethodId,
     paymentMethodLabel: payment?.paymentMethodLabel ?? current.paymentMethodLabel,
+    p24SessionId: payment?.p24SessionId ?? current.p24SessionId,
     payload: {
       ...current.payload,
       status,
@@ -431,7 +433,24 @@ export function updateOrderStatusInStore(
         ? { paymentMethod: payment.paymentMethodLabel }
         : {}),
       ...(payment?.paymentId ? { paymentId: payment.paymentId } : {}),
+      ...(payment?.p24SessionId ? { p24SessionId: payment.p24SessionId } : {}),
     },
+  };
+  runtimeStore.orders[index] = next;
+  return next;
+}
+
+/** Persist the P24 sessionId used for register (needed for return-page reconcile). */
+export function setOrderP24SessionInStore(id: string, p24SessionId: string): StoredOrder | null {
+  const index = runtimeStore.orders.findIndex((order) => order.id === id);
+  if (index < 0) return null;
+  const current = runtimeStore.orders[index]!;
+  const next: StoredOrder = {
+    ...current,
+    p24SessionId,
+    paymentProvider: current.paymentProvider ?? "p24",
+    updatedAt: new Date().toISOString(),
+    payload: { ...current.payload, p24SessionId },
   };
   runtimeStore.orders[index] = next;
   return next;

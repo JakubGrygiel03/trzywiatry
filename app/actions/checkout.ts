@@ -8,6 +8,7 @@ import {
   applyVariantStockDelta,
   getRuntimeSettings,
   nextOrderNumber,
+  setOrderP24SessionInStore,
 } from "@/lib/data/runtime-store";
 import { ensureOrdersHydrated, flushOrdersSave } from "@/lib/data/order-persist";
 import { ensureAtelierHydrated, flushAtelierSave } from "@/lib/data/atelier-persist";
@@ -201,6 +202,8 @@ export async function createCheckoutSession(
   if ((await resolvePaymentAccess()).canPay) {
     const registered = await registerP24Transaction(p24);
     if (registered.ok) {
+      setOrderP24SessionInStore(order.id, orderNumber);
+      await flushOrdersSave();
       return {
         ok: true,
         orderNumber,

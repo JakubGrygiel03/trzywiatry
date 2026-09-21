@@ -37,10 +37,13 @@ export function CheckoutForm({
   defaultEmail = "",
   defaultName = "",
   paymentsLive = false,
+  onHandoff,
 }: {
   defaultEmail?: string;
   defaultName?: string;
   paymentsLive?: boolean;
+  /** Fired before redirect so CheckoutGate never flashes “koszyk pusty”. */
+  onHandoff?: () => void;
 }) {
   const items = useCartStore((state) => state.items);
   const hasGiftWrapping = useCartStore((state) => state.hasGiftWrapping);
@@ -62,9 +65,14 @@ export function CheckoutForm({
 
   useEffect(() => {
     if (!state.ok || !state.redirectTo) return;
-    clear();
-    window.location.assign(state.redirectTo);
-  }, [state.ok, state.redirectTo, clear]);
+    const url = state.redirectTo;
+    onHandoff?.();
+    // Clear on leave — never clear before assign (CheckoutGate would flash “koszyk pusty”).
+    const wipeCart = () => clear();
+    window.addEventListener("pagehide", wipeCart);
+    window.location.assign(url);
+    return () => window.removeEventListener("pagehide", wipeCart);
+  }, [state.ok, state.redirectTo, clear, onHandoff]);
 
   // Safety net — CheckoutGate usually catches empty carts first.
   if (items.length === 0 && !state.ok) {
@@ -81,13 +89,18 @@ export function CheckoutForm({
   }
 
   if (state.ok) {
+    const toPayment = Boolean(state.redirectTo?.includes("przelewy24") || state.redirectTo?.includes("trnRequest"));
     return (
       <SurfaceTile>
         <SurfaceTileBody className="sm:py-8">
           <p className="font-heading text-sm uppercase tracking-[0.14em] text-czerwony">
-            Zamówienie przyjęte
+            {toPayment ? "Przekierowanie do płatności" : "Zamówienie przyjęte"}
           </p>
-          <p className="mt-4 text-lg leading-relaxed">{state.message}</p>
+          <p className="mt-4 text-lg leading-relaxed">
+            {toPayment
+              ? "Chwilę… otwieramy Przelewy24 (BLIK, karta, przelew)."
+              : state.message}
+          </p>
         </SurfaceTileBody>
       </SurfaceTile>
     );

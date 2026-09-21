@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useCallback, useState } from "react";
 import { CheckoutForm } from "@/components/checkout/checkout-form";
 import { useCartEmptyFast } from "@/hooks/use-cart-hydration";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,8 @@ export function CheckoutGate({
   paymentsLive?: boolean;
 }) {
   const { ready, empty } = useCartEmptyFast();
+  const [handingOff, setHandingOff] = useState(false);
+  const onHandoff = useCallback(() => setHandingOff(true), []);
 
   // Before paint hydrate: tiny placeholder (usually never visible).
   if (!ready) {
@@ -46,13 +49,28 @@ export function CheckoutGate({
     );
   }
 
-  if (empty) return <EmptyCheckout />;
+  // After successful checkout the cart may clear on pagehide — never flash empty UI mid-redirect.
+  if (empty && !handingOff) return <EmptyCheckout />;
+
+  if (empty && handingOff) {
+    return (
+      <SurfaceTile>
+        <SurfaceTileBody className="sm:py-8">
+          <p className="font-heading text-sm uppercase tracking-[0.14em] text-czerwony">
+            Przekierowanie do płatności
+          </p>
+          <p className="mt-4 text-lg leading-relaxed">Chwilę… otwieramy Przelewy24.</p>
+        </SurfaceTileBody>
+      </SurfaceTile>
+    );
+  }
 
   return (
     <CheckoutForm
       defaultEmail={defaultEmail}
       defaultName={defaultName}
       paymentsLive={paymentsLive}
+      onHandoff={onHandoff}
     />
   );
 }

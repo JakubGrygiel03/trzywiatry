@@ -1,11 +1,19 @@
 import Link from "next/link";
-import { OrderNextStep } from "@/components/checkout/order-next-step";
 import { ClearCartOnMount } from "@/components/checkout/clear-cart-on-mount";
+import { PaymentOutcomePanel } from "@/components/checkout/payment-outcome-panel";
+import { PendingPaymentRefresh } from "@/components/checkout/pending-payment-refresh";
 import { Container, SectionHeading } from "@/components/ui/badge";
 import { ORDER_STATUS_HINTS, ORDER_STATUS_LABELS } from "@/lib/constants";
 import { ensureOrdersHydrated } from "@/lib/data/order-persist";
 import { getOrderByNumber } from "@/lib/data/runtime-store";
 import { formatPLN } from "@/lib/format";
+import { reconcilePendingOrderPayment } from "@/lib/p24-reconcile";
+import {
+  alignOutcomeWithOrderStatus,
+  parsePaymentOutcomeParam,
+  PAYMENT_OUTCOMES,
+  type PaymentOutcomeKey,
+} from "@/lib/payment-outcome";
 import { resolvePaymentAccess } from "@/lib/payment-access";
 import { noIndexRobots } from "@/lib/seo";
 import type { Metadata } from "next";
@@ -16,41 +24,80 @@ export const metadata: Metadata = {
   robots: noIndexRobots,
 };
 
+function outcomeFromPayParam(pay: string | undefined): PaymentOutcomeKey | null {
+  if (!pay) return null;
+  if (pay === "auth" || pay === "net") return "error";
+  if (pay === "0") return "retry";
+  return null;
+}
+
 export default async function OrderConfirmationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ order?: string; k?: string; mail?: string; pay?: string }>;
+  searchParams: Promise<{ order?: string; k?: string; mail?: string; pay?: string; wynik?: string }>;
 }) {
-  const { order: orderNumber, k, mail, pay } = await searchParams;
-  // Always re-fetch — warm serverless instances may still hold a pre-checkout order list.
+  const { order: orderNumber, k, mail, pay, wynik } = await searchParams;
   await ensureOrdersHydrated({ force: true });
   const record = orderNumber ? getOrderByNumber(orderNumber) : null;
-  const order = record && k && record.id === k ? record : null;
+  let order = record && k && record.id === k ? record : null;
+
   const { canPay, isTester } = await resolvePaymentAccess();
+
+  let candidate: PaymentOutcomeKey = "awaiting";
+
+  // Preview of UI branches — admin tester only (never fake “paid” for real customers).
+  const forced = isTester ? parsePaymentOutcomeParam(wynik) : null;
+  if (forced) {
+    candidate = forced;
+  } else if (order?.status === "pending") {
+    const reconciled = await reconcilePendingOrderPayment(order);
+    order = reconciled.order;
+    candidate = reconciled.outcome;
+  } else if (order && order.status !== "pending" && order.status !== "cancelled") {
+    candidate = "paid";
+  } else if (order?.status === "cancelled") {
+    candidate = "none";
+  }
+
+  const payOutcome = outcomeFromPayParam(pay);
+  if (!forced && payOutcome && order?.status === "pending") {
+    candidate = payOutcome;
+  }
+
+  // Lock UI to the real order record — no “opłacone” without status paid, no “zapłać” after paid.
+  const outcome = order
+    ? alignOutcomeWithOrderStatus(order.status, candidate)
+    : candidate;
+  const copy = PAYMENT_OUTCOMES[outcome];
+
+  const firstName = order?.customerName.split(" ")[0] ?? "";
+  const headingTitle = !order
+    ? "Nie znaleziono zamówienia"
+    : outcome === "paid"
+      ? `Dziękujemy, ${firstName}`
+      : copy.title;
+  const headingDescription = !order
+    ? orderNumber
+      ? `Szukaliśmy zamówienia ${orderNumber}, ale nie udało się go odczytać. Sprawdź maila albo konto.`
+      : "Po płatności wróć linkiem z maila albo zaloguj się na konto."
+    : outcome === "paid"
+      ? `Numer ${order.orderNumber}. ${ORDER_STATUS_HINTS[order.status]}`
+      : `Numer ${order.orderNumber}. ${copy.body}`;
 
   return (
     <div className="py-14 md:py-20">
       <Container className="max-w-2xl space-y-8">
-        <SectionHeading
-          eyebrow="Zamówienie"
-          title={order ? `Dziękujemy, ${order.customerName.split(" ")[0]}` : "Nie znaleziono zamówienia"}
-          description={
-            order
-              ? `Numer ${order.orderNumber}. ${ORDER_STATUS_HINTS[order.status]}`
-              : orderNumber
-                ? `Szukaliśmy zamówienia ${orderNumber}, ale nie udało się go odczytać. Sprawdź maila albo konto — płatność mogła już przejść w Przelewy24.`
-                : "Po płatności Przelewy24 wróć linkiem z maila albo zaloguj się na konto, żeby zobaczyć historię."
-          }
-        />
+        <SectionHeading eyebrow="Zamówienie" title={headingTitle} description={headingDescription} />
         {!order ? (
           <p className="text-sm text-czarny/60">
-            Jeśli zapłaciłeś w sandboxie / P24, zamówienie i tak powinno być w panelu admina i na mailu pracowni.
-            Napisz na kontakt jeśli status się nie pojawi.
+            Jeśli płatność przeszła w Przelewy24, zamówienie powinno być w panelu i na mailu pracowni. Napisz na
+            kontakt, jeśli status się nie pojawi.
           </p>
         ) : null}
         {order ? (
           <>
             <ClearCartOnMount />
+            <PendingPaymentRefresh pending={order.status === "pending" && (outcome === "awaiting" || outcome === "retry")} />
             <div className="space-y-4 rounded-[28px] bg-krem p-6">
               <p className="font-heading text-sm uppercase tracking-[0.14em] text-czerwony">
                 {ORDER_STATUS_LABELS[order.status]}
@@ -70,16 +117,15 @@ export default async function OrderConfirmationPage({
                 <span className="font-heading">{formatPLN(order.totalAmountInCents)}</span>
               </p>
             </div>
-            <OrderNextStep
+            <PaymentOutcomePanel
+              outcome={outcome}
+              orderStatus={order.status}
               orderNumber={order.orderNumber}
               orderId={order.id}
-              status={order.status}
-              customerEmail={order.customerEmail}
-              mailFailed={mail === "0"}
-              payFailed={Boolean(pay)}
-              payCode={pay}
               canPay={canPay}
               isTester={isTester}
+              mailFailed={mail === "0"}
+              customerEmail={order.customerEmail}
             />
           </>
         ) : (

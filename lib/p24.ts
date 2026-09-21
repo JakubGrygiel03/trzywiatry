@@ -195,10 +195,68 @@ export async function verifyP24Transaction(input: {
       responseCode?: number;
     } | null;
     const ok = response.ok && (json?.data?.status === "success" || json?.responseCode === 0);
-    if (!ok) console.error("[p24] verify failed", response.status);
+    if (!ok) console.error("[p24] verify failed", response.status, json);
     return ok;
   } catch (error) {
     console.error("[p24] verify network", error);
     return false;
   }
+}
+
+export type P24TransactionLookup = {
+  sessionId: string;
+  orderId: number;
+  amount: number;
+  currency: string;
+  /** 0 = unpaid, 1/2 = paid (P24 API). */
+  status: number;
+  paymentMethod?: number;
+};
+
+/** Look up a registered session — used when urlReturn beats the webhook. */
+export async function getP24TransactionBySessionId(
+  sessionId: string,
+): Promise<P24TransactionLookup | null> {
+  const { posId } = merchantIds();
+  if (!hasP24Credentials() || !sessionId) return null;
+
+  try {
+    const response = await fetch(
+      `${p24Host()}/api/v1/transaction/by/sessionId/${encodeURIComponent(sessionId)}`,
+      { method: "GET", headers: p24Headers(posId), cache: "no-store" },
+    );
+    const json = (await response.json().catch(() => null)) as {
+      data?: {
+        sessionId?: string;
+        orderId?: number;
+        amount?: number;
+        currency?: string;
+        status?: number;
+        paymentMethod?: number;
+      };
+      responseCode?: number;
+    } | null;
+    if (!response.ok || !json?.data?.orderId) {
+      if (response.status !== 404) {
+        console.error("[p24] transaction lookup", response.status, json);
+      }
+      return null;
+    }
+    return {
+      sessionId: json.data.sessionId ?? sessionId,
+      orderId: Number(json.data.orderId),
+      amount: Number(json.data.amount ?? 0),
+      currency: json.data.currency ?? "PLN",
+      status: Number(json.data.status ?? 0),
+      paymentMethod: json.data.paymentMethod != null ? Number(json.data.paymentMethod) : undefined,
+    };
+  } catch (error) {
+    console.error("[p24] transaction lookup network", error);
+    return null;
+  }
+}
+
+export function isP24TransactionPaid(status: number) {
+  // P24: 0 = no payment yet; 1 / 2 = paid (settled or awaiting merchant verify).
+  return status === 1 || status === 2;
 }

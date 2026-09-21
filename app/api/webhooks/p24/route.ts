@@ -80,6 +80,7 @@ export async function POST(request: NextRequest) {
       paymentId: String(body.orderId),
       paymentMethodId: methodId,
       paymentMethodLabel: p24MethodLabel(methodId),
+      p24SessionId: sessionId,
     });
     if (updated) {
       await flushOrdersSave();
