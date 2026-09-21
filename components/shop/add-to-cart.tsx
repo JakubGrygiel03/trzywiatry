@@ -30,7 +30,14 @@ export function AddToCart({ product }: { product: Product }) {
       variantId: variant.id,
       slug: product.slug,
       name: product.name,
-      variantTitle: variant.title,
+      // Persist human-readable choice (colour / capacity) — checkout still keys off variantId
+      variantTitle: [
+        variant.color,
+        variant.capacityMl ? `${variant.capacityMl} ml` : null,
+        !variant.color && !variant.capacityMl ? variant.title : null,
+      ]
+        .filter(Boolean)
+        .join(" · ") || variant.title,
       image: variant.image ?? getProductPhoto(product) ?? product.images[0],
       unitPriceInCents: price,
       stockQuantity: variant.stockQuantity,

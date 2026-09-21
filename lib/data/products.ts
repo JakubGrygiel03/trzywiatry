@@ -596,7 +596,7 @@ export const products: Product[] = [
         stockQuantity: 1,
         isAvailable: true,
         color: "Czerwony",
-        colorHex: "#9C644E",
+        colorHex: "#b84a6a",
         image: "/brand/photos/products/woo/miska-z-surowym-wykonczeniem-v3627-01-img_7428-scaled.jpeg",
       },
       {

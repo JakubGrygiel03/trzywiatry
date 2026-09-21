@@ -1,3 +1,4 @@
+import { glazeColorHex } from "@/lib/glaze-colors";
 import { isUsableProductPhoto } from "@/lib/media";
 import type { Product, ProductVariant } from "@/lib/types";
 
@@ -8,7 +9,7 @@ export function variantColors(product: Product) {
     const name = variant.color?.trim();
     if (!name || seen.has(name)) continue;
     seen.add(name);
-    colors.push({ name, hex: variant.colorHex });
+    colors.push({ name, hex: variant.colorHex ?? glazeColorHex(name) });
   }
   return colors;
 }
