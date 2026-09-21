@@ -43,13 +43,27 @@ export function getPublishedProducts() {
 
 /** Old Woo / colour-split slugs → one product with variants. */
 const PRODUCT_SLUG_ALIASES: Record<string, string> = {
-  "wygodny-kubas-granatowy": "wygodny-kubas",
-  "wygodny-kubas-niebieski": "wygodny-kubas",
-  "wygodny-kubas-miodowy": "wygodny-kubas",
-  "wygodny-wiegas-miodowy": "wygodny-wiegas",
-  "wygodny-wielgas-niebieiski": "wygodny-wiegas",
-  "wygodny-wiegas-niebieski": "wygodny-wiegas",
+  // Old merged listings → current Woo CSV SKUs
+  "wygodny-kubas": "wygodny-kubas-granatowy",
+  "wygodny-kubas-niebieski": "wygodny-kubas-granatowy",
+  "wygodny-wiegas": "wygodny-wiegas-niebieski",
+  "wygodny-wielgas-niebieiski": "wygodny-wiegas-niebieski",
   "formy-nieokielznane": "formy-nieidealne",
+  "czarka-kremowa": "czarki-kremowe",
+  "czarka-niebieska": "czarki-zawijasy-blekitny",
+  "czarka-rozowa": "czarki-zawijasy-rozowy",
+  "czarka-zielona": "czarki-zawijasy-zielone",
+  "czarka-z-logo": "czarka-z-logo-trzy-wiatry",
+  "czajniczek-w-kropki": "czajniczek-w-kropki-zestaw",
+  "filizanka-latte-jasna": "filizanka-latte-kremowa",
+  "szesciokatna-czareczka": "szesciokatna-czarka",
+  "forma-gipsowa-talerz": "forma-gipsowa-talezyk-1",
+  "forma-gipsowa-miska": "forma-gipsowa-miska-1",
+  "forma-gipsowa-miska-niska": "forma-gipsowa-miska-2",
+  "forma-gipsowa-ucho-1": "forma-gipsowa-raczka-1",
+  "forma-gipsowa-ucho-2": "forma-gipsowa-raczka-2",
+  "forma-gipsowa-ucho-3": "forma-gipsowa-raczka-3",
+  "granatowa-micha-z-surowym-wykonczeniem": "gratowa-micha-z-surowym-wykonczeniem",
 };
 
 export function getProductBySlug(slug: string) {

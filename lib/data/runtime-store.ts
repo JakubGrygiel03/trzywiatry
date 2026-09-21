@@ -307,8 +307,9 @@ export function setCatalogSeedSignature(signature: string) {
 }
 
 /**
- * Keep admin edits. Only append products that appeared in the seed file
- * after the last persisted signature — never replace the whole catalog.
+ * Keep admin edits only while the seed fingerprint is unchanged.
+ * When products.ts changes (Woo re-import), replace the whole catalog so
+ * removed products disappear and variants/images match the CSV.
  */
 function mergeNewSeedProducts() {
   const signature = seedIdSignature();
@@ -321,14 +322,9 @@ function mergeNewSeedProducts() {
   runtimeStore.catalog = runtimeStore.catalog.filter((product) => !DROP_PRODUCT_IDS.has(product.id));
   if (signature === lastSeedIdSignature) return;
 
-  const ids = new Set(runtimeStore.catalog.map((product) => product.id));
-  for (const seed of seedProducts) {
-    if (!ids.has(seed.id) && !DROP_PRODUCT_IDS.has(seed.id)) {
-      runtimeStore.catalog.push(structuredClone(seed));
-      ids.add(seed.id);
-    }
-  }
+  runtimeStore.catalog = structuredClone(seedProducts);
   lastSeedIdSignature = signature;
+  persist();
 }
 
 export function getRuntimeCatalog(): Product[] {

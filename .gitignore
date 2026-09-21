@@ -44,6 +44,14 @@ next-env.d.ts
 # local admin credentials + reset tokens (never commit)
 .data/
 tmp-brand-extract/
+tmp-woo-*.json
+tmp-woo-*.txt
+tmp-woo-analyze.txt
+tmp-woo-import-log*.txt
+scripts/check-encoding.mjs
+scripts/debug-woo-images.mjs
+scripts/analyze-woo-csv.mjs
+
 
 # brand source (keep crops in public/, ignore heavy PDF originals)
 /brand/*.pdf
