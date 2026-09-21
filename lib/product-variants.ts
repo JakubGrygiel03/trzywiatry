@@ -56,17 +56,36 @@ export function variantPhoto(product: Product, variant?: ProductVariant) {
   return variant?.image ?? product.images[0];
 }
 
-function photoStem(src: string) {
-  return src.replace(/-\d+\.(jpe?g|png|webp|avif)$/i, "").toLowerCase();
-}
-
-/** Gallery for the selected glaze — cover first, then matching shots of that colour. */
+/**
+ * Gallery for the selected variant.
+ * - Capacity-only / shared gallery: all product photos, cover first
+ * - Colour variants with `-v{id}-` files: parent shots + that variant’s shots
+ * - Legacy `slug-02.jpg` stems: group by colour stem
+ */
 export function photosForVariant(product: Product, variant?: ProductVariant) {
   const all = product.images.filter(isUsableProductPhoto);
   const cover = variant?.image && isUsableProductPhoto(variant.image) ? variant.image : undefined;
   if (!cover) return all;
 
-  const stem = photoStem(cover);
-  const matched = all.filter((src) => src === cover || photoStem(src) === stem);
-  return [cover, ...matched.filter((src) => src !== cover)];
+  const withCoverFirst = (list: string[]) => [cover, ...list.filter((src) => src !== cover)];
+
+  // Woo CSV import: variant-specific files are named `…-v1234-…`
+  const variantToken = cover.match(/-v\d+-/i)?.[0];
+  if (variantToken) {
+    const matched = all.filter(
+      (src) => src === cover || src.includes(variantToken) || !/-v\d+-/i.test(src),
+    );
+    return withCoverFirst(matched.length ? matched : all);
+  }
+
+  // Legacy naming: `micha-biala-02.jpg` — group by stem without trailing -NN
+  const classicStem = (src: string) => src.replace(/-\d{2}\.(jpe?g|png|webp|avif)$/i, "").toLowerCase();
+  const coverClassic = classicStem(cover);
+  if (coverClassic !== cover.toLowerCase()) {
+    const matched = all.filter((src) => src === cover || classicStem(src) === coverClassic);
+    if (matched.length > 1) return withCoverFirst(matched);
+  }
+
+  // Shared gallery (e.g. wygodny kubas – capacity variants): show every product photo
+  return withCoverFirst(all);
 }
