@@ -47,7 +47,8 @@ export default async function OrderConfirmationPage({
             Jeśli zapłaciłeś w sandboxie / P24, zamówienie i tak powinno być w panelu admina i na mailu pracowni.
             Napisz na kontakt jeśli status się nie pojawi.
           </p>
-        ) : null}        {order ? (
+        ) : null}
+        {order ? (
           <>
             <ClearCartOnMount />
             <div className="space-y-4 rounded-[28px] bg-krem p-6">
