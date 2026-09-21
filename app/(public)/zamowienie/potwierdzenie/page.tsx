@@ -65,7 +65,8 @@ export default async function OrderConfirmationPage({
               status={order.status}
               customerEmail={order.customerEmail}
               mailFailed={mail === "0"}
-              payFailed={pay === "0"}
+              payFailed={Boolean(pay)}
+              payCode={pay}
             />
           </>
         ) : (

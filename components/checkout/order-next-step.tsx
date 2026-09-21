@@ -2,8 +2,15 @@ import Link from "next/link";
 import { startPendingOrderPayment } from "@/app/actions/pay-order";
 import { Button } from "@/components/ui/button";
 import { SITE } from "@/lib/constants";
-import { hasP24Credentials } from "@/lib/p24";
+import { arePaymentsEnabled, isP24Sandbox } from "@/lib/p24";
 import type { OrderStatus } from "@/lib/types";
+
+const PAY_ERRORS: Record<string, string> = {
+  "0": "Płatność nie wystartowała za pierwszym razem. Spróbuj ponownie.",
+  auth:
+    "Przelewy24 odrzuciło klucz API (401). W sandboxie muszą być klucze z panelu sandbox.przelewy24.pl — nie z produkcji.",
+  net: "Nie udało się połączyć z Przelewy24. Sprawdź sieć / TLS i spróbuj ponownie.",
+};
 
 export function OrderNextStep({
   orderNumber,
@@ -12,6 +19,7 @@ export function OrderNextStep({
   customerEmail,
   mailFailed,
   payFailed,
+  payCode,
 }: {
   orderNumber: string;
   orderId: string;
@@ -19,8 +27,10 @@ export function OrderNextStep({
   customerEmail: string;
   mailFailed: boolean;
   payFailed: boolean;
+  payCode?: string;
 }) {
-  const canPay = status === "pending" && hasP24Credentials();
+  const canPay = status === "pending" && arePaymentsEnabled();
+  const payMessage = payCode ? PAY_ERRORS[payCode] ?? PAY_ERRORS["0"] : payFailed ? PAY_ERRORS["0"] : null;
 
   return (
     <div className="space-y-4">
@@ -28,12 +38,19 @@ export function OrderNextStep({
         <div className="space-y-3 rounded-[28px] border border-czerwony/20 bg-krem p-6">
           <p className="font-heading text-[11px] uppercase tracking-[0.16em] text-czerwony">Następny krok</p>
           <p className="text-sm leading-relaxed">
-            Zamówienie jest zapisane. Pracownia zaczyna pakować dopiero po płatności — BLIK, karta albo przelew w
-            Przelewy24.
+            {canPay ? (
+              <>
+                Zamówienie jest zapisane. Pracownia zaczyna pakować dopiero po płatności — BLIK, karta albo przelew w
+                Przelewy24{isP24Sandbox() ? " (tryb testowy / sandbox)" : ""}.
+              </>
+            ) : (
+              <>
+                Zamówienie jest zapisane. Płatności online są chwilowo niedostępne — o dalszych krokach damy znać
+                mailem.
+              </>
+            )}
           </p>
-          {payFailed ? (
-            <p className="text-sm text-czerwony">Płatność nie wystartowała za pierwszym razem. Spróbuj ponownie.</p>
-          ) : null}
+          {payMessage ? <p className="text-sm text-czerwony">{payMessage}</p> : null}
           {canPay ? (
             <form action={startPendingOrderPayment}>
               <input type="hidden" name="orderNumber" value={orderNumber} />

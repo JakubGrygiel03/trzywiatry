@@ -5,7 +5,7 @@ import { CartLineItem } from "@/components/cart/cart-line-item";
 import { CartStockNotice } from "@/components/cart/cart-stock-notice";
 import { CartUpsell } from "@/components/cart/cart-upsell";
 import { FreeShippingMeter, GiftWrappingCard } from "@/components/cart/gift-and-shipping";
-import { useSiteSettings } from "@/components/cms/site-settings-provider";
+import { usePaymentsEnabled, useSiteSettings } from "@/components/cms/site-settings-provider";
 import { useCartEmptyFast } from "@/hooks/use-cart-hydration";
 import { SurfacePageIntro } from "@/components/layout/surface-page";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ export default function CartPage() {
   const hasGiftWrapping = useCartStore((state) => state.hasGiftWrapping);
   const { ready, empty } = useCartEmptyFast();
   const { giftWrapPriceCents } = useSiteSettings();
+  const paymentsEnabled = usePaymentsEnabled();
   const subtotal = cartSubtotal(items);
   const gift = cartGiftWrapCost(hasGiftWrapping, giftWrapPriceCents);
 
@@ -64,6 +65,12 @@ export default function CartPage() {
                   <span>Razem</span>
                   <span className="font-heading">{formatPLN(subtotal + gift)}</span>
                 </div>
+                {!paymentsEnabled ? (
+                  <p className="rounded-2xl border border-czerwony/20 bg-krem px-4 py-3 text-xs leading-relaxed text-czerwony">
+                    Płatności online są chwilowo niedostępne. Możesz przejść do kasy i zapisać zamówienie — o płatności
+                    damy znać mailem.
+                  </p>
+                ) : null}
                 <Button asChild className="w-full">
                   <Link href="/zamowienie" prefetch>
                     Przejdź do kasy

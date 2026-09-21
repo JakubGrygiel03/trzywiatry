@@ -1,6 +1,13 @@
 import { createHash } from "crypto";
 
+export type P24RegisterFailure =
+  | "missing-keys"
+  | "auth-failed"
+  | "register-failed"
+  | "network-failed";
+
 function p24Sign(fields: Record<string, string | number>) {
+  // P24 docs: JSON field order + types matter (merchantId/amount = int).
   return createHash("sha384").update(JSON.stringify(fields)).digest("hex");
 }
 
@@ -8,6 +15,10 @@ function p24Host() {
   return process.env.P24_SANDBOX === "false"
     ? "https://secure.przelewy24.pl"
     : "https://sandbox.przelewy24.pl";
+}
+
+export function isP24Sandbox() {
+  return process.env.P24_SANDBOX !== "false";
 }
 
 function merchantIds() {
@@ -24,6 +35,22 @@ function apiAuth(posId: number) {
 export function hasP24Credentials() {
   const { merchantId, crc } = merchantIds();
   return Boolean(merchantId && crc && (process.env.P24_API_KEY || process.env.P24_REPORTS_KEY));
+}
+
+/**
+ * Customer-facing payments stay off until PAYMENTS_ENABLED=true.
+ * Keeps sandbox keys in env without opening checkout to shoppers.
+ */
+export function arePaymentsEnabled() {
+  return process.env.PAYMENTS_ENABLED === "true" && hasP24Credentials();
+}
+
+function p24Headers(posId: number) {
+  return {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    Authorization: `Basic ${apiAuth(posId)}`,
+  };
 }
 
 /** Builds a Przelewy24 register payload. Live keys live in env — never in the client. */
@@ -65,26 +92,33 @@ export async function registerP24Transaction(session: ReturnType<typeof buildP24
   try {
     const response = await fetch(`${p24Host()}/api/v1/transaction/register`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Basic ${apiAuth(session.posId)}`,
-      },
+      headers: p24Headers(session.posId),
       body: JSON.stringify(session),
     });
     const json = (await response.json().catch(() => null)) as {
       data?: { token?: string };
       error?: string;
       message?: string;
+      code?: number;
     } | null;
     const token = json?.data?.token;
     if (!token) {
-      console.error("[p24] register failed", response.status, JSON.stringify(json));
+      console.error("[p24] register failed", {
+        status: response.status,
+        sandbox: isP24Sandbox(),
+        merchantId: session.merchantId,
+        posId: session.posId,
+        body: json,
+      });
+      if (response.status === 401) {
+        return { ok: false as const, reason: "auth-failed" as const };
+      }
       return { ok: false as const, reason: "register-failed" as const };
     }
     return { ok: true as const, redirectUrl: `${p24Host()}/trnRequest/${token}` };
   } catch (error) {
     console.error("[p24] register network", error);
-    return { ok: false as const, reason: "register-failed" as const };
+    return { ok: false as const, reason: "network-failed" as const };
   }
 }
 
@@ -139,10 +173,7 @@ export async function verifyP24Transaction(input: {
   try {
     const response = await fetch(`${p24Host()}/api/v1/transaction/verify`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Basic ${apiAuth(posId)}`,
-      },
+      headers: p24Headers(posId),
       body: JSON.stringify({
         merchantId,
         posId,

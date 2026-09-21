@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node --use-system-ca ./node_modules/next/dist/bin/next dev",
+    "p24:probe": "node --use-system-ca ./scripts/p24-probe.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

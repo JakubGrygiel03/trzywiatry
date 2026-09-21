@@ -15,7 +15,7 @@ import { getAllProducts } from "@/lib/data/queries";
 import { getCustomerSession } from "@/lib/customer-session";
 import { orderPlacedEmail, sendEmail } from "@/lib/resend";
 import { notifyStudioNewOrder } from "@/lib/studio-notify";
-import { buildP24Session, hasP24Credentials, registerP24Transaction } from "@/lib/p24";
+import { arePaymentsEnabled, buildP24Session, registerP24Transaction } from "@/lib/p24";
 import { getVacationCheckoutNote } from "@/lib/vacation-message";
 import { getRequestOrigin } from "@/lib/request-origin";
 import type { ShippingMethod, StoredOrder, StoredOrderItem } from "@/lib/types";
@@ -190,7 +190,7 @@ export async function createCheckoutSession(
     urlStatus: `${origin}/api/webhooks/p24`,
   });
 
-  if (hasP24Credentials()) {
+  if (arePaymentsEnabled()) {
     const registered = await registerP24Transaction(p24);
     if (registered.ok) {
       return {
@@ -200,7 +200,13 @@ export async function createCheckoutSession(
         message: `Zamówienie ${orderNumber} zapisane. Przekierowujemy do płatności…`,
       };
     }
-    confirmQuery.set("pay", "0");
+    const payCode =
+      registered.reason === "auth-failed"
+        ? "auth"
+        : registered.reason === "network-failed"
+          ? "net"
+          : "0";
+    confirmQuery.set("pay", payCode);
     return {
       ok: true,
       orderNumber,
@@ -209,7 +215,7 @@ export async function createCheckoutSession(
     };
   }
 
-  console.warn("[p24] checkout skipped — missing credentials");
+  console.warn("[p24] checkout skipped — payments disabled or missing credentials");
 
   return {
     ok: true,

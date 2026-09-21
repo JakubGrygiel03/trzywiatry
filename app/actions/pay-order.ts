@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { buildP24Session, hasP24Credentials, registerP24Transaction } from "@/lib/p24";
+import { arePaymentsEnabled, buildP24Session, registerP24Transaction } from "@/lib/p24";
 import { ensureOrdersHydrated } from "@/lib/data/order-persist";
 import { getOrderByNumber } from "@/lib/data/runtime-store";
 import { getRequestOrigin } from "@/lib/request-origin";
@@ -23,13 +23,16 @@ export async function startPendingOrderPayment(formData: FormData) {
     redirect(confirmPath(orderNumber || "brak", orderId || "brak"));
   }
 
-  if (!hasP24Credentials()) {
+  if (!arePaymentsEnabled()) {
     redirect(`${origin}${confirmPath(order.orderNumber, order.id, { pay: "0" })}`);
   }
 
+  // Unique session per retry — P24 rejects reusing the same sessionId after a failed attempt.
+  const sessionId = `${order.orderNumber}-${Date.now().toString(36)}`;
+
   const registered = await registerP24Transaction(
     buildP24Session({
-      sessionId: order.orderNumber,
+      sessionId,
       amountInCents: order.totalAmountInCents,
       email: order.customerEmail,
       description: `Trzy Wiatry ${order.orderNumber}`,
@@ -39,5 +42,8 @@ export async function startPendingOrderPayment(formData: FormData) {
   );
 
   if (registered.ok) redirect(registered.redirectUrl);
-  redirect(`${origin}${confirmPath(order.orderNumber, order.id, { pay: "0" })}`);
+
+  const payCode =
+    registered.reason === "auth-failed" ? "auth" : registered.reason === "network-failed" ? "net" : "0";
+  redirect(`${origin}${confirmPath(order.orderNumber, order.id, { pay: payCode })}`);
 }

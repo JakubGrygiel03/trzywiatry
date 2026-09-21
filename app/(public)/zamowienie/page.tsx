@@ -4,7 +4,7 @@ import { Container } from "@/components/ui/badge";
 import { SurfaceTile, SurfaceTileBody } from "@/components/ui/surface-tile";
 import { getCustomerSession } from "@/lib/customer-session";
 import { getSettings } from "@/lib/data/queries";
-import { hasP24Credentials } from "@/lib/p24";
+import { arePaymentsEnabled } from "@/lib/p24";
 import { getVacationCheckoutNote } from "@/lib/vacation-message";
 import { noIndexRobots } from "@/lib/seo";
 import type { Metadata } from "next";
@@ -18,6 +18,7 @@ export const metadata: Metadata = {
 export default async function CheckoutPage() {
   const vacation = getVacationCheckoutNote(getSettings());
   const customer = await getCustomerSession();
+  const paymentsLive = arePaymentsEnabled();
 
   return (
     <div className="py-8 md:py-10">
@@ -26,9 +27,9 @@ export default async function CheckoutPage() {
           eyebrow="Kasa"
           title="Dostawa i płatność"
           description={
-            hasP24Credentials()
+            paymentsLive
               ? "Wybierz paczkomat na mapie albo kuriera. Płatność BLIK / karta przez Przelewy24 — potwierdzenie przyjdzie mailem."
-              : "Podaj e-mail i dane dostawy. Zamówienie zapisujemy; o płatności damy znać mailem."
+              : "Podaj e-mail i dane dostawy. Płatności online są chwilowo niedostępne — zamówienie zapisujemy, o płatności damy znać mailem."
           }
         />
         {vacation ? (
@@ -40,10 +41,20 @@ export default async function CheckoutPage() {
             </SurfaceTileBody>
           </SurfaceTile>
         ) : null}
+        {!paymentsLive ? (
+          <SurfaceTile>
+            <SurfaceTileBody>
+              <p className="text-[14px] leading-relaxed text-czerwony">
+                Płatności online są chwilowo niedostępne. Możesz złożyć zamówienie — skontaktujemy się w sprawie
+                płatności.
+              </p>
+            </SurfaceTileBody>
+          </SurfaceTile>
+        ) : null}
         <CheckoutGate
           defaultEmail={customer?.email ?? ""}
           defaultName={customer?.name ?? ""}
-          paymentsLive={hasP24Credentials()}
+          paymentsLive={paymentsLive}
         />
       </Container>
     </div>

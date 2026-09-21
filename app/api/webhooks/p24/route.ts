@@ -48,7 +48,13 @@ export async function POST(request: NextRequest) {
   }
 
   await ensureOrdersHydrated();
-  const order = getOrderByNumber(sessionId);
+  // Checkout uses orderNumber; retries may append a suffix (TW-0004-m1x2y3).
+  const order =
+    getOrderByNumber(sessionId) ??
+    (() => {
+      const base = sessionId.match(/^(TW-\d+)/i)?.[1];
+      return base ? getOrderByNumber(base) : null;
+    })();
   if (!order) {
     return NextResponse.json({ error: "unknown session" }, { status: 404 });
   }

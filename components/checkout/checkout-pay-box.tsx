@@ -60,10 +60,17 @@ export function CheckoutPayBox({
             </p>
           </div>
         ) : (
-          <p className="text-xs text-czarny/50">Zamówienie zapisujemy — o płatności damy znać mailem.</p>
+          <div className="space-y-2 rounded-2xl border border-czerwony/20 bg-krem px-4 py-4">
+            <p className="font-heading text-[11px] uppercase tracking-[0.16em] text-czerwony">
+              Płatności niedostępne
+            </p>
+            <p className="text-xs leading-relaxed text-czarny/70">
+              Płatności online są chwilowo wyłączone. Zamówienie zapisujemy — o płatności damy znać mailem.
+            </p>
+          </div>
         )}
         <Button type="submit" disabled={pending} className="w-full">
-          {pending ? "Składam zamówienie…" : paymentsLive ? "Zamawiam i płacę" : "Zamawiam"}
+          {pending ? "Składam zamówienie…" : paymentsLive ? "Zamawiam i płacę" : "Zamawiam bez płatności"}
         </Button>
         {message ? <p className="text-sm text-czerwony">{message}</p> : null}
       </SurfaceTileBody>
