@@ -2,7 +2,7 @@ import Link from "next/link";
 import { startPendingOrderPayment } from "@/app/actions/pay-order";
 import { Button } from "@/components/ui/button";
 import { SITE } from "@/lib/constants";
-import { arePaymentsEnabled, isP24Sandbox } from "@/lib/p24";
+import { isP24Sandbox } from "@/lib/p24";
 import type { OrderStatus } from "@/lib/types";
 
 const PAY_ERRORS: Record<string, string> = {
@@ -20,6 +20,8 @@ export function OrderNextStep({
   mailFailed,
   payFailed,
   payCode,
+  canPay: paymentsAllowed,
+  isTester = false,
 }: {
   orderNumber: string;
   orderId: string;
@@ -28,8 +30,10 @@ export function OrderNextStep({
   mailFailed: boolean;
   payFailed: boolean;
   payCode?: string;
+  canPay: boolean;
+  isTester?: boolean;
 }) {
-  const canPay = status === "pending" && arePaymentsEnabled();
+  const canPay = status === "pending" && paymentsAllowed;
   const payMessage = payCode ? PAY_ERRORS[payCode] ?? PAY_ERRORS["0"] : payFailed ? PAY_ERRORS["0"] : null;
 
   return (
@@ -41,7 +45,8 @@ export function OrderNextStep({
             {canPay ? (
               <>
                 Zamówienie jest zapisane. Pracownia zaczyna pakować dopiero po płatności — BLIK, karta albo przelew w
-                Przelewy24{isP24Sandbox() ? " (tryb testowy / sandbox)" : ""}.
+                Przelewy24
+                {isP24Sandbox() || isTester ? " (tryb testowy / sandbox)" : ""}.
               </>
             ) : (
               <>

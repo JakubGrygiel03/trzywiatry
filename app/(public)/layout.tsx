@@ -10,16 +10,17 @@ import { ScrollToTopOnNavigate } from "@/components/layout/scroll-to-top-on-navi
 import { SiteHeader } from "@/components/layout/site-header";
 import { ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 import { getSettings } from "@/lib/data/queries";
-import { arePaymentsEnabled } from "@/lib/p24";
+import { resolvePaymentAccess } from "@/lib/payment-access";
 
 export default async function PublicLayout({ children }: { children: ReactNode }) {
   await connection();
   await ensureAtelierHydrated();
   const settings = getSettings();
   const announcementHidden = settings.announcementType === "hidden";
+  const paymentAccess = await resolvePaymentAccess();
 
   return (
-    <SiteSettingsProvider settings={settings} paymentsEnabled={arePaymentsEnabled()}>
+    <SiteSettingsProvider settings={settings} paymentAccess={paymentAccess}>
       <div
         className="site-shell flex min-h-screen w-full max-w-full flex-col"
         data-announcement={announcementHidden ? "off" : "on"}

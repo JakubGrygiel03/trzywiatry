@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { CartLineItem } from "@/components/cart/cart-line-item";
 import { CartUpsell } from "@/components/cart/cart-upsell";
 import { FreeShippingMeter, GiftWrappingCard } from "@/components/cart/gift-and-shipping";
-import { usePaymentsEnabled, useSiteSettings } from "@/components/cms/site-settings-provider";
+import { usePaymentAccess, useSiteSettings } from "@/components/cms/site-settings-provider";
 import { drawerTransition, fadeTransition } from "@/lib/motion";
 import { formatPLN } from "@/lib/format";
 import { cartGiftWrapCost, cartSubtotal, ensureCartHydratedSync, useCartStore } from "@/store/use-cart-store";
@@ -22,7 +22,7 @@ export function CartDrawer() {
   const closeCart = useCartStore((state) => state.closeCart);
   const hasGiftWrapping = useCartStore((state) => state.hasGiftWrapping);
   const { giftWrapPriceCents } = useSiteSettings();
-  const paymentsEnabled = usePaymentsEnabled();
+  const { isPublic, isTester } = usePaymentAccess();
   const subtotal = cartSubtotal(items);
   const gift = cartGiftWrapCost(hasGiftWrapping, giftWrapPriceCents);
   const reduceMotion = useReducedMotion();
@@ -117,9 +117,14 @@ export function CartDrawer() {
                     <span>Suma częściowa</span>
                     <span className="font-heading">{formatPLN(subtotal + gift)}</span>
                   </div>
-                  {!paymentsEnabled ? (
+                  {!isPublic && !isTester ? (
                     <p className="text-xs leading-relaxed text-czerwony">
                       Płatności online chwilowo niedostępne — zamówienie zapisujemy bez opłaty online.
+                    </p>
+                  ) : null}
+                  {isTester ? (
+                    <p className="text-xs leading-relaxed text-czerwony">
+                      Tryb testowy (admin) — sandbox P24 włączony tylko dla Ciebie.
                     </p>
                   ) : null}
                   <Button asChild className="w-full" onClick={closeCart}>

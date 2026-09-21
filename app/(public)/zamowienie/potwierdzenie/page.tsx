@@ -6,6 +6,7 @@ import { ORDER_STATUS_HINTS, ORDER_STATUS_LABELS } from "@/lib/constants";
 import { ensureOrdersHydrated } from "@/lib/data/order-persist";
 import { getOrderByNumber } from "@/lib/data/runtime-store";
 import { formatPLN } from "@/lib/format";
+import { resolvePaymentAccess } from "@/lib/payment-access";
 import { noIndexRobots } from "@/lib/seo";
 import type { Metadata } from "next";
 
@@ -24,6 +25,7 @@ export default async function OrderConfirmationPage({
   await ensureOrdersHydrated();
   const record = orderNumber ? getOrderByNumber(orderNumber) : null;
   const order = record && k && record.id === k ? record : null;
+  const { canPay, isTester } = await resolvePaymentAccess();
 
   return (
     <div className="py-14 md:py-20">
@@ -67,6 +69,8 @@ export default async function OrderConfirmationPage({
               mailFailed={mail === "0"}
               payFailed={Boolean(pay)}
               payCode={pay}
+              canPay={canPay}
+              isTester={isTester}
             />
           </>
         ) : (

@@ -4,7 +4,7 @@ import { Container } from "@/components/ui/badge";
 import { SurfaceTile, SurfaceTileBody } from "@/components/ui/surface-tile";
 import { getCustomerSession } from "@/lib/customer-session";
 import { getSettings } from "@/lib/data/queries";
-import { arePaymentsEnabled } from "@/lib/p24";
+import { resolvePaymentAccess } from "@/lib/payment-access";
 import { getVacationCheckoutNote } from "@/lib/vacation-message";
 import { noIndexRobots } from "@/lib/seo";
 import type { Metadata } from "next";
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 export default async function CheckoutPage() {
   const vacation = getVacationCheckoutNote(getSettings());
   const customer = await getCustomerSession();
-  const paymentsLive = arePaymentsEnabled();
+  const { isPublic, canPay, isTester } = await resolvePaymentAccess();
 
   return (
     <div className="py-8 md:py-10">
@@ -27,7 +27,7 @@ export default async function CheckoutPage() {
           eyebrow="Kasa"
           title="Dostawa i płatność"
           description={
-            paymentsLive
+            canPay
               ? "Wybierz paczkomat na mapie albo kuriera. Płatność BLIK / karta przez Przelewy24 — potwierdzenie przyjdzie mailem."
               : "Podaj e-mail i dane dostawy. Płatności online są chwilowo niedostępne — zamówienie zapisujemy, o płatności damy znać mailem."
           }
@@ -41,7 +41,7 @@ export default async function CheckoutPage() {
             </SurfaceTileBody>
           </SurfaceTile>
         ) : null}
-        {!paymentsLive ? (
+        {!isPublic && !isTester ? (
           <SurfaceTile>
             <SurfaceTileBody>
               <p className="text-[14px] leading-relaxed text-czerwony">
@@ -51,10 +51,20 @@ export default async function CheckoutPage() {
             </SurfaceTileBody>
           </SurfaceTile>
         ) : null}
+        {isTester ? (
+          <SurfaceTile>
+            <SurfaceTileBody>
+              <p className="text-[14px] leading-relaxed text-czerwony">
+                Tryb testowy (sesja admina) — klienci nadal widzą „płatności niedostępne”, Ty możesz przejść przez
+                Przelewy24 sandbox.
+              </p>
+            </SurfaceTileBody>
+          </SurfaceTile>
+        ) : null}
         <CheckoutGate
           defaultEmail={customer?.email ?? ""}
           defaultName={customer?.name ?? ""}
-          paymentsLive={paymentsLive}
+          paymentsLive={canPay}
         />
       </Container>
     </div>

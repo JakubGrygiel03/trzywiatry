@@ -15,7 +15,8 @@ import { getAllProducts } from "@/lib/data/queries";
 import { getCustomerSession } from "@/lib/customer-session";
 import { orderPlacedEmail, sendEmail } from "@/lib/resend";
 import { notifyStudioNewOrder } from "@/lib/studio-notify";
-import { arePaymentsEnabled, buildP24Session, registerP24Transaction } from "@/lib/p24";
+import { buildP24Session, registerP24Transaction } from "@/lib/p24";
+import { resolvePaymentAccess } from "@/lib/payment-access";
 import { getVacationCheckoutNote } from "@/lib/vacation-message";
 import { getRequestOrigin } from "@/lib/request-origin";
 import type { ShippingMethod, StoredOrder, StoredOrderItem } from "@/lib/types";
@@ -190,7 +191,7 @@ export async function createCheckoutSession(
     urlStatus: `${origin}/api/webhooks/p24`,
   });
 
-  if (arePaymentsEnabled()) {
+  if ((await resolvePaymentAccess()).canPay) {
     const registered = await registerP24Transaction(p24);
     if (registered.ok) {
       return {

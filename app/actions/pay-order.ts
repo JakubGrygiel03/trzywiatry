@@ -1,7 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { arePaymentsEnabled, buildP24Session, registerP24Transaction } from "@/lib/p24";
+import { buildP24Session, registerP24Transaction } from "@/lib/p24";
+import { resolvePaymentAccess } from "@/lib/payment-access";
 import { ensureOrdersHydrated } from "@/lib/data/order-persist";
 import { getOrderByNumber } from "@/lib/data/runtime-store";
 import { getRequestOrigin } from "@/lib/request-origin";
@@ -23,7 +24,7 @@ export async function startPendingOrderPayment(formData: FormData) {
     redirect(confirmPath(orderNumber || "brak", orderId || "brak"));
   }
 
-  if (!arePaymentsEnabled()) {
+  if (!(await resolvePaymentAccess()).canPay) {
     redirect(`${origin}${confirmPath(order.orderNumber, order.id, { pay: "0" })}`);
   }
 

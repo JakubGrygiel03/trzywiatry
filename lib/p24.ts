@@ -39,7 +39,7 @@ export function hasP24Credentials() {
 
 /**
  * Customer-facing payments stay off until PAYMENTS_ENABLED=true.
- * Keeps sandbox keys in env without opening checkout to shoppers.
+ * Admin can still test via resolvePaymentAccess() in lib/payment-access.ts.
  */
 export function arePaymentsEnabled() {
   return process.env.PAYMENTS_ENABLED === "true" && hasP24Credentials();
