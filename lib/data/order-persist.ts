@@ -43,8 +43,11 @@ async function hydrate() {
   }
 }
 
-export async function ensureOrdersHydrated() {
-  if (!hydratePromise) hydratePromise = hydrate();
+export async function ensureOrdersHydrated(options?: { force?: boolean }) {
+  // Serverless warm instances cache the first hydrate — force re-read after P24 return / webhook.
+  if (options?.force || !hydratePromise) {
+    hydratePromise = hydrate();
+  }
   await hydratePromise;
 }
 

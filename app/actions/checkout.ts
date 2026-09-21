@@ -18,7 +18,7 @@ import { notifyStudioNewOrder } from "@/lib/studio-notify";
 import { buildP24Session, registerP24Transaction } from "@/lib/p24";
 import { resolvePaymentAccess } from "@/lib/payment-access";
 import { getVacationCheckoutNote } from "@/lib/vacation-message";
-import { getRequestOrigin } from "@/lib/request-origin";
+import { getPublicSiteUrl } from "@/lib/site-url";
 import type { ShippingMethod, StoredOrder, StoredOrderItem } from "@/lib/types";
 import { formatPLN } from "@/lib/format";
 
@@ -175,7 +175,7 @@ export async function createCheckoutSession(
     notifyStudioNewOrder(order),
   ]);
 
-  const origin = await getRequestOrigin();
+  const origin = getPublicSiteUrl();
   const confirmQuery = new URLSearchParams({
     order: orderNumber,
     k: order.id,
@@ -187,6 +187,7 @@ export async function createCheckoutSession(
     amountInCents: total,
     email: order.customerEmail,
     description: `Trzy Wiatry ${orderNumber}`,
+    // Canonical public URL — avoids www/apex/host mismatch after P24 redirect.
     urlReturn: `${origin}${confirmPath}`,
     urlStatus: `${origin}/api/webhooks/p24`,
   });

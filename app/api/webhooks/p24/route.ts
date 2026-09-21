@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "missing session" }, { status: 400 });
   }
 
-  await ensureOrdersHydrated();
+  await ensureOrdersHydrated({ force: true });
   // Checkout uses orderNumber; retries may append a suffix (TW-0004-m1x2y3).
   const order =
     getOrderByNumber(sessionId) ??

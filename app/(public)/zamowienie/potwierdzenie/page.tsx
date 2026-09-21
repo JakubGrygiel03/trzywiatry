@@ -22,7 +22,8 @@ export default async function OrderConfirmationPage({
   searchParams: Promise<{ order?: string; k?: string; mail?: string; pay?: string }>;
 }) {
   const { order: orderNumber, k, mail, pay } = await searchParams;
-  await ensureOrdersHydrated();
+  // Always re-fetch — warm serverless instances may still hold a pre-checkout order list.
+  await ensureOrdersHydrated({ force: true });
   const record = orderNumber ? getOrderByNumber(orderNumber) : null;
   const order = record && k && record.id === k ? record : null;
   const { canPay, isTester } = await resolvePaymentAccess();
@@ -36,10 +37,17 @@ export default async function OrderConfirmationPage({
           description={
             order
               ? `Numer ${order.orderNumber}. ${ORDER_STATUS_HINTS[order.status]}`
-              : "Sprawdź link z maila albo zaloguj się na konto, żeby zobaczyć historię."
+              : orderNumber
+                ? `Szukaliśmy zamówienia ${orderNumber}, ale nie udało się go odczytać. Sprawdź maila albo konto — płatność mogła już przejść w Przelewy24.`
+                : "Po płatności Przelewy24 wróć linkiem z maila albo zaloguj się na konto, żeby zobaczyć historię."
           }
         />
-        {order ? (
+        {!order ? (
+          <p className="text-sm text-czarny/60">
+            Jeśli zapłaciłeś w sandboxie / P24, zamówienie i tak powinno być w panelu admina i na mailu pracowni.
+            Napisz na kontakt jeśli status się nie pojawi.
+          </p>
+        ) : null}        {order ? (
           <>
             <ClearCartOnMount />
             <div className="space-y-4 rounded-[28px] bg-krem p-6">

@@ -5,7 +5,7 @@ import { buildP24Session, registerP24Transaction } from "@/lib/p24";
 import { resolvePaymentAccess } from "@/lib/payment-access";
 import { ensureOrdersHydrated } from "@/lib/data/order-persist";
 import { getOrderByNumber } from "@/lib/data/runtime-store";
-import { getRequestOrigin } from "@/lib/request-origin";
+import { getPublicSiteUrl } from "@/lib/site-url";
 
 function confirmPath(orderNumber: string, orderId: string, extra: Record<string, string> = {}) {
   const params = new URLSearchParams({ order: orderNumber, k: orderId, ...extra });
@@ -16,9 +16,9 @@ function confirmPath(orderNumber: string, orderId: string, extra: Record<string,
 export async function startPendingOrderPayment(formData: FormData) {
   const orderNumber = String(formData.get("orderNumber") ?? "");
   const orderId = String(formData.get("orderId") ?? "");
-  await ensureOrdersHydrated();
+  await ensureOrdersHydrated({ force: true });
   const order = getOrderByNumber(orderNumber);
-  const origin = await getRequestOrigin();
+  const origin = getPublicSiteUrl();
 
   if (!order || order.id !== orderId || order.status !== "pending") {
     redirect(confirmPath(orderNumber || "brak", orderId || "brak"));
