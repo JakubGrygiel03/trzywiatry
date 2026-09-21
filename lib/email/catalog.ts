@@ -24,98 +24,129 @@ export type EmailTemplateMeta = {
   body: string;
 };
 
+/**
+ * Body HTML is wrapped by wrapEmail (Hostinger/P24 card shell).
+ * Use {highlightBlock} / {detailsBlock} / {itemsBlock} for nested tiles.
+ */
 export const EMAIL_TEMPLATES: Record<EmailTemplateKey, EmailTemplateMeta> = {
   order_placed: {
     key: "order_placed",
     label: "Zamówienie przyjęte",
     trigger: "Klient składa zamówienie w kasie.",
-    tokens: ["customerName", "orderNumber", "items", "total", "vacationBlock"],
+    tokens: [
+      "customerName",
+      "orderNumber",
+      "highlightBlock",
+      "detailsBlock",
+      "itemsBlock",
+      "total",
+      "vacationBlock",
+    ],
     subject: "Zamówienie {orderNumber} · przyjęte",
-    body: `<h1 style="font-size:22px">Zamówienie {orderNumber} przyjęte</h1>
-<p>Cześć {customerName}, dziękujemy. Zapisaliśmy Twoje zamówienie. Status na start: <strong>oczekuje na płatność</strong>.</p>
+    body: `<h1>Zamówienie przyjęte</h1>
+<p>Dzień dobry {customerName},</p>
+<p>dziękujemy — zapisaliśmy Twoje zamówienie w pracowni. Status na start: <strong>oczekuje na płatność</strong>.</p>
+{highlightBlock}
 {vacationBlock}
-<ul>{items}</ul>
-<p><strong>Razem:</strong> {total}</p>
+{detailsBlock}
+{itemsBlock}
 <p>Jak tylko płatność wejdzie, ruszamy z pakowaniem (wkładki, karton — zero stłuczek). Dam znać mailem, gdy paczka wyjdzie z pracowni.</p>
-<p>Status zamówienia śledzisz też po zalogowaniu na konto w sklepie (konto musi być zalogowane już przy kasie).</p>`,
+<p>Status śledzisz też po zalogowaniu na konto w sklepie.</p>`,
   },
   order_pending: {
     key: "order_pending",
     label: "Oczekuje na płatność",
     trigger: "Admin ustawia status „oczekuje na płatność”.",
-    tokens: ["customerName", "orderNumber"],
+    tokens: ["customerName", "orderNumber", "highlightBlock", "detailsBlock"],
     subject: "Zamówienie {orderNumber} · oczekuje na płatność",
-    body: `<h1 style="font-size:22px">Czekamy na płatność</h1>
-<p>Cześć {customerName}, zamówienie <strong>{orderNumber}</strong> jest u nas, ale jeszcze nie widzimy płatności.</p>
-<p>Jak tylko przelew / BLIK przejdzie, od razu ruszamy z pakowaniem.</p>`,
+    body: `<h1>Czekamy na płatność</h1>
+<p>Dzień dobry {customerName},</p>
+<p>zamówienie jest u nas, ale jeszcze nie widzimy płatności. Jak tylko przelew / BLIK przejdzie, od razu ruszamy z pakowaniem.</p>
+{highlightBlock}
+{detailsBlock}`,
   },
   order_paid: {
     key: "order_paid",
     label: "Płatność potwierdzona",
     trigger: "Płatność P24 / zmiana statusu na „opłacone”.",
-    tokens: ["customerName", "orderNumber", "total"],
+    tokens: ["customerName", "orderNumber", "highlightBlock", "detailsBlock", "total"],
     subject: "Zamówienie {orderNumber} · płatność potwierdzona",
-    body: `<h1 style="font-size:22px">Płatność potwierdzona</h1>
-<p>Cześć {customerName}, zamówienie <strong>{orderNumber}</strong> jest opłacone ({total}).</p>
-<p>Zaraz zaczynamy przygotowanie paczki.</p>`,
+    body: `<h1>Płatność potwierdzona</h1>
+<p>Dzień dobry {customerName},</p>
+<p>otrzymaliśmy płatność. Zaraz zaczynamy przygotowanie paczki.</p>
+{highlightBlock}
+{detailsBlock}`,
   },
   order_processing: {
     key: "order_processing",
     label: "W realizacji",
     trigger: "Admin oznacza zamówienie jako „w realizacji”.",
-    tokens: ["customerName", "orderNumber", "statusLabel", "items"],
+    tokens: ["customerName", "orderNumber", "highlightBlock", "detailsBlock", "itemsBlock", "statusLabel"],
     subject: "Zamówienie {orderNumber} · rozpoczęliśmy realizację",
-    body: `<h1 style="font-size:22px">Zaczynamy pakować</h1>
-<p>Cześć {customerName}, status zamówienia <strong>{orderNumber}</strong>: <em>{statusLabel}</em>.</p>
-<p>Piec, wióry i karton — Twoja paczka jest w toku. Dam znać, gdy wyjdzie z pracowni.</p>
-<ul>{items}</ul>`,
+    body: `<h1>Zaczynamy pakować</h1>
+<p>Dzień dobry {customerName},</p>
+<p>status zamówienia: <strong>{statusLabel}</strong>. Piec, wióry i karton — Twoja paczka jest w toku.</p>
+{highlightBlock}
+{detailsBlock}
+{itemsBlock}`,
   },
   order_shipped: {
     key: "order_shipped",
     label: "Paczka wysłana",
     trigger: "Admin ustawia status „wysłane” i numer śledzenia.",
-    tokens: ["customerName", "orderNumber", "trackingBlock"],
+    tokens: ["customerName", "orderNumber", "highlightBlock", "detailsBlock", "trackingBlock"],
     subject: "Zamówienie {orderNumber} · paczka w drodze",
-    body: `<h1 style="font-size:22px">Paczka wyszła z pracowni</h1>
-<p>Cześć {customerName}, zamówienie <strong>{orderNumber}</strong> jest już w drodze.</p>
+    body: `<h1>Paczka wyszła z pracowni</h1>
+<p>Dzień dobry {customerName},</p>
+<p>zamówienie jest już w drodze. Trzymaj kciuki za zero stłuczek — pakujemy podwójnie.</p>
+{highlightBlock}
 {trackingBlock}
-<p>Trzymaj kciuki za zero stłuczek — pakujemy podwójnie.</p>`,
+{detailsBlock}`,
   },
   order_completed: {
     key: "order_completed",
     label: "Zamówienie zakończone",
     trigger: "Admin oznacza zamówienie jako dostarczone.",
-    tokens: ["customerName", "orderNumber"],
+    tokens: ["customerName", "orderNumber", "highlightBlock", "detailsBlock"],
     subject: "Zamówienie {orderNumber} · dostarczone",
-    body: `<h1 style="font-size:22px">Zamówienie zakończone</h1>
-<p>Cześć {customerName}, zamówienie <strong>{orderNumber}</strong> oznaczyliśmy jako zakończone.</p>
-<p>Dziękujemy za wsparcie lokalnego rzemiosła. Do zobaczenia przy kolejnej czarce.</p>`,
+    body: `<h1>Zamówienie zakończone</h1>
+<p>Dzień dobry {customerName},</p>
+<p>oznaczyliśmy zamówienie jako zakończone. Dziękujemy za wsparcie lokalnego rzemiosła — do zobaczenia przy kolejnej czarce.</p>
+{highlightBlock}
+{detailsBlock}`,
   },
   order_cancelled: {
     key: "order_cancelled",
     label: "Zamówienie anulowane",
     trigger: "Admin anuluje zamówienie.",
-    tokens: ["customerName", "orderNumber", "studioEmail"],
+    tokens: ["customerName", "orderNumber", "highlightBlock", "detailsBlock", "studioEmail"],
     subject: "Zamówienie {orderNumber} · anulowane",
-    body: `<h1 style="font-size:22px">Zamówienie anulowane</h1>
-<p>Cześć {customerName}, zamówienie <strong>{orderNumber}</strong> zostało anulowane.</p>
-<p>Jeśli to pomyłka — napisz na {studioEmail}, ogarniemy.</p>`,
+    body: `<h1>Zamówienie anulowane</h1>
+<p>Dzień dobry {customerName},</p>
+<p>zamówienie zostało anulowane. Jeśli to pomyłka — napisz na {studioEmail}, ogarniemy.</p>
+{highlightBlock}
+{detailsBlock}`,
   },
   newsletter_welcome: {
     key: "newsletter_welcome",
     label: "Newsletter — kod rabatowy",
     trigger: "Klient zapisuje się na newsletter.",
-    tokens: ["code"],
+    tokens: ["code", "highlightBlock"],
     subject: "Twój kod {code} · Trzy Wiatry",
-    body: `<p>Witaj w pracowni. Twój kod rabatowy: <strong>{code}</strong>.</p>`,
+    body: `<h1>Witaj w pracowni</h1>
+<p>Dziękujemy za zapis. Oto Twój kod rabatowy — wpisz go w kasie przy kolejnym zamówieniu.</p>
+{highlightBlock}
+<p>Zachowaj ostrożność i nie udostępniaj kodu publicznie, jeśli nie chcesz się nim dzielić.</p>`,
   },
   workshop_ticket: {
     key: "workshop_ticket",
     label: "Bilet na warsztat",
     trigger: "Klient rezerwuje miejsce na warsztat.",
-    tokens: ["workshopTitle", "seatsCount"],
+    tokens: ["workshopTitle", "seatsCount", "detailsBlock"],
     subject: "Bilet · {workshopTitle}",
-    body: `<p>Rezerwacja potwierdzona: {workshopTitle}. Liczba miejsc: {seatsCount}.</p>`,
+    body: `<h1>Rezerwacja potwierdzona</h1>
+<p>Do zobaczenia przy kole. Szczegóły Twojego biletu:</p>
+{detailsBlock}`,
   },
   contact_ack: {
     key: "contact_ack",
@@ -123,10 +154,10 @@ export const EMAIL_TEMPLATES: Record<EmailTemplateKey, EmailTemplateMeta> = {
     trigger: "Klient wysyła formularz na /kontakt.",
     tokens: ["customerName", "studioEmail"],
     subject: "Dostaliśmy Twoją wiadomość · Trzy Wiatry",
-    body: `<h1 style="font-size:22px">Wiadomość dotarła do pracowni</h1>
-<p>Cześć {customerName}, dziękujemy za kontakt.</p>
-<p>Odpowiemy jak tylko zejdziemy od koła — zwykle w ciągu 1–2 dni roboczych.</p>
-<p style="font-size:13px;color:#666">Jeśli coś pilnego: {studioEmail}</p>`,
+    body: `<h1>Wiadomość dotarła do pracowni</h1>
+<p>Dzień dobry {customerName},</p>
+<p>dziękujemy za kontakt. Odpowiemy jak tylko zejdziemy od koła — zwykle w ciągu 1–2 dni roboczych.</p>
+<p>Jeśli coś pilnego: <strong>{studioEmail}</strong></p>`,
   },
   customer_welcome: {
     key: "customer_welcome",
@@ -134,11 +165,12 @@ export const EMAIL_TEMPLATES: Record<EmailTemplateKey, EmailTemplateMeta> = {
     trigger: "Klient zakłada konto — musi kliknąć link, zanim się zaloguje.",
     tokens: ["customerName", "confirmButton", "confirmUrl"],
     subject: "Potwierdź konto w pracowni",
-    body: `<h1 style="font-size:22px">Cześć, {customerName}</h1>
-<p>Ktoś podał ten adres przy rejestracji w sklepie Trzy Wiatry. Kliknij przycisk, żeby potwierdzić skrzynkę i aktywować konto — to zabezpieczenie przed spamem.</p>
-<p style="margin:24px 0">{confirmButton}</p>
-<p style="font-size:13px;color:#666">Link ważny 24 godziny. Jeśli to nie Ty — zignoruj tę wiadomość, konto nie powstanie bez kliknięcia.</p>
-<p style="font-size:12px;color:#999;word-break:break-all">{confirmUrl}</p>`,
+    body: `<h1>Potwierdź swoje konto</h1>
+<p>Dzień dobry {customerName},</p>
+<p>ktoś podał ten adres przy rejestracji w sklepie Trzy Wiatry. Kliknij przycisk, żeby potwierdzić skrzynkę i aktywować konto.</p>
+{confirmButton}
+<p>Link ważny 24 godziny. Jeśli to nie Ty — zignoruj tę wiadomość.</p>
+<p style="font-size:12px;color:#9A9A9A;word-break:break-all;">{confirmUrl}</p>`,
   },
   customer_password_reset: {
     key: "customer_password_reset",
@@ -146,11 +178,11 @@ export const EMAIL_TEMPLATES: Record<EmailTemplateKey, EmailTemplateMeta> = {
     trigger: "Klient prosi o nowe hasło do konta.",
     tokens: ["resetButton", "resetUrl"],
     subject: "Reset hasła do konta · Trzy Wiatry",
-    body: `<h1 style="font-size:22px">Reset hasła</h1>
+    body: `<h1>Reset hasła</h1>
 <p>Dostaliśmy prośbę o zmianę hasła do konta w sklepie Trzy Wiatry.</p>
-<p style="margin:24px 0">{resetButton}</p>
-<p style="font-size:13px;color:#666">Link ważny 1 godzinę. Jeśli to nie Ty — zignoruj tę wiadomość.</p>
-<p style="font-size:12px;color:#999;word-break:break-all">{resetUrl}</p>`,
+{resetButton}
+<p><strong>Uwaga!</strong> Link wygaśnie za 1 godzinę. Jeśli to nie Ty — zignoruj tę wiadomość.</p>
+<p style="font-size:12px;color:#9A9A9A;word-break:break-all;">{resetUrl}</p>`,
   },
 };
 

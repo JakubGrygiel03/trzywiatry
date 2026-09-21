@@ -386,6 +386,12 @@ export function updateOrderStatusInStore(
   id: string,
   status: OrderStatus,
   trackingNumber?: string,
+  payment?: {
+    paymentId?: string;
+    paymentMethodId?: number;
+    paymentMethodLabel?: string;
+    paymentProvider?: StoredOrder["paymentProvider"];
+  },
 ): StoredOrder | null {
   const index = runtimeStore.orders.findIndex((order) => order.id === id);
   if (index < 0) return null;
@@ -404,16 +410,27 @@ export function updateOrderStatusInStore(
     );
   }
 
+  const becamePaid = status === "paid" && current.status !== "paid";
+
   const next: StoredOrder = {
     ...current,
     status,
     statusHistory: history,
     trackingNumber: trackingNumber?.trim() || current.trackingNumber,
     updatedAt: now,
+    paidAt: becamePaid ? now : current.paidAt,
+    paymentProvider: payment?.paymentProvider ?? current.paymentProvider,
+    paymentId: payment?.paymentId ?? current.paymentId,
+    paymentMethodId: payment?.paymentMethodId ?? current.paymentMethodId,
+    paymentMethodLabel: payment?.paymentMethodLabel ?? current.paymentMethodLabel,
     payload: {
       ...current.payload,
       status,
       trackingNumber: trackingNumber?.trim() || current.trackingNumber || "",
+      ...(payment?.paymentMethodLabel
+        ? { paymentMethod: payment.paymentMethodLabel }
+        : {}),
+      ...(payment?.paymentId ? { paymentId: payment.paymentId } : {}),
     },
   };
   runtimeStore.orders[index] = next;

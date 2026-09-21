@@ -138,8 +138,8 @@ export function ProductForm({
           </AdminFormSection>
 
           <AdminFormSection
-            title="Warianty i magazyn"
-            description="Tu ustawiasz ilość sztuk oraz zaznaczasz „Brak w magazynie” — to steruje nakładką w sklepie."
+            title="Warianty (kolor, pojemność, magazyn)"
+            description="Tu decydujesz, co klient wybiera w sklepie. Każdy wariant ma własny stan i może mieć własne zdjęcie."
           >
             <ProductVariantsField
               initialVariants={product?.variants}

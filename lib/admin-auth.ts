@@ -114,6 +114,20 @@ export function updateAdminPassword(newPassword: string) {
   });
 }
 
+/** Change password when the admin knows the current one (logged-in panel). */
+export function changeAdminPassword(currentPassword: string, newPassword: string) {
+  const auth = loadAdminAuth();
+  if (!verifyPassword(currentPassword, auth.passwordHash)) {
+    return { ok: false as const, reason: "bad-current" as const };
+  }
+  writeAuthFile({
+    email: auth.email,
+    passwordHash: hashPassword(newPassword),
+    updatedAt: new Date().toISOString(),
+  });
+  return { ok: true as const };
+}
+
 /** Creates a one-time reset token (raw returned once; only hash is stored). */
 export function createPasswordResetToken() {
   const raw = randomBytes(32).toString("hex");

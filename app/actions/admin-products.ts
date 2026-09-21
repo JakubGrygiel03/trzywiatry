@@ -146,10 +146,11 @@ function buildVariants(
         draft.priceZl != null && Number.isFinite(draft.priceZl)
           ? Math.round(draft.priceZl * 100)
           : undefined,
-      color: draft.color || previous?.color,
-      colorHex: draft.colorHex || previous?.colorHex,
-      capacityMl: draft.capacityMl ?? previous?.capacityMl,
-      image: draft.image || previous?.image,
+      // Form payload is source of truth — empty clears previous colour / capacity / image
+      color: draft.color?.trim() || undefined,
+      colorHex: draft.colorHex?.trim() || undefined,
+      capacityMl: draft.capacityMl,
+      image: draft.image?.trim() || undefined,
     });
   }
 

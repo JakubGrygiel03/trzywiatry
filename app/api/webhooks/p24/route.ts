@@ -3,6 +3,7 @@ import { ensureOrdersHydrated, flushOrdersSave } from "@/lib/data/order-persist"
 import { flushAtelierSave } from "@/lib/data/atelier-persist";
 import { getOrderByNumber, updateOrderStatusInStore } from "@/lib/data/runtime-store";
 import { p24NotificationValid, verifyP24Transaction, type P24Notification } from "@/lib/p24";
+import { p24MethodLabel } from "@/lib/p24-methods";
 import { notifyCustomerOrderStatus } from "@/lib/resend";
 import { notifyStudioOrderPaid } from "@/lib/studio-notify";
 
@@ -73,12 +74,28 @@ export async function POST(request: NextRequest) {
   }
 
   if (order.status === "pending") {
-    const updated = updateOrderStatusInStore(order.id, "paid");
+    const methodId = Number(body.methodId ?? 0) || undefined;
+    const updated = updateOrderStatusInStore(order.id, "paid", undefined, {
+      paymentProvider: "p24",
+      paymentId: String(body.orderId),
+      paymentMethodId: methodId,
+      paymentMethodLabel: p24MethodLabel(methodId),
+    });
     if (updated) {
       await flushOrdersSave();
       await flushAtelierSave();
       await Promise.all([notifyCustomerOrderStatus(updated), notifyStudioOrderPaid(updated)]);
     }
+  } else if (!order.paymentMethodId && body.methodId) {
+    // Already paid earlier without method — backfill label from a late/retry notify.
+    const methodId = Number(body.methodId);
+    updateOrderStatusInStore(order.id, order.status, undefined, {
+      paymentProvider: "p24",
+      paymentId: order.paymentId ?? String(body.orderId),
+      paymentMethodId: methodId,
+      paymentMethodLabel: p24MethodLabel(methodId),
+    });
+    await flushOrdersSave();
   }
 
   return NextResponse.json({ ok: true, received: true });

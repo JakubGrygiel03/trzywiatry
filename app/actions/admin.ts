@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
+  changeAdminPassword,
   createPasswordResetToken,
   getAdminEmail,
   setPasswordWithResetToken,
@@ -15,7 +16,11 @@ import { ensureOrdersHydrated, flushOrdersSave } from "@/lib/data/order-persist"
 import { flushAtelierSave } from "@/lib/data/atelier-persist";
 import { defaultStudioSettings } from "@/lib/data/settings";
 import type { OrderStatus } from "@/lib/types";
-import { adminForgotPasswordSchema, adminResetPasswordSchema } from "@/lib/validations/forms";
+import {
+  adminChangePasswordSchema,
+  adminForgotPasswordSchema,
+  adminResetPasswordSchema,
+} from "@/lib/validations/forms";
 import { firstZodMessage } from "@/lib/validations/safe-input";
 import { studioSettingsFormSchema } from "@/lib/validations/settings";
 import { notifyCustomerOrderStatus, sendAdminPasswordResetEmail, customerMailFailureMessage } from "@/lib/resend";
@@ -108,6 +113,29 @@ export async function resetAdminPassword(
   }
 
   redirect("/admin/logowanie?zresetowano=1");
+}
+
+/** Logged-in: change password with current password confirmation. */
+export async function changeLoggedInAdminPassword(
+  _: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  await assertAdminSession();
+  const parsed = adminChangePasswordSchema.safeParse({
+    currentPassword: formData.get("currentPassword"),
+    password: formData.get("password"),
+    passwordConfirm: formData.get("passwordConfirm"),
+  });
+  if (!parsed.success) {
+    return { ok: false, message: parsed.error.issues[0]?.message ?? "Sprawdź pola formularza." };
+  }
+
+  const result = changeAdminPassword(parsed.data.currentPassword, parsed.data.password);
+  if (!result.ok) {
+    return { ok: false, message: "Obecne hasło jest nieprawidłowe." };
+  }
+
+  return { ok: true, message: "Hasło zmienione. Przy następnym logowaniu użyj nowego." };
 }
 
 export async function updateOrderStatus(formData: FormData) {

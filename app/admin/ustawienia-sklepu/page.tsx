@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { saveStudioSettings } from "@/app/actions/admin";
+import { AdminChangePasswordForm } from "@/components/admin/admin-change-password-form";
 import { CmsTokenField } from "@/components/admin/cms-token-field";
 import { ShopHubPhotoPicker } from "@/components/admin/shop-hub-photo-picker";
 import { AdminAlert } from "@/components/admin/ui/admin-alert";
@@ -7,6 +8,7 @@ import { AdminField, AdminInput, AdminSelect } from "@/components/admin/ui/admin
 import { AdminFormActions } from "@/components/admin/ui/admin-form-actions";
 import { AdminFormSection } from "@/components/admin/ui/admin-form-section";
 import { AdminPageHeader } from "@/components/admin/ui/admin-page-header";
+import { getAdminEmail } from "@/lib/admin-auth";
 import { getSettings, getShopHubPhotoOptions } from "@/lib/data/queries";
 import { buildVacationBannerMessage } from "@/lib/vacation-message";
 
@@ -143,6 +145,10 @@ export default async function ShopSettingsPage({
 
         <AdminFormActions submitLabel="Zapisz ustawienia" cancelHref="/admin" cancelLabel="← Pulpit" />
       </form>
+
+      <div className="mt-8">
+        <AdminChangePasswordForm adminEmail={getAdminEmail()} />
+      </div>
     </div>
   );
 }

@@ -41,7 +41,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const upsells = getProductUpsells(product, 4);
 
   return (
-    <div className="product-pdp overflow-anchor-none py-8 md:py-14">
+    <div className="product-pdp overflow-anchor-none py-8 md:py-14" key={product.slug}>
       <ScrollProductToTop slug={product.slug} />
       <JsonLd
         data={[
@@ -54,7 +54,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       />
       <TrackRecentlyViewed product={product} />
       <Container className="space-y-12 md:space-y-16">
-        <PdpVariantProvider product={product}>
+        <PdpVariantProvider key={product.id} product={product}>
           {/*
             Mobile DOM order: title → gallery → buy block (starts at the top with the name).
             Desktop grid: gallery left (sticky), title + buy stacked on the right.

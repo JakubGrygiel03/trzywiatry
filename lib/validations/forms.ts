@@ -44,6 +44,22 @@ export const adminResetPasswordSchema = z
     path: ["passwordConfirm"],
   });
 
+/** Logged-in admin changing password from Ustawienia. */
+export const adminChangePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Podaj obecne hasło").max(120),
+    password: z.string().min(8, "Nowe hasło: minimum 8 znaków").max(120),
+    passwordConfirm: z.string().min(8, "Powtórz hasło").max(120),
+  })
+  .refine((data) => data.password === data.passwordConfirm, {
+    message: "Hasła muszą być takie same",
+    path: ["passwordConfirm"],
+  })
+  .refine((data) => data.currentPassword !== data.password, {
+    message: "Nowe hasło musi różnić się od obecnego",
+    path: ["password"],
+  });
+
 export const customerRegisterSchema = z
   .object({
     name: plainText("Imię i nazwisko / Full name", 80, 2),

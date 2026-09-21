@@ -5,9 +5,10 @@ import { getWorkshopById, getWorkshopBySlug, remainingSeats } from "@/lib/data/q
 import { saveAtelierSnapshot, ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 import { getRuntimeSettings, runtimeStore } from "@/lib/data/runtime-store";
 import { SITE } from "@/lib/constants";
-import { renderEmailTemplate } from "@/lib/email/render";
+import { renderEmailTemplate, emailDetailRows, emailDetailTile } from "@/lib/email/render";
 import { customerMailFailureMessage, sendEmail } from "@/lib/resend";
 import { notifyStudioContact, notifyStudioWorkshop } from "@/lib/studio-notify";
+import { escapeHtml } from "@/lib/validations/safe-input";
 
 export async function submitContact(_: { ok: boolean; message: string }, formData: FormData) {
   await ensureAtelierHydrated();
@@ -104,6 +105,14 @@ export async function bookWorkshop(_: { ok: boolean; message: string }, formData
   const ticket = renderEmailTemplate("workshop_ticket", {
     workshopTitle: workshop.title,
     seatsCount: String(parsed.data.seatsCount),
+    detailsBlock: emailDetailTile(
+      "Szczegóły biletu",
+      emailDetailRows([
+        { label: "Warsztat", value: escapeHtml(workshop.title) },
+        { label: "Miejsca", value: String(parsed.data.seatsCount) },
+        { label: "Uczestnik", value: escapeHtml(parsed.data.attendeeName) },
+      ]),
+    ),
   });
   await Promise.all([
     sendEmail({

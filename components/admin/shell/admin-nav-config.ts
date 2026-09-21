@@ -35,7 +35,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: "Przegląd",
     items: [
       { href: "/admin", label: "Pulpit", icon: LayoutDashboard, exact: true },
-      { href: "/admin/analityka", label: "Analityka", icon: BarChart3 },
+      { href: "/admin/analityka", label: "Zarobki", icon: BarChart3 },
     ],
   },
   {

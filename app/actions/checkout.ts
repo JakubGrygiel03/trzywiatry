@@ -88,11 +88,15 @@ export async function createCheckoutSession(
     }
     const unit = variant.priceInCents ?? product.priceInCents;
     goods += unit * line.quantity;
+    const variantTitle =
+      [variant.color, variant.capacityMl ? `${variant.capacityMl} ml` : null]
+        .filter(Boolean)
+        .join(" · ") || variant.title;
     items.push({
       productId: product.id,
       variantId: variant.id,
       productName: product.name,
-      variantTitle: variant.title,
+      variantTitle,
       quantity: line.quantity,
       unitPriceInCents: unit,
     });
@@ -141,6 +145,7 @@ export async function createCheckoutSession(
     discountAmountCents: discount,
     totalAmountInCents: total,
     discountCode: parsed.data.discountCode,
+    paymentProvider: "p24",
     payload: {
       orderNumber,
       customerName: parsed.data.customerName,
@@ -150,6 +155,7 @@ export async function createCheckoutSession(
       giftWrap: giftWrap ? 1 : 0,
       giftMessage: parsed.data.giftMessage ?? "",
       status,
+      paymentProvider: "p24",
     },
   };
 

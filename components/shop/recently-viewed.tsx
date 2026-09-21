@@ -38,7 +38,7 @@ export function RecentlyViewed({
             <li key={item.id}>
               <Link
                 href={`/sklep/${item.slug}`}
-                scroll
+                scroll={false}
                 prefetch
                 onClick={onProductNavigateClick}
                 className="group flex gap-3 rounded-xl border border-czarny/8 bg-krem/50 p-2.5 transition-colors hover:border-czerwony/40"

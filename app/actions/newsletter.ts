@@ -4,7 +4,7 @@ import { newsletterSchema } from "@/lib/validations/forms";
 import { addSubscriber } from "@/lib/mailerlite";
 import { saveAtelierSnapshot, ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 import { getRuntimeSettings, runtimeStore } from "@/lib/data/runtime-store";
-import { renderEmailTemplate } from "@/lib/email/render";
+import { renderEmailTemplate, emailHighlightTile } from "@/lib/email/render";
 import { sendEmail } from "@/lib/resend";
 
 export async function subscribeNewsletter(_: { ok: boolean; message: string }, formData: FormData) {
@@ -15,15 +15,18 @@ export async function subscribeNewsletter(_: { ok: boolean; message: string }, f
   }
 
   const settings = getRuntimeSettings();
-  const code = (settings.promoCode ?? "").trim();
+  const code = (settings.promoCode ?? "").trim() || "newsletter";
 
   runtimeStore.newsletter.push(parsed.data.email);
   await saveAtelierSnapshot();
   await addSubscriber(parsed.data.email, "footer_discount_15");
-  const welcome = renderEmailTemplate("newsletter_welcome", { code: code || "newsletter" });
+  const welcome = renderEmailTemplate("newsletter_welcome", {
+    code,
+    highlightBlock: emailHighlightTile("Twój kod rabatowy", code),
+  });
   const mailed = await sendEmail({
     to: parsed.data.email,
-    subject: code ? welcome.subject : "Newsletter · Trzy Wiatry",
+    subject: settings.promoCode?.trim() ? welcome.subject : "Newsletter · Trzy Wiatry",
     html: welcome.html,
   });
 
@@ -37,7 +40,7 @@ export async function subscribeNewsletter(_: { ok: boolean; message: string }, f
 
   return {
     ok: true,
-    message: code
+    message: settings.promoCode?.trim()
       ? "Kod rabatowy jest w drodze mailem. Sprawdź skrzynkę. / Your discount code is on its way — check your inbox."
       : "Jesteś na liście. Sprawdź skrzynkę. / You're on the list — check your inbox.",
   };

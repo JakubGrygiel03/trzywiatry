@@ -49,7 +49,7 @@ export function UpsellRail({
             >
               <Link
                 href={`/sklep/${product.slug}`}
-                scroll
+                scroll={false}
                 prefetch
                 onClick={onProductNavigateClick}
                 className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-krem"
@@ -67,7 +67,7 @@ export function UpsellRail({
                   </p>
                   <Link
                     href={`/sklep/${product.slug}`}
-                    scroll
+                    scroll={false}
                     prefetch
                     onClick={onProductNavigateClick}
                     className="mt-0.5 block truncate text-sm font-medium leading-snug"

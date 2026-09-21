@@ -39,8 +39,13 @@ export const getDashboardMetrics = cache(async function getDashboardMetrics() {
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
 
-  const revenue = orders.reduce((sum, order) => sum + order.totalAmountInCents, 0);
-  const aov = orders.length ? revenue / orders.length : 0;
+  const revenue = orders
+    .filter((order) => ["paid", "processing", "shipped", "completed"].includes(order.status))
+    .reduce((sum, order) => sum + order.totalAmountInCents, 0);
+  const paidCount = orders.filter((order) =>
+    ["paid", "processing", "shipped", "completed"].includes(order.status),
+  ).length;
+  const aov = paidCount ? revenue / paidCount : 0;
 
   const lowStockProducts = catalog.filter((product) =>
     product.variants.some(

@@ -1,9 +1,20 @@
-import { ORDER_STATUS_LABELS, SITE } from "@/lib/constants";
-import { renderEmailTemplate, resetButtonHtml, wrapEmail, emailButtonHtml } from "@/lib/email/render";
+import { ORDER_STATUS_LABELS, SITE, shippingMethodLabel } from "@/lib/constants";
+import {
+  renderEmailTemplate,
+  resetButtonHtml,
+  wrapEmail,
+  emailButtonHtml,
+  emailDetailRows,
+  emailDetailTile,
+  emailHighlightTile,
+  emailItemsTile,
+} from "@/lib/email/render";
 import { formatPLN } from "@/lib/format";
 import { sendViaSmtp } from "@/lib/smtp-mailer";
 import type { OrderStatus, StoredOrder } from "@/lib/types";
 import type { EmailTemplateKey } from "@/lib/email/catalog";
+import { escapeHtml } from "@/lib/validations/safe-input";
+import { orderPaymentDisplay } from "@/lib/p24-methods";
 
 type TransactionalEmail = {
   to: string;
@@ -144,23 +155,43 @@ function itemsList(order: StoredOrder) {
   return order.items
     .map(
       (item) =>
-        `<li>${item.productName} (${item.variantTitle}) × ${item.quantity} — ${formatPLN(item.unitPriceInCents * item.quantity)}</li>`,
+        `<li style="margin:0 0 8px;">${escapeHtml(item.productName)} (${escapeHtml(item.variantTitle)}) × ${item.quantity} — ${formatPLN(item.unitPriceInCents * item.quantity)}</li>`,
     )
     .join("");
 }
 
 function orderVars(order: StoredOrder, extra: Record<string, string> = {}) {
+  const details = emailDetailTile(
+    "Szczegóły zamówienia",
+    emailDetailRows([
+      { label: "Numer", value: escapeHtml(order.orderNumber) },
+      { label: "Kwota", value: formatPLN(order.totalAmountInCents) },
+      { label: "Status", value: ORDER_STATUS_LABELS[order.status] },
+      { label: "Dostawa", value: shippingMethodLabel(order.shippingMethod) },
+      { label: "Płatność", value: orderPaymentDisplay(order) },
+    ]),
+  );
+
   return {
-    customerName: order.customerName,
-    orderNumber: order.orderNumber,
+    customerName: escapeHtml(order.customerName),
+    orderNumber: escapeHtml(order.orderNumber),
     total: formatPLN(order.totalAmountInCents),
     items: itemsList(order),
+    itemsBlock: emailItemsTile(itemsList(order)),
+    highlightBlock: emailHighlightTile("Numer zamówienia", escapeHtml(order.orderNumber)),
+    detailsBlock: details,
     statusLabel: ORDER_STATUS_LABELS[order.status],
     studioEmail: SITE.email,
     vacationBlock: "",
     trackingBlock: order.trackingNumber
-      ? `<p><strong>Numer śledzenia:</strong> ${order.trackingNumber}</p>`
-      : "<p>Numer śledzenia dopiszemy, gdy kurier / InPost go nada.</p>",
+      ? emailDetailTile(
+          "Śledzenie przesyłki",
+          emailDetailRows([{ label: "Numer", value: escapeHtml(order.trackingNumber) }]),
+        )
+      : emailDetailTile(
+          "Śledzenie przesyłki",
+          `<p style="margin:0;font-size:14px;line-height:1.5;color:#010101;">Numer śledzenia dopiszemy, gdy kurier / InPost go nada.</p>`,
+        ),
     ...extra,
   };
 }
@@ -168,7 +199,12 @@ function orderVars(order: StoredOrder, extra: Record<string, string> = {}) {
 export function orderPlacedEmail(order: StoredOrder, vacationNote?: string) {
   return renderEmailTemplate("order_placed", {
     ...orderVars(order, {
-      vacationBlock: vacationNote ? `<p><strong>Przerwa twórcza:</strong> ${vacationNote}</p>` : "",
+      vacationBlock: vacationNote
+        ? emailDetailTile(
+            "Przerwa twórcza",
+            `<p style="margin:0;font-size:14px;line-height:1.5;color:#010101;">${escapeHtml(vacationNote)}</p>`,
+          )
+        : "",
     }),
   });
 }
@@ -216,11 +252,11 @@ export async function sendAdminPasswordResetEmail(to: string, resetUrl: string) 
     to,
     subject: "Reset hasła do panelu CMS · Trzy Wiatry",
     html: wrapEmail(`
-      <h1 style="font-size:22px">Reset hasła do panelu</h1>
+      <h1>Reset hasła do panelu</h1>
       <p>Dostaliśmy prośbę o ustawienie nowego hasła do CMS Trzy Wiatry.</p>
-      <p style="margin:24px 0">${resetButtonHtml(resetUrl)}</p>
-      <p style="font-size:13px;color:#666">Link ważny 1 godzinę. Jeśli to nie Ty — zignoruj tę wiadomość.</p>
-      <p style="font-size:12px;color:#999;word-break:break-all">${resetUrl}</p>
+      ${resetButtonHtml(resetUrl)}
+      <p><strong>Uwaga!</strong> Link wygaśnie za 1 godzinę. Jeśli to nie Ty — zignoruj tę wiadomość.</p>
+      <p style="font-size:12px;color:#9A9A9A;word-break:break-all;">${resetUrl}</p>
     `),
   });
 }

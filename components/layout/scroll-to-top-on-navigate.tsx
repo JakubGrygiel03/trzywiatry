@@ -3,17 +3,14 @@
 import { useEffect, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { scrollToHashOrTop } from "@/lib/scroll-chrome";
+import { forceDocumentTop } from "@/lib/scroll-to-top";
 
 function scrollKey(pathname: string, query: string) {
   return `tw-scroll:${pathname}${query ? `?${query}` : ""}`;
 }
 
 function forceTop() {
-  window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  document.documentElement.scrollTop = 0;
-  document.documentElement.scrollLeft = 0;
-  document.body.scrollTop = 0;
-  document.body.scrollLeft = 0;
+  forceDocumentTop();
 }
 
 /** Messenger / Android WebViews often leave a leftover scrollX → uneven side gutters. */
@@ -122,7 +119,7 @@ export function ScrollToTopOnNavigate() {
     const isProductPdp = /^\/sklep\/[^/]+\/?$/.test(pathname);
     const isCollection = /^\/kolekcje\/[^/]+\/?$/.test(pathname);
     const delays = isProductPdp || isCollection
-      ? [0, 30, 80, 160, 320, 600]
+      ? [0, 30, 80, 160, 320, 600, 1000]
       : pathname.startsWith("/sklep")
         ? [0, 40, 100, 200]
         : [0, 80];

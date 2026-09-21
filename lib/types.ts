@@ -188,6 +188,16 @@ export type StoredOrder = {
   totalAmountInCents: number;
   trackingNumber?: string;
   discountCode?: string;
+  /** How the customer is expected to pay / did pay. */
+  paymentProvider?: "p24" | "manual" | "none";
+  /** P24 transaction orderId from webhook. */
+  paymentId?: string;
+  /** P24 methodId from status notification (BLIK, card, bank…). */
+  paymentMethodId?: number;
+  /** Human label cached at webhook time. */
+  paymentMethodLabel?: string;
+  /** ISO timestamp when status first became paid. */
+  paidAt?: string;
   /** Kept for older admin KPI code that read payload.total */
   payload: Record<string, string | number>;
 };

@@ -10,9 +10,18 @@ export type EmailTemplateDraft = {
 export function getEmailTemplate(key: EmailTemplateKey): EmailTemplateDraft {
   const seed = EMAIL_TEMPLATES[key];
   const override = runtimeStore.emailTemplates?.[key];
+  const overrideBody = override?.body?.trim() || "";
+  const needsTiles = seed.tokens.some((t) => t === "highlightBlock" || t === "detailsBlock" || t === "itemsBlock");
+  const staleOverride =
+    needsTiles &&
+    Boolean(overrideBody) &&
+    !overrideBody.includes("{highlightBlock}") &&
+    !overrideBody.includes("{detailsBlock}") &&
+    !overrideBody.includes("{itemsBlock}");
+
   return {
     subject: override?.subject?.trim() || seed.subject,
-    body: override?.body?.trim() || seed.body,
+    body: staleOverride ? seed.body : overrideBody || seed.body,
   };
 }
 

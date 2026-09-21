@@ -6,6 +6,7 @@ import { ORDER_STATUS_LABELS, shippingMethodLabel } from "@/lib/constants";
 import { ensureOrdersHydrated } from "@/lib/data/order-persist";
 import { getOrderById } from "@/lib/data/runtime-store";
 import { formatPLN } from "@/lib/format";
+import { orderPaymentDisplay } from "@/lib/p24-methods";
 import type { OrderStatus } from "@/lib/types";
 
 const STATUSES = Object.keys(ORDER_STATUS_LABELS) as OrderStatus[];
@@ -100,6 +101,11 @@ export default async function AdminOrderDetailPage({
           {order.inpostLocker ? ` · paczkomat ${order.inpostLocker}` : ""}
         </p>
         <p className="font-heading text-lg">{formatPLN(order.totalAmountInCents)}</p>
+        <p>
+          Płatność: <strong>{orderPaymentDisplay(order)}</strong>
+          {order.paymentProvider === "p24" ? " · Przelewy24" : ""}
+          {order.paymentId ? ` · ID ${order.paymentId}` : ""}
+        </p>
         {order.trackingNumber ? (
           <p>
             Śledzenie: <strong>{order.trackingNumber}</strong>

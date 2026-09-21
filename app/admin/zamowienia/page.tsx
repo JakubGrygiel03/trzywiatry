@@ -6,6 +6,7 @@ import { OrderStatusBadge } from "@/components/admin/ui/admin-status-badge";
 import { ensureOrdersHydrated } from "@/lib/data/order-persist";
 import { runtimeStore } from "@/lib/data/runtime-store";
 import { formatPLN } from "@/lib/format";
+import { orderPaymentDisplay } from "@/lib/p24-methods";
 
 export default async function AdminOrdersPage() {
   await ensureOrdersHydrated();
@@ -42,6 +43,7 @@ export default async function AdminOrdersPage() {
                   <th className="px-4 py-3 font-medium">Numer</th>
                   <th className="px-4 py-3 font-medium">Klient</th>
                   <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Płatność</th>
                   <th className="px-4 py-3 font-medium">Uwagi</th>
                   <th className="px-4 py-3 font-medium">Wysyłka</th>
                   <th className="px-4 py-3 text-right font-medium">Kwota</th>
@@ -72,6 +74,7 @@ export default async function AdminOrdersPage() {
                     <td className="px-4 py-3">
                       <OrderStatusBadge status={order.status} />
                     </td>
+                    <td className="px-4 py-3 text-czarny/70">{orderPaymentDisplay(order)}</td>
                     <td className="px-4 py-3">
                       {order.hasGiftWrapping ? (
                         <span className="inline-flex rounded-full bg-czerwony px-3 py-1 font-heading text-[10px] uppercase tracking-[0.14em] text-bialy">

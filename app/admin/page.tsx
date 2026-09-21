@@ -82,7 +82,7 @@ export default async function AdminHomePage() {
         <AdminStatCard
           label="Przychód"
           value={formatPLN(m.revenue)}
-          hint={m.orderCount ? `AOV ${formatPLN(m.aov)}` : "Brak sprzedaży"}
+          hint={m.orderCount ? `AOV ${formatPLN(m.aov)} · tylko opłacone` : "Brak sprzedaży"}
           href="/admin/analityka"
           icon={TrendingUp}
         />
@@ -220,7 +220,7 @@ export default async function AdminHomePage() {
               <QuickLink href="/admin/produkty/nowy" label="Nowy produkt" />
               <QuickLink href="/admin/ustawienia-sklepu" label="Banner / urlop" />
               <QuickLink href="/admin/b2b" label={`Zapytania (${m.b2bCount + m.contactCount})`} />
-              <QuickLink href="/admin/analityka" label="Eksport CSV" />
+              <QuickLink href="/admin/analityka" label="Zarobki i CSV" />
             </div>
           </AdminPanel>
         </div>
