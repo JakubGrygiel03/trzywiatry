@@ -12,12 +12,9 @@ const helpLinks = [
   { href: "/kontakt", label: "Kontakt" },
 ] as const;
 
-const primaryLinks = helpLinks.slice(0, 3);
-const contactLink = helpLinks[3]!;
-
 function FooterLink({ href, children }: { href: string; children: string }) {
   return (
-    <Link href={href} prefetch className="relative z-[1] transition-colors hover:text-czerwony">
+    <Link href={href} prefetch className="relative z-[1] shrink-0 transition-colors hover:text-czerwony">
       {children}
     </Link>
   );
@@ -25,20 +22,20 @@ function FooterLink({ href, children }: { href: string; children: string }) {
 
 function FooterSocials() {
   const iconClass =
-    "relative z-[1] flex size-8 items-center justify-center rounded-full text-czarny/55 transition-colors hover:text-czerwony";
+    "relative z-[1] flex size-7 shrink-0 items-center justify-center text-czarny/55 transition-colors hover:text-czerwony";
   return (
-    <span className="inline-flex items-center gap-0.5">
+    <span className="inline-flex shrink-0 items-center gap-0.5">
       <OutboundSocialLink href={SITE.instagram} className={iconClass} aria-label="Instagram Trzy Wiatry">
-        <InstagramIcon className="size-4" />
+        <InstagramIcon className="size-3.5" />
       </OutboundSocialLink>
       <OutboundSocialLink href={SITE.facebook} className={iconClass} aria-label="Facebook Trzy Wiatry">
-        <FacebookIcon className="size-4" />
+        <FacebookIcon className="size-3.5" />
       </OutboundSocialLink>
     </span>
   );
 }
 
-/** Slim bar — help + coordinates. Header already covers Sklep / O nas / B2B. */
+/** Slim bar — help, credit and legal on one line. Header already covers Sklep / O nas / B2B. */
 export function Footer() {
   const year = new Date().getFullYear();
 
@@ -54,50 +51,30 @@ export function Footer() {
         }}
       />
 
-      <div className="relative z-[1] mx-auto flex max-w-7xl flex-col gap-4 px-6 py-6 md:px-14 lg:px-16 xl:px-20">
-        {/* Mobile: 1) FAQ/Pielęgnacja/Dostawa 2) Kontakt/mail/IG 3) logo → line. Desktop: logo | links. */}
-        <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <nav
-            aria-label="Stopka"
-            className="order-1 w-full text-sm tracking-wide text-czarny/70 sm:order-2 sm:w-auto"
-          >
-            <div className="flex flex-col gap-2.5 sm:hidden">
-              <div className="flex justify-between gap-2 text-center">
-                {primaryLinks.map((link) => (
-                  <FooterLink key={link.href} href={link.href}>
-                    {link.label}
-                  </FooterLink>
-                ))}
-              </div>
-              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-center">
-                <FooterLink href={contactLink.href}>{contactLink.label}</FooterLink>
-                <MailtoLink email={SITE.email} className="min-w-0 truncate" />
-                <FooterSocials />
-              </div>
-            </div>
+      <div className="relative z-[1] mx-auto flex max-w-7xl flex-col items-center gap-3 px-6 py-4 md:flex-row md:justify-between md:gap-5 md:px-14 md:py-5 lg:px-16 xl:px-20">
+        <Logo variant="footer" />
 
-            <div className="hidden flex-wrap gap-x-4 gap-y-1 sm:flex">
-              {helpLinks.map((link) => (
-                <FooterLink key={link.href} href={link.href}>
-                  {link.label}
-                </FooterLink>
-              ))}
-              <MailtoLink email={SITE.email} />
-              <FooterSocials />
-            </div>
-          </nav>
+        <nav
+          aria-label="Stopka"
+          className="flex flex-wrap items-center justify-center gap-x-3.5 gap-y-1 text-sm tracking-wide text-czarny/70 md:flex-nowrap md:gap-x-4"
+        >
+          {helpLinks.map((link) => (
+            <FooterLink key={link.href} href={link.href}>
+              {link.label}
+            </FooterLink>
+          ))}
+          <MailtoLink email={SITE.email} className="shrink-0" />
+          <FooterSocials />
+        </nav>
 
-          <div className="order-2 flex justify-center sm:order-1 sm:justify-start">
-            <Logo variant="footer" />
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-czarny/8 pt-3 text-[11px] tracking-wide text-czarny/40">
-          <p>
-            © {year} {SITE.name}
-            <span> · Copyright Jakub Grygiel</span>
+        <div className="flex flex-wrap items-center justify-center gap-x-3 text-[11px] tracking-wide text-czarny/40 md:flex-nowrap md:justify-end">
+          <p className="whitespace-nowrap">
+            © {year} {SITE.name} · Copyright Jakub Grygiel
           </p>
-          <nav aria-label="Dokumenty sklepu" className="flex gap-4">
+          <span className="hidden text-czarny/20 md:inline" aria-hidden>
+            ·
+          </span>
+          <nav aria-label="Dokumenty sklepu" className="flex shrink-0 gap-3">
             <FooterLink href="/regulamin">Regulamin</FooterLink>
             <FooterLink href="/polityka-prywatnosci">Polityka prywatności</FooterLink>
           </nav>
