@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { updateOrderStatus } from "@/app/actions/admin";
+import { DeleteOrderButton } from "@/components/admin/delete-order-button";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/field";
 import { ORDER_STATUS_LABELS, shippingMethodLabel } from "@/lib/constants";
@@ -176,6 +177,16 @@ export default async function AdminOrderDetailPage({
         </label>
         <Button type="submit">Zapisz status i powiadom</Button>
       </form>
+
+      <div className="rounded-[24px] border border-czerwony/20 p-5">
+        <p className="text-sm font-medium text-czarny">Usuń zamówienie</p>
+        <p className="mt-1 text-xs text-czarny/50">
+          Znika z listy i analityki. Jeśli nie było anulowane, sztuki wracają na magazyn.
+        </p>
+        <div className="mt-3">
+          <DeleteOrderButton id={order.id} orderNumber={order.orderNumber} />
+        </div>
+      </div>
     </div>
   );
 }

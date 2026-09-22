@@ -79,10 +79,12 @@ export function AccountStudioNotes({ settings }: { settings: StudioSettings }) {
           <li>
             Darmowa dostawa od <strong className="text-czarny">{freeShipping}</strong>.
           </li>
-          <li>
-            Pakowanie na prezent: <strong className="text-czarny">{giftWrap}</strong> (pudełko, wstążka,
-            bilecik).
-          </li>
+          {settings.giftWrapEnabled ? (
+            <li>
+              Pakowanie na prezent: <strong className="text-czarny">{giftWrap}</strong> (pudełko, wstążka,
+              bilecik).
+            </li>
+          ) : null}
           {settings.workshopsEnabled ? (
             <li>
               Warsztaty ceramiczne —{" "}

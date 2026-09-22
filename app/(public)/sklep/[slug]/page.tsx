@@ -6,12 +6,14 @@ import { TrackRecentlyViewed } from "@/components/shop/track-recently-viewed";
 import { ScrollProductToTop } from "@/components/shop/scroll-product-to-top";
 import { UpsellRail } from "@/components/shop/upsell-rail";
 import { ProductGallery } from "@/components/shop/product-gallery";
+import { ProductLongCopy } from "@/components/shop/product-long-copy";
 import { JsonLd } from "@/components/seo/json-ld";
 import { Badge, Container } from "@/components/ui/badge";
 import { DOMAIN_LABELS } from "@/lib/constants";
 import { getCollections, getProductBySlug, isAliasedProductSlug, resolveProductSlug, variantStockLabel } from "@/lib/data/queries";
-import { getProductUpsells } from "@/lib/data/recommendations";
+import { getProductUpsells, getUpsellCopy } from "@/lib/data/recommendations";
 import { getProductPhoto } from "@/lib/media";
+import { splitProductCopy } from "@/lib/product-copy";
 import { breadcrumbJsonLd, noIndexRobots, pageMetadata, productJsonLd } from "@/lib/seo";
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
@@ -39,6 +41,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const status = variantStockLabel(stock, product.lowStockThreshold);
   const collection = getCollections().find((item) => item.id === product.collectionId);
   const upsells = getProductUpsells(product, 4);
+  const upsellCopy = getUpsellCopy(product);
+  const { short, long } = splitProductCopy(product);
 
   return (
     <div className="product-pdp overflow-anchor-none py-8 md:py-14" key={product.slug}>
@@ -56,51 +60,59 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <Container className="space-y-12 md:space-y-16">
         <PdpVariantProvider key={product.id} product={product}>
           {/*
-            Mobile DOM order: title → gallery → buy block (starts at the top with the name).
-            Desktop grid: gallery left (sticky), title + buy stacked on the right.
+            Mobile: title → gallery → buy (order-*).
+            Desktop: one right-hand column so the short line sits under the title, not a row below the photos.
           */}
           <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-10">
-            <header className="space-y-3 lg:col-start-2 lg:row-start-1">
-              <div className="flex flex-wrap gap-2">
-                <Badge>{DOMAIN_LABELS[product.domain]}</Badge>
-                {product.capacityMl ? <Badge>{product.capacityMl} ml</Badge> : null}
-                {product.isBestseller ? <Badge tone="clay">Bestseller</Badge> : null}
-                {status === "sold_out" ? <Badge tone="sold">Wyprzedane</Badge> : null}
-                {status === "low" ? <Badge tone="low">Niski stan</Badge> : null}
-              </div>
-              <h1 className="font-heading text-3xl uppercase tracking-[0.08em] md:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
-                {product.name}
-              </h1>
-              {collection ? (
-                <p className="font-heading text-[11px] uppercase tracking-[0.18em] text-szary">
-                  Kolekcja {collection.name}
-                </p>
-              ) : null}
-            </header>
+            <div className="contents lg:col-start-2 lg:row-start-1 lg:flex lg:flex-col lg:gap-5">
+              <header className="order-1 space-y-3 lg:order-none">
+                <div className="flex flex-wrap gap-2">
+                  <Badge>{DOMAIN_LABELS[product.domain]}</Badge>
+                  {product.capacityMl ? <Badge>{product.capacityMl} ml</Badge> : null}
+                  {product.isBestseller ? <Badge tone="clay">Bestseller</Badge> : null}
+                  {status === "sold_out" ? <Badge tone="sold">Wyprzedane</Badge> : null}
+                  {status === "low" ? <Badge tone="low">Niski stan</Badge> : null}
+                </div>
+                <h1 className="font-heading text-3xl uppercase tracking-[0.08em] md:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
+                  {product.name}
+                </h1>
+                {collection ? (
+                  <p className="font-heading text-[11px] uppercase tracking-[0.18em] text-szary">
+                    Kolekcja {collection.name}
+                  </p>
+                ) : null}
+              </header>
 
-            <div className="lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-24">
-              <ProductGallery product={product} />
+              <div className="order-3 space-y-5 lg:order-none">
+                {short ? <p className="text-base leading-relaxed text-czarny/70 md:text-lg">{short}</p> : null}
+                <AddToCart product={product} />
+                {long || product.careInstructions ? (
+                  <section className="border-t border-czarny/8 pt-5" aria-label="Opis produktu">
+                    {long ? <ProductLongCopy text={long} /> : null}
+                    {product.careInstructions ? (
+                      <p className="mt-4 text-sm leading-relaxed text-czarny/55">{product.careInstructions}</p>
+                    ) : null}
+                  </section>
+                ) : null}
+              </div>
             </div>
 
-            <div className="space-y-5 lg:col-start-2 lg:row-start-2">
-              <p className="text-base leading-relaxed text-czarny/70 md:text-lg">{product.description}</p>
-              {product.careInstructions ? (
-                <p className="border-t border-czarny/8 pt-4 text-sm leading-relaxed text-czarny/55">
-                  {product.careInstructions}
-                </p>
-              ) : null}
-              <AddToCart product={product} />
+            <div className="order-2 lg:order-none lg:col-start-1 lg:row-start-1 lg:sticky lg:top-24">
+              <ProductGallery product={product} />
             </div>
           </div>
         </PdpVariantProvider>
 
-        <UpsellRail suggestions={upsells.slice(0, 2)} title="Często dobierane razem" />
-
-        <CrossSell
-          suggestions={upsells}
-          title="Dobierz zestaw do stołu"
-          subtitle="Ta sama kolekcja szkliwa, dopełniające formy albo gotowy zestaw prezentowy."
-        />
+        {upsells.length > 0 ? (
+          <>
+            <UpsellRail
+              suggestions={upsells.slice(0, 2)}
+              title="Często dobierane razem"
+              subtitle={upsellCopy.rail}
+            />
+            <CrossSell suggestions={upsells} title={upsellCopy.title} subtitle={upsellCopy.subtitle} />
+          </>
+        ) : null}
         <RecentlyViewed excludeId={product.id} />
       </Container>
     </div>

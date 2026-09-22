@@ -18,8 +18,10 @@ import { orderPlacedEmail, sendEmail } from "@/lib/resend";
 import { notifyStudioNewOrder } from "@/lib/studio-notify";
 import { buildP24Session, registerP24Transaction } from "@/lib/p24";
 import { resolvePaymentAccess } from "@/lib/payment-access";
+import { storefrontClosedMessage } from "@/lib/maintenance";
 import { getVacationCheckoutNote } from "@/lib/vacation-message";
 import { getPublicSiteUrl } from "@/lib/site-url";
+import { reserveCouponForOrder, resolveCheckoutDiscount } from "@/lib/newsletter-coupons";
 import type { ShippingMethod, StoredOrder, StoredOrderItem } from "@/lib/types";
 import { formatPLN } from "@/lib/format";
 
@@ -64,7 +66,6 @@ export async function createCheckoutSession(
   }
 
   const cartRaw = formData.get("cart");
-  const giftWrap = formData.get("hasGiftWrapping") === "true";
   let cartLines: CartPayload[] = [];
   try {
     cartLines = JSON.parse(String(cartRaw ?? "[]")) as CartPayload[];
@@ -77,6 +78,13 @@ export async function createCheckoutSession(
   }
 
   await ensureAtelierHydrated();
+  const closed = await storefrontClosedMessage();
+  if (closed) {
+    return { ok: false, message: closed };
+  }
+  const settings = getRuntimeSettings();
+
+  const giftWrap = settings.giftWrapEnabled && formData.get("hasGiftWrapping") === "true";
 
   const catalog = getAllProducts();
   const items: StoredOrderItem[] = [];
@@ -103,16 +111,19 @@ export async function createCheckoutSession(
     });
   }
 
-  const settings = getRuntimeSettings();
   const shipping = SHIPPING_METHODS.find((method) => method.id === parsed.data.shippingMethod);
   const shippingCost =
     goods >= settings.freeShippingThresholdCents ? 0 : (shipping?.priceInCents ?? 0);
   const giftCost = giftWrap ? settings.giftWrapPriceCents : 0;
-  const promo = (settings.promoCode ?? "").trim().toUpperCase();
-  const discount =
-    promo && parsed.data.discountCode?.trim().toUpperCase() === promo
-      ? Math.round(goods * 0.15)
-      : 0;
+  const discountResult = resolveCheckoutDiscount(
+    parsed.data.discountCode,
+    goods,
+    settings.promoCode,
+  );
+  if (!discountResult.ok) {
+    return { ok: false, message: discountResult.message };
+  }
+  const discount = discountResult.amountCents;
   const total = goods + shippingCost + giftCost - discount;
   await ensureOrdersHydrated();
   const orderNumber = nextOrderNumber();
@@ -145,7 +156,7 @@ export async function createCheckoutSession(
     giftWrappingCostCents: giftCost,
     discountAmountCents: discount,
     totalAmountInCents: total,
-    discountCode: parsed.data.discountCode,
+    discountCode: discountResult.code,
     paymentProvider: "p24",
     payload: {
       orderNumber,
@@ -160,6 +171,11 @@ export async function createCheckoutSession(
     },
   };
 
+  if (discountResult.unique && discountResult.code) {
+    if (!reserveCouponForOrder(discountResult.code, order.id)) {
+      return { ok: false, message: "Ten kod rabatowy jest już używany przy innym zamówieniu." };
+    }
+  }
   addRuntimeOrder(order);
   applyVariantStockDelta(
     cartLines.map((line) => ({ variantId: line.variantId, quantity: line.quantity })),

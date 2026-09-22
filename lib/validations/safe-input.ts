@@ -11,9 +11,24 @@ export function firstZodMessage(error: z.ZodError<unknown>, fallback = "Sprawdź
   return error.issues[0]?.message ?? fallback;
 }
 
+export function normalizeHref(value: string) {
+  let href = value.trim();
+  if (
+    (href.startsWith('"') && href.endsWith('"')) ||
+    (href.startsWith("'") && href.endsWith("'"))
+  ) {
+    href = href.slice(1, -1).trim();
+  }
+  if (!href) return href;
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(href)) return href;
+  if (href.startsWith("//") || href.startsWith("#") || href.startsWith("/")) return href;
+  return `/${href}`;
+}
+
 export function isSafeHref(value: string) {
-  const href = value.trim();
+  const href = normalizeHref(value);
   if (!href || href.includes("..") || href.includes("\\") || /\s/.test(href)) return false;
+  if (href.startsWith("#") && href.length <= 180) return true;
   if (href.startsWith("/") && !href.startsWith("//") && !href.includes("://")) return href.length <= 180;
   try {
     const url = new URL(href);
@@ -64,7 +79,8 @@ export const safeHrefSchema = z
   .trim()
   .min(1, "Podaj link.")
   .max(180, "Link jest za długi.")
-  .refine(isSafeHref, "Link musi zaczynać się od / albo https:// — bez javascript i spacji.");
+  .transform(normalizeHref)
+  .refine(isSafeHref, "Link wewnętrzny (np. /kolekcje/mist albo /sklep) albo adres https://.");
 
 export const emailSchema = z
   .string()

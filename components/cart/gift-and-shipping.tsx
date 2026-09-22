@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useSiteSettings } from "@/components/cms/site-settings-provider";
 import { useCartStore } from "@/store/use-cart-store";
 import { formatPLN } from "@/lib/format";
@@ -37,7 +38,13 @@ export function GiftWrappingCard() {
   const giftMessage = useCartStore((state) => state.giftMessage);
   const setGiftWrapping = useCartStore((state) => state.setGiftWrapping);
   const setGiftMessage = useCartStore((state) => state.setGiftMessage);
-  const { giftWrapPriceCents: price } = useSiteSettings();
+  const { giftWrapPriceCents: price, giftWrapEnabled } = useSiteSettings();
+
+  useEffect(() => {
+    if (!giftWrapEnabled && hasGiftWrapping) setGiftWrapping(false);
+  }, [giftWrapEnabled, hasGiftWrapping, setGiftWrapping]);
+
+  if (!giftWrapEnabled) return null;
 
   return (
     <div className="space-y-3 rounded-2xl border border-czarny/10 p-4">

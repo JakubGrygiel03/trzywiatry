@@ -11,6 +11,7 @@ import {
   setCatalogSeedSignature,
 } from "@/lib/data/runtime-store";
 import { ATELIER_STATE_KEYS, hasSupabaseService, readAtelierState, writeAtelierState } from "@/lib/data/supabase-state";
+import { parseNewsletterCoupons } from "@/lib/newsletter-coupons";
 import type { BlogPost, Collection, Product, StudioSettings, Workshop } from "@/lib/types";
 
 const DATA_DIR = path.join(process.cwd(), ".data");
@@ -29,6 +30,7 @@ export type AtelierSnapshot = {
   b2b?: Inquiry[];
   contacts?: Inquiry[];
   newsletter?: string[];
+  newsletterCoupons?: unknown;
   bookings?: Inquiry[];
   homeLayout?: HomeSection[];
   contentPages?: Partial<ContentOverlayMap>;
@@ -59,6 +61,9 @@ function applySnapshot(snap: AtelierSnapshot) {
   if (Array.isArray(snap.b2b)) runtimeStore.b2b = snap.b2b;
   if (Array.isArray(snap.contacts)) runtimeStore.contacts = snap.contacts;
   if (Array.isArray(snap.newsletter)) runtimeStore.newsletter = snap.newsletter;
+  if (snap.newsletterCoupons !== undefined) {
+    runtimeStore.newsletterCoupons = parseNewsletterCoupons(snap.newsletterCoupons);
+  }
   if (Array.isArray(snap.bookings)) runtimeStore.bookings = snap.bookings;
   if (Array.isArray(snap.homeLayout) && snap.homeLayout.length > 0) {
     runtimeStore.homeLayout = snap.homeLayout;
@@ -79,6 +84,7 @@ function captureSnapshot(): AtelierSnapshot {
     b2b: runtimeStore.b2b,
     contacts: runtimeStore.contacts,
     newsletter: runtimeStore.newsletter,
+    newsletterCoupons: runtimeStore.newsletterCoupons,
     bookings: runtimeStore.bookings,
     homeLayout: runtimeStore.homeLayout,
     contentPages: runtimeStore.contentPages,

@@ -68,6 +68,7 @@ export function flattenSiteComponents(
       base.freeShippingThresholdCents,
     ),
     giftWrapPriceCents: readNumber(checkout.giftWrapPriceCents, base.giftWrapPriceCents),
+    giftWrapEnabled: readBoolean(checkout.giftWrapEnabled, base.giftWrapEnabled),
     workshopsEnabled: readBoolean(workshops.enabled, base.workshopsEnabled),
   };
 }

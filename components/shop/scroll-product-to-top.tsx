@@ -10,9 +10,7 @@ import { forceDocumentTop, pulseDocumentTop } from "@/lib/scroll-to-top";
 export function ScrollProductToTop({ slug }: { slug: string }) {
   useLayoutEffect(() => {
     forceDocumentTop();
-    const sentinel = document.getElementById("pdp-top");
-    sentinel?.scrollIntoView({ block: "start", behavior: "auto" });
-    const timers = pulseDocumentTop();
+    const timers = pulseDocumentTop([0, 16, 80, 200]);
     return () => {
       for (const id of timers) window.clearTimeout(id);
     };

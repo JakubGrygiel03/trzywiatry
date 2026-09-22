@@ -25,6 +25,8 @@ export const studioSettingsFormSchema = z
       .min(0, "Próg dostawy nie może być ujemny.")
       .max(1_000_000, "Próg dostawy jest za wysoki."),
     workshopsEnabled: z.boolean(),
+    giftWrapEnabled: z.boolean(),
+    maintenanceMode: z.boolean(),
   })
   .superRefine((data, ctx) => {
     if (revealsPromoOnStorefront(data.announcementText, data.promoCode)) {

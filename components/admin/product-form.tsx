@@ -89,13 +89,30 @@ export function ProductForm({
               />
             </AdminField>
 
-            <AdminField label="Opis" htmlFor="description" required>
+            <AdminField
+              label="Krótki opis (przy cenie)"
+              htmlFor="shortDescription"
+              hint="Jedno zdanie obok ceny. Puste = bierzemy pierwsze zdanie z pełnego opisu. Tytuł produktu zostaje osobno."
+            >
+              <AdminInput
+                id="shortDescription"
+                name="shortDescription"
+                defaultValue={product?.shortDescription ?? ""}
+                placeholder="np. Miska toczona ręcznie na kole garncarskim."
+              />
+            </AdminField>
+            <AdminField
+              label="Pełny opis (poniżej zdjęć)"
+              htmlFor="description"
+              hint="Cechy, wymiary, pielęgnacja. Nowa linia + myślnik albo • robią listę."
+              required
+            >
               <AdminTextarea
                 id="description"
                 name="description"
                 required
                 defaultValue={product?.description}
-                placeholder="Krótki opis dla klienta — materiał, szkliwo, zastosowanie."
+                placeholder={"Cechy:\n• Wymiary: średnica około 20 cm\n• Można myć w zmywarce."}
               />
             </AdminField>
           </AdminFormSection>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { scrollToHashOrTop } from "@/lib/scroll-chrome";
 import { forceDocumentTop } from "@/lib/scroll-to-top";
@@ -84,12 +84,12 @@ export function ScrollToTopOnNavigate() {
     };
   }, [pathname, query]);
 
-  useEffect(() => {
+  // Before paint — useEffect runs too late and the PDP flashes at the catalog Y.
+  useLayoutEffect(() => {
     const key = scrollKey(pathname, query);
     const pop = isPopState.current;
     isPopState.current = false;
 
-    // First mount of the shell: still force top unless this is a back navigation.
     if (!ready.current) {
       ready.current = true;
       if (!pop && !window.location.hash) {
@@ -112,17 +112,15 @@ export function ScrollToTopOnNavigate() {
       return () => window.cancelAnimationFrame(id);
     }
 
-    // Forward Link navigation — hammer top a few times (layout / images can fight one frame).
-    // Product PDP: tall gallery used to open mid-page on phones (scroll anchoring).
     forceTop();
     const frame = window.requestAnimationFrame(() => scrollToHashOrTop("auto"));
     const isProductPdp = /^\/sklep\/[^/]+\/?$/.test(pathname);
     const isCollection = /^\/kolekcje\/[^/]+\/?$/.test(pathname);
     const delays = isProductPdp || isCollection
-      ? [0, 30, 80, 160, 320, 600, 1000]
+      ? [0, 50, 160, 400]
       : pathname.startsWith("/sklep")
-        ? [0, 40, 100, 200]
-        : [0, 80];
+        ? [0, 80]
+        : [0, 40];
     const timers = delays.map((ms) =>
       window.setTimeout(() => {
         if (!window.location.hash) forceTop();

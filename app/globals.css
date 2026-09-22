@@ -96,7 +96,9 @@ body {
 }
 
 html {
-  scroll-behavior: smooth;
+  /* Instant — smooth here fights App Router scroll-to-top and leaves PDP mid-page. */
+  scroll-behavior: auto;
+  overflow-anchor: none;
   /* Sticky announcement + nav — hash links / scrollIntoView stop below chrome */
   scroll-padding-top: var(--site-chrome, 5.75rem);
   scrollbar-width: thin;
@@ -298,21 +300,9 @@ h4 {
   max-height: 100%;
 }
 
-/* Tablet shop filters: horizontal swipe stays on the rail (no page scroll fight). */
+/* Tablet shop filters: chips wrap — no horizontal scrollbar fighting the grid. */
 .catalog-filter-rail {
-  -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
-  touch-action: pan-x;
-  scrollbar-width: thin;
-}
-
-.catalog-filter-rail::-webkit-scrollbar {
-  height: 4px;
-}
-
-.catalog-filter-rail::-webkit-scrollbar-thumb {
-  background: rgb(1 1 1 / 0.18);
-  border-radius: 999px;
 }
 
 /* Full-bleed hero band — different from inset section tiles below.

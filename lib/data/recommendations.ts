@@ -1,15 +1,21 @@
 import { getRuntimeCatalog } from "@/lib/data/runtime-store";
 import type { Product } from "@/lib/types";
 
+const TECHNICAL_CATEGORIES = new Set(["formy_matki", "formy_master", "narzedzia"]);
+
 /** Categories that naturally complete each other on the table. */
 const COMPLEMENTS: Record<string, string[]> = {
-  kubki: ["miski", "talerze", "zestawy", "rzezby"],
-  miski: ["kubki", "talerze", "zestawy", "rzezby"],
-  talerze: ["kubki", "miski", "zestawy", "rzezby"],
+  kubki: ["miski", "talerze", "czarki", "czajniczki", "zestawy", "rzezby"],
+  czarki: ["kubki", "miski", "talerze", "czajniczki", "zestawy"],
+  miski: ["kubki", "talerze", "czarki", "zestawy", "rzezby"],
+  talerze: ["kubki", "miski", "czarki", "zestawy", "rzezby"],
+  czajniczki: ["czarki", "kubki", "miski", "talerze", "zestawy"],
   rzezby: ["kubki", "miski", "talerze", "zestawy"],
-  zestawy: ["kubki", "talerze", "miski", "rzezby"],
+  zestawy: ["kubki", "talerze", "miski", "czarki", "rzezby"],
   karty: ["zestawy", "kubki", "miski"],
-  formy_matki: ["kubki", "formy_matki"],
+  formy_matki: ["formy_matki", "formy_master", "narzedzia"],
+  formy_master: ["formy_matki", "formy_master", "narzedzia"],
+  narzedzia: ["formy_matki", "formy_master", "narzedzia"],
 };
 
 export type UpsellSuggestion = {
@@ -17,6 +23,39 @@ export type UpsellSuggestion = {
   reason: string;
   score: number;
 };
+
+export type UpsellCopy = {
+  title: string;
+  subtitle: string;
+  rail: string;
+};
+
+export function isStudioTechnicalProduct(product: Pick<Product, "domain" | "category">) {
+  return product.domain === "formy" || TECHNICAL_CATEGORIES.has(product.category);
+}
+
+/** Heading + supporting line for the PDP recommendation block. */
+export function getUpsellCopy(product: Product): UpsellCopy {
+  if (isStudioTechnicalProduct(product)) {
+    return {
+      title: "Dobierz do pracowni",
+      subtitle: "Pasujące formy, narzędzia i akcesoria odlewnicze — bez zastawy stołowej.",
+      rail: "Formy i narzędzia, które naturalnie uzupełniają odlew.",
+    };
+  }
+  if (product.domain === "drewno") {
+    return {
+      title: "Dobierz do deski",
+      subtitle: "Naczynia i drewno, które dobrze siadają obok tego egzemplarza.",
+      rail: "Pary, które naturalnie uzupełniają wybór.",
+    };
+  }
+  return {
+    title: "Dobierz zestaw do stołu",
+    subtitle: "Ta sama kolekcja szkliwa, dopełniające formy albo gotowy zestaw prezentowy.",
+    rail: "Pary i zestawy, które naturalnie uzupełniają wybór.",
+  };
+}
 
 function published() {
   return getRuntimeCatalog().filter((product) => product.isPublished);
@@ -32,6 +71,11 @@ function hasStock(product: Product) {
 
 function reasonFor(seed: Product, candidate: Product): string {
   if (seed.relatedIds?.includes(candidate.id)) return "Dobierz do pary";
+  if (isStudioTechnicalProduct(seed)) {
+    if (candidate.category === "narzedzia") return "Narzędzia do odlewu";
+    if (candidate.category === "formy_master") return "Forma master";
+    return "Pasuje do odlewu";
+  }
   if (candidate.category === "zestawy" && seed.category !== "zestawy") return "Zestaw prezentowy";
   if (seed.collectionId && candidate.collectionId === seed.collectionId) return "Ta sama kolekcja";
   if (seed.domain === "ceramika" && candidate.domain === "drewno") return "Ceramika + drewno";
@@ -44,13 +88,19 @@ function reasonFor(seed: Product, candidate: Product): string {
 function scorePair(seed: Product, candidate: Product): number {
   if (seed.id === candidate.id || !hasStock(candidate)) return 0;
 
+  const curated = Boolean(seed.relatedIds?.includes(candidate.id));
+  const seedTech = isStudioTechnicalProduct(seed);
+  const candidateTech = isStudioTechnicalProduct(candidate);
+  // Tableware ↔ molds only when the atelier curated the pair.
+  if (seedTech !== candidateTech && !curated) return 0;
+
   let score = 0;
-  if (seed.relatedIds?.includes(candidate.id)) score += 100;
-  if (candidate.category === "zestawy" && seed.category !== "zestawy") score += 45;
+  if (curated) score += 100;
+  if (candidate.category === "zestawy" && seed.category !== "zestawy" && !seedTech) score += 45;
   if (seed.collectionId && candidate.collectionId === seed.collectionId) score += 40;
   if ((COMPLEMENTS[seed.category] ?? []).includes(candidate.category)) score += 28;
-  if (seed.domain === "ceramika" && candidate.domain === "drewno") score += 22;
-  if (seed.domain === "drewno" && candidate.domain === "ceramika") score += 22;
+  if (!seedTech && seed.domain === "ceramika" && candidate.domain === "drewno") score += 22;
+  if (!seedTech && seed.domain === "drewno" && candidate.domain === "ceramika") score += 22;
   if (candidate.isBestseller) score += 12;
   if (seed.category === candidate.category) score += 8;
   if (

@@ -188,8 +188,10 @@ export function cartSubtotal(items: CartItem[]) {
 export function cartGiftWrapCost(
   hasGiftWrapping: boolean,
   giftWrapPriceCents = defaultStudioSettings.giftWrapPriceCents,
+  giftWrapEnabled = true,
 ) {
-  return hasGiftWrapping ? giftWrapPriceCents : 0;
+  if (!giftWrapEnabled || !hasGiftWrapping) return 0;
+  return giftWrapPriceCents;
 }
 
 export function cartCount(items: CartItem[]) {

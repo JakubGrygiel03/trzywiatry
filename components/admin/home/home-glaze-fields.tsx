@@ -100,7 +100,10 @@ export function HomeGlazeFields({
               </AdminSelect>
             </AdminField>
           </div>
-          <AdminField label="Link po kliknięciu">
+          <AdminField
+            label="Link po kliknięciu"
+            hint="Ścieżka wewnętrzna, np. /kolekcje/mist albo /sklep — bez cudzysłowów."
+          >
             <AdminInput value={line.href} onChange={(e) => updateLine(index, { href: e.target.value })} />
           </AdminField>
         </div>

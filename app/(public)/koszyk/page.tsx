@@ -18,10 +18,10 @@ export default function CartPage() {
   const items = useCartStore((state) => state.items);
   const hasGiftWrapping = useCartStore((state) => state.hasGiftWrapping);
   const { ready, empty } = useCartEmptyFast();
-  const { giftWrapPriceCents } = useSiteSettings();
+  const { giftWrapPriceCents, giftWrapEnabled } = useSiteSettings();
   const { isPublic, isTester } = usePaymentAccess();
   const subtotal = cartSubtotal(items);
-  const gift = cartGiftWrapCost(hasGiftWrapping, giftWrapPriceCents);
+  const gift = cartGiftWrapCost(hasGiftWrapping, giftWrapPriceCents, giftWrapEnabled);
 
   return (
     <div className="py-8 md:py-10">

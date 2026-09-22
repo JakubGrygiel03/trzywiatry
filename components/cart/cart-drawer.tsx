@@ -21,10 +21,10 @@ export function CartDrawer() {
   const isOpen = useCartStore((state) => state.isOpen);
   const closeCart = useCartStore((state) => state.closeCart);
   const hasGiftWrapping = useCartStore((state) => state.hasGiftWrapping);
-  const { giftWrapPriceCents } = useSiteSettings();
+  const { giftWrapPriceCents, giftWrapEnabled } = useSiteSettings();
   const { isPublic, isTester } = usePaymentAccess();
   const subtotal = cartSubtotal(items);
-  const gift = cartGiftWrapCost(hasGiftWrapping, giftWrapPriceCents);
+  const gift = cartGiftWrapCost(hasGiftWrapping, giftWrapPriceCents, giftWrapEnabled);
   const reduceMotion = useReducedMotion();
 
   // Hard reset drawer open flag only — cart lines hydrate sync from localStorage.

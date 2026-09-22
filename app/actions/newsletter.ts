@@ -3,7 +3,10 @@
 import { newsletterSchema } from "@/lib/validations/forms";
 import { addSubscriber } from "@/lib/mailerlite";
 import { saveAtelierSnapshot, ensureAtelierHydrated } from "@/lib/data/atelier-persist";
-import { getRuntimeSettings, runtimeStore } from "@/lib/data/runtime-store";
+import {
+  issueOrReuseNewsletterCoupon,
+  rememberNewsletterEmail,
+} from "@/lib/newsletter-coupons";
 import { renderEmailTemplate, emailHighlightTile } from "@/lib/email/render";
 import { sendEmail } from "@/lib/resend";
 
@@ -14,19 +17,27 @@ export async function subscribeNewsletter(_: { ok: boolean; message: string }, f
     return { ok: false, message: parsed.error.issues[0]?.message ?? "Sprawdź e-mail. / Check the email address." };
   }
 
-  const settings = getRuntimeSettings();
-  const code = (settings.promoCode ?? "").trim() || "newsletter";
-
-  runtimeStore.newsletter.push(parsed.data.email);
+  const email = parsed.data.email;
+  const { coupon, minted } = issueOrReuseNewsletterCoupon(email);
+  rememberNewsletterEmail(email);
   await saveAtelierSnapshot();
-  await addSubscriber(parsed.data.email, "footer_discount_15");
+  await addSubscriber(email, "footer_discount_15");
+
+  if (!minted && coupon.isUsed) {
+    return {
+      ok: true,
+      message:
+        "Ten adres jest już na liście. Kod rabatowy został wcześniej wykorzystany. / This address is already subscribed — the discount code was already used.",
+    };
+  }
+
   const welcome = renderEmailTemplate("newsletter_welcome", {
-    code,
-    highlightBlock: emailHighlightTile("Twój kod rabatowy", code),
+    code: coupon.code,
+    highlightBlock: emailHighlightTile("Twój jednorazowy kod", coupon.code),
   });
   const mailed = await sendEmail({
-    to: parsed.data.email,
-    subject: settings.promoCode?.trim() ? welcome.subject : "Newsletter · Trzy Wiatry",
+    to: email,
+    subject: welcome.subject,
     html: welcome.html,
   });
 
@@ -40,8 +51,8 @@ export async function subscribeNewsletter(_: { ok: boolean; message: string }, f
 
   return {
     ok: true,
-    message: settings.promoCode?.trim()
+    message: minted
       ? "Kod rabatowy jest w drodze mailem. Sprawdź skrzynkę. / Your discount code is on its way — check your inbox."
-      : "Jesteś na liście. Sprawdź skrzynkę. / You're on the list — check your inbox.",
+      : "Ten adres jest już na liście — ponownie wysłaliśmy ten sam kod. / Already subscribed — we re-sent the same code.",
   };
 }

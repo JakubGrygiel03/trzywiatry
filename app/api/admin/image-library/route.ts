@@ -8,7 +8,7 @@ export async function GET() {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  return Response.json(getAdminProductImageLibrary(), {
+  return Response.json(await getAdminProductImageLibrary(), {
     headers: { "Cache-Control": "private, max-age=30" },
   });
 }

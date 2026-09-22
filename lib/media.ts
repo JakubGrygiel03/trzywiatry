@@ -6,7 +6,18 @@ const REAL_PHOTO_PREFIX = "/brand/photos/products/";
 const WOO_LOGO_PNG = /-01\.png$/i;
 const PHOTO_FILE = /\.(jpe?g|webp|avif)$/i;
 
+function isCloudUploadPhoto(src: string) {
+  if (!src.startsWith("https://")) return false;
+  try {
+    const url = new URL(src);
+    return url.pathname.includes("/storage/v1/object/public/");
+  } catch {
+    return false;
+  }
+}
+
 export function isUsableProductPhoto(src: string) {
+  if (isCloudUploadPhoto(src)) return true;
   if (!src.includes(REAL_PHOTO_PREFIX)) return false;
   if (WOO_LOGO_PNG.test(src)) return false;
   return true;

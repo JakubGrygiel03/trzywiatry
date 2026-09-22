@@ -26,8 +26,8 @@ export function pulseDocumentTop(delays: number[] = TOP_PULSE_MS) {
 
 /** Click handler for in-shop product links (cross-sell / recently viewed). */
 export function onProductNavigateClick() {
+  if (typeof document === "undefined") return;
+  document.documentElement.style.overflowAnchor = "none";
   forceDocumentTop();
   window.requestAnimationFrame(forceDocumentTop);
-  // Extra frames — soft /sklep/[slug] → /sklep/[other] often restores mid-page once.
-  pulseDocumentTop([0, 30, 80, 160, 320, 600]);
 }

@@ -32,7 +32,7 @@ export const PAYMENT_OUTCOMES: Record<PaymentOutcomeKey, PaymentOutcomeCopy> = {
     sandboxLabel: "Zapłać",
     eyebrow: "Płatność OK",
     title: "Płatność potwierdzona",
-    body: "Dziękujemy — BLIK, karta albo przelew przeszły. Pracownia może pakować zamówienie.",
+    body: "Dziękujemy. BLIK, karta albo przelew przeszły — pracownia może pakować zamówienie.",
     tone: "ok",
     showPayButton: false,
     showRefreshHint: false,

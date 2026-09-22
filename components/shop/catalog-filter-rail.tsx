@@ -10,9 +10,7 @@ type CategoryCounts = {
   byDomain: Record<string, number>;
 };
 
-/**
- * Tablet-only horizontal chip rail — swipe sideways here without scrolling the grid.
- */
+/** Tablet chip rail — wraps so Windows never paints a terracotta overflow bar over the chips. */
 export function CatalogFilterRail({
   lane,
   capacity,
@@ -35,9 +33,9 @@ export function CatalogFilterRail({
   const tree = categoryTreeForLane(lane);
 
   return (
-    <div className="sticky top-[var(--site-chrome)] z-20 -mx-1 hidden border-b border-czarny/8 bg-papier/95 backdrop-blur-sm md:block lg:hidden">
+    <div className="sticky top-[var(--site-chrome)] z-20 -mx-1 hidden overflow-x-hidden border-b border-czarny/8 bg-papier/95 pb-1 backdrop-blur-sm md:block lg:hidden">
       <div
-        className="catalog-filter-rail flex items-center gap-2 overflow-x-auto px-1 py-3"
+        className="catalog-filter-rail flex flex-wrap items-center gap-2 overflow-x-hidden px-1 py-3"
         role="navigation"
         aria-label="Filtry katalogu"
       >
@@ -61,7 +59,7 @@ export function CatalogFilterRail({
         {tree.map((group) => {
           const domainActive = domain === group.domain && !category;
           return (
-            <div key={group.id} className="flex shrink-0 items-center gap-1.5">
+            <div key={group.id} className="flex flex-wrap items-center gap-1.5">
               <RailChip
                 active={domainActive}
                 onClick={() =>
@@ -106,7 +104,7 @@ export function CatalogFilterRail({
         })}
 
         {lane === "uzytkowa" ? (
-          <div className="flex shrink-0 items-center gap-1.5 border-l border-czarny/10 pl-2">
+          <div className="flex flex-wrap items-center gap-1.5 border-l border-czarny/10 pl-2">
             <RailChip active={!capacity} onClick={() => onPush((next) => next.delete("pojemnosc"))}>
               ml · wszystkie
             </RailChip>

@@ -1,14 +1,21 @@
 import "server-only";
-import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { MAX_IMAGE_BYTES, MAX_PRODUCT_IMAGES } from "@/lib/admin-product-constants";
+import {
+  canUploadToCloud,
+  listPublicImages,
+  mustUseCloudStorage,
+  randomImageName,
+  uploadPublicImage,
+} from "@/lib/admin-storage";
 import { PRODUCT_IMAGE_OPTIONS } from "@/lib/constants";
 
 export { MAX_IMAGE_BYTES, MAX_PRODUCT_IMAGES };
 
 export const PRODUCT_UPLOAD_DIR = "public/brand/photos/products/uploads";
 export const PRODUCT_UPLOAD_URL_PREFIX = "/brand/photos/products/uploads/";
+export const PRODUCT_UPLOAD_FOLDER = "products";
 
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 
@@ -33,36 +40,65 @@ function safeSlugPart(value: string) {
 
 export type AdminImageOption = { url: string; label: string };
 
-export function getAdminProductImageLibrary(): AdminImageOption[] {
+function localUploadLibrary(): AdminImageOption[] {
   const uploads: AdminImageOption[] = [];
   const dir = path.join(process.cwd(), PRODUCT_UPLOAD_DIR);
-
-  if (existsSync(dir)) {
-    for (const file of readdirSync(dir)) {
-      if (!/\.(jpe?g|png|webp|gif)$/i.test(file)) continue;
-      uploads.push({
-        url: `${PRODUCT_UPLOAD_URL_PREFIX}${file}`,
-        label: file,
-      });
-    }
+  if (!existsSync(dir)) return uploads;
+  for (const file of readdirSync(dir)) {
+    if (!/\.(jpe?g|png|webp|gif)$/i.test(file)) continue;
+    uploads.push({ url: `${PRODUCT_UPLOAD_URL_PREFIX}${file}`, label: file });
   }
-
   uploads.sort((a, b) => b.label.localeCompare(a.label));
+  return uploads;
+}
+
+export async function getAdminProductImageLibrary(): Promise<AdminImageOption[]> {
+  const cloud = await listPublicImages(PRODUCT_UPLOAD_FOLDER);
+  const uploads = [...cloud, ...localUploadLibrary()];
+  const seen = new Set<string>();
+  const unique = uploads.filter((item) => {
+    if (seen.has(item.url)) return false;
+    seen.add(item.url);
+    return true;
+  });
 
   const presets: AdminImageOption[] = PRODUCT_IMAGE_OPTIONS.map((option) => ({
     url: option.value,
     label: option.label,
   }));
 
-  return [...uploads, ...presets];
+  return [...unique, ...presets];
 }
 
-/** Saves validated product photos under /public/brand/photos/products/uploads/. */
-export async function saveProductImageUploads(files: File[], slug: string): Promise<string[]> {
-  const saved: string[] = [];
+async function persistProductFile(file: File, slugPart: string): Promise<string> {
+  const ext = extForMime(file.type);
+  const name = randomImageName(slugPart, ext);
+  const buffer = Buffer.from(await file.arrayBuffer());
+
+  if (canUploadToCloud()) {
+    return uploadPublicImage({
+      folder: PRODUCT_UPLOAD_FOLDER,
+      filename: name,
+      bytes: buffer,
+      contentType: file.type,
+    });
+  }
+
+  if (mustUseCloudStorage()) {
+    throw new Error(
+      "Na serwerze produkcyjnym zdjęcia idą do Supabase Storage. Uzupełnij klucze Supabase w środowisku.",
+    );
+  }
+
   const dir = path.join(process.cwd(), PRODUCT_UPLOAD_DIR);
   mkdirSync(dir, { recursive: true });
+  writeFileSync(path.join(dir, name), buffer);
+  return `${PRODUCT_UPLOAD_URL_PREFIX}${name}`;
+}
 
+/** Saves validated product photos to cloud storage (Vercel) or local /public in dev. */
+export async function saveProductImageUploads(files: File[], slug: string): Promise<string[]> {
+  const saved: string[] = [];
   const slugPart = safeSlugPart(slug) || "produkt";
 
   for (const file of files) {
@@ -73,12 +109,7 @@ export async function saveProductImageUploads(files: File[], slug: string): Prom
     if (!ALLOWED_MIME.has(file.type)) {
       throw new Error(`Plik „${file.name}” ma niedozwolony format. Użyj JPG, PNG lub WebP.`);
     }
-
-    const ext = extForMime(file.type);
-    const name = `${slugPart}-${Date.now()}-${randomBytes(4).toString("hex")}.${ext}`;
-    const buffer = Buffer.from(await file.arrayBuffer());
-    writeFileSync(path.join(dir, name), buffer);
-    saved.push(`${PRODUCT_UPLOAD_URL_PREFIX}${name}`);
+    saved.push(await persistProductFile(file, slugPart));
   }
 
   return saved;

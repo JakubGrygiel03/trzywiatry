@@ -9,7 +9,9 @@ import { AdminFormActions } from "@/components/admin/ui/admin-form-actions";
 import { AdminFormSection } from "@/components/admin/ui/admin-form-section";
 import { AdminPageHeader } from "@/components/admin/ui/admin-page-header";
 import { getAdminEmail } from "@/lib/admin-auth";
+import { SITE } from "@/lib/constants";
 import { getSettings, getShopHubPhotoOptions } from "@/lib/data/queries";
+import { getRequestOrigin } from "@/lib/request-origin";
 import { buildVacationBannerMessage } from "@/lib/vacation-message";
 
 export default async function ShopSettingsPage({
@@ -19,6 +21,12 @@ export default async function ShopSettingsPage({
 }) {
   const { zapisano, blad } = await searchParams;
   const settings = getSettings();
+  const origin = await getRequestOrigin();
+  const publicOrigin = SITE.url;
+  const token = settings.maintenancePreviewToken;
+  const previewUrl = token ? `${publicOrigin}/podglad/${token}` : "";
+  const localPreviewUrl =
+    token && !origin.includes("trzywiatry.pl") ? `${origin}/podglad/${token}` : "";
   const vacationPreview = buildVacationBannerMessage({
     ...settings,
     announcementType: "vacation",
@@ -32,7 +40,7 @@ export default async function ShopSettingsPage({
     <div className="mx-auto max-w-4xl">
       <AdminPageHeader
         title="Ustawienia sklepu"
-        description="Banner, urlop, kod rabatowy, darmowa dostawa, warsztaty i zdjęcia na wejściu do sklepu."
+        description="Banner, urlop, kod rabatowy, darmowa dostawa, pakowanie, warsztaty i tryb serwisowy."
       />
 
       {zapisano ? (
@@ -40,7 +48,7 @@ export default async function ShopSettingsPage({
       ) : null}
       {blad ? <AdminAlert variant="error">{blad}</AdminAlert> : null}
 
-      <form action={saveStudioSettings} className="mt-6 space-y-6">
+      <form action={saveStudioSettings} className="mt-6 space-y-6 pb-28">
         <AdminFormSection title="Pasek ogłoszeń" description="Widoczny na całej stronie sklepu.">
           <AdminField label="Tryb bannera" htmlFor="announcementType">
             <AdminSelect id="announcementType" name="announcementType" defaultValue={settings.announcementType}>
@@ -90,9 +98,9 @@ export default async function ShopSettingsPage({
 
         <AdminFormSection title="Promocje i dostawa">
           <AdminField
-            label="Kod rabatowy (e-mail newslettera i kasa)"
+            label="Kampanijny kod rabatowy (opcjonalnie)"
             htmlFor="promoCode"
-            hint="Nie pokazujemy kodu na stronie — wychodzi tylko mailem po zapisie i działa w kasie. Nie wklejaj go do paska ani belki newslettera."
+            hint="Newsletter sam wysyła unikalny jednorazowy kod TW-XXXXXX. To pole to tylko zapasowy kod kampanii (np. WIOSNA) — wielokrotny, nie pokazujemy go na stronie."
           >
             <AdminInput id="promoCode" name="promoCode" defaultValue={settings.promoCode} />
           </AdminField>
@@ -104,6 +112,21 @@ export default async function ShopSettingsPage({
               defaultValue={settings.freeShippingThresholdCents}
             />
           </AdminField>
+          <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-czarny/8 bg-krem/40 p-4">
+            <input
+              type="checkbox"
+              name="giftWrapEnabled"
+              value="true"
+              defaultChecked={settings.giftWrapEnabled}
+              className="mt-0.5 accent-czerwony"
+            />
+            <span className="text-sm">
+              <span className="font-medium text-czarny">Pakowanie na prezent w koszyku</span>
+              <span className="mt-1 block text-xs text-czarny/45">
+                Po zapisie checkbox znika z koszyka i kasy — nie doliczamy 20 zł. Włącz z powrotem, gdy wrócą pudełka.
+              </span>
+            </span>
+          </label>
         </AdminFormSection>
 
         <AdminFormSection
@@ -141,6 +164,62 @@ export default async function ShopSettingsPage({
               </span>
             </span>
           </label>
+        </AdminFormSection>
+
+        <AdminFormSection
+          title="Tryb serwisowy"
+          description="Zamyka tylko sklep: katalog, koszyk i kasę. Strona główna, blog, kontakt i warsztaty zostają."
+        >
+          <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-czarny/8 bg-krem/40 p-4">
+            <input
+              type="checkbox"
+              name="maintenanceMode"
+              value="true"
+              defaultChecked={settings.maintenanceMode}
+              className="mt-0.5 accent-czerwony"
+            />
+            <span className="text-sm">
+              <span className="font-medium text-czarny">Zamknij sklep (przerwa techniczna)</span>
+              <span className="mt-1 block text-xs text-czarny/45">
+                Po zapisie /sklep, koszyk i kasa pokazują przerwę. Reszta witryny działa.
+              </span>
+            </span>
+          </label>
+          {settings.maintenanceMode ? (
+            <AdminAlert variant="success">
+              Sklep jest zamknięty. Kliknij „Widok klienta”, żeby zobaczyć komunikat na /sklep. Strona główna zostaje.
+            </AdminAlert>
+          ) : null}
+          {previewUrl ? (
+            <>
+              <AdminField
+                label="Link podglądu dla testerów"
+                hint="Ten adres idzie na domenę (trzywiatry.pl). Cookie trzyma sesję 7 dni. Nowy link unieważnia stary."
+              >
+                <AdminInput readOnly value={previewUrl} />
+              </AdminField>
+              {localPreviewUrl ? (
+                <AdminField
+                  label="Lokalny test (ten komputer)"
+                  hint="Na localhost widać lokalny host — testerom z zewnątrz wysyłaj link z domeną powyżej."
+                >
+                  <AdminInput readOnly value={localPreviewUrl} />
+                </AdminField>
+              ) : null}
+            </>
+          ) : (
+            <p className="text-sm text-czarny/55">
+              Nie ma jeszcze linku. Kliknij poniżej — wygeneruje się przy zapisie.
+            </p>
+          )}
+          <button
+            type="submit"
+            name="intent"
+            value="rotatePreview"
+            className="inline-flex h-11 items-center justify-center rounded-lg border border-czarny/12 bg-bialy px-4 text-sm font-medium text-czerwony transition hover:border-czerwony/40"
+          >
+            {previewUrl ? "Wygeneruj nowy link podglądu" : "Wygeneruj link podglądu"}
+          </button>
         </AdminFormSection>
 
         <AdminFormActions submitLabel="Zapisz ustawienia" cancelHref="/admin" cancelLabel="← Pulpit" />

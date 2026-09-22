@@ -1,6 +1,12 @@
 import nodemailer from "nodemailer";
 import { SITE } from "@/lib/constants";
 
+export type EmailAttachment = {
+  filename: string;
+  content: string;
+  contentType?: string;
+};
+
 export function hasSmtpCredentials() {
   return Boolean(
     process.env.SMTP_HOST?.trim() && process.env.SMTP_USER?.trim() && process.env.SMTP_PASS?.trim(),
@@ -12,6 +18,7 @@ export async function sendViaSmtp(message: {
   subject: string;
   html: string;
   replyTo?: string;
+  attachments?: EmailAttachment[];
 }): Promise<{ ok: boolean; demo: boolean; error?: string }> {
   const host = process.env.SMTP_HOST?.trim();
   const user = process.env.SMTP_USER?.trim();
@@ -35,6 +42,12 @@ export async function sendViaSmtp(message: {
       replyTo: message.replyTo?.trim() || SITE.email,
       subject: message.subject,
       html: message.html,
+      attachments: message.attachments?.map((file) => ({
+        filename: file.filename,
+        content: file.content,
+        contentType: file.contentType ?? "text/csv; charset=utf-8",
+        encoding: "utf-8",
+      })),
     });
     return { ok: true, demo: false };
   } catch (error) {

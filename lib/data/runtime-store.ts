@@ -5,7 +5,16 @@ import { blogPosts as seedBlogPosts } from "@/lib/data/posts";
 import { products as seedProducts } from "@/lib/data/products";
 import { defaultStudioSettings } from "@/lib/data/settings";
 import { workshops as seedWorkshops } from "@/lib/data/workshops";
-import type { BlogPost, Collection, OrderStatus, Product, StoredOrder, StudioSettings, Workshop } from "@/lib/types";
+import type {
+  BlogPost,
+  Collection,
+  NewsletterCoupon,
+  OrderStatus,
+  Product,
+  StoredOrder,
+  StudioSettings,
+  Workshop,
+} from "@/lib/types";
 
 let persistRuntime: (() => void) | null = null;
 
@@ -28,6 +37,8 @@ type RuntimeStore = {
   orders: StoredOrder[];
   bookings: Inquiry[];
   newsletter: string[];
+  /** Unique one-time −15% codes issued on newsletter signup. */
+  newsletterCoupons: NewsletterCoupon[];
   b2b: Inquiry[];
   contacts: Inquiry[];
   settings: StudioSettings;
@@ -53,6 +64,7 @@ function createStore(): RuntimeStore {
     orders: [],
     bookings: [],
     newsletter: [],
+    newsletterCoupons: [],
     b2b: [],
     contacts: [],
     settings: { ...defaultStudioSettings },
@@ -105,6 +117,10 @@ if (Array.isArray(runtimeStore.homeLayout)) {
 
 if (!Array.isArray(runtimeStore.orders)) {
   runtimeStore.orders = [];
+}
+
+if (!Array.isArray(runtimeStore.newsletterCoupons)) {
+  runtimeStore.newsletterCoupons = [];
 }
 
 if (!Array.isArray(runtimeStore.catalog) || runtimeStore.catalog.length === 0) {
@@ -382,6 +398,24 @@ export function addRuntimeOrder(order: StoredOrder) {
   return order;
 }
 
+/** Remove an order. Un-cancelled ones return stock, same as status=cancelled. */
+export function deleteRuntimeOrder(id: string): StoredOrder | null {
+  const index = runtimeStore.orders.findIndex((order) => order.id === id);
+  if (index < 0) return null;
+
+  const current = runtimeStore.orders[index]!;
+  if (current.status !== "cancelled") {
+    applyVariantStockDelta(
+      current.items.map((item) => ({ variantId: item.variantId, quantity: item.quantity })),
+      1,
+    );
+    releaseNewsletterCouponForOrder(id);
+  }
+  runtimeStore.orders.splice(index, 1);
+  persist();
+  return current;
+}
+
 export function updateOrderStatusInStore(
   id: string,
   status: OrderStatus,
@@ -409,6 +443,7 @@ export function updateOrderStatusInStore(
       current.items.map((item) => ({ variantId: item.variantId, quantity: item.quantity })),
       1,
     );
+    releaseNewsletterCouponForOrder(id);
   }
 
   const becamePaid = status === "paid" && current.status !== "paid";
@@ -437,7 +472,39 @@ export function updateOrderStatusInStore(
     },
   };
   runtimeStore.orders[index] = next;
+  if (
+    status === "paid" ||
+    status === "processing" ||
+    status === "shipped" ||
+    status === "completed"
+  ) {
+    consumeNewsletterCouponForOrder(next);
+  }
   return next;
+}
+
+function consumeNewsletterCouponForOrder(order: StoredOrder) {
+  const code = order.discountCode?.trim().toUpperCase();
+  if (!code || !Array.isArray(runtimeStore.newsletterCoupons)) return;
+  const coupon = runtimeStore.newsletterCoupons.find((item) => item.code === code);
+  if (!coupon) return;
+  coupon.isUsed = true;
+  coupon.usedAt = order.paidAt ?? new Date().toISOString();
+  coupon.usedOrderId = order.id;
+  coupon.reservedOrderId = undefined;
+  persist();
+}
+
+function releaseNewsletterCouponForOrder(orderId: string) {
+  if (!Array.isArray(runtimeStore.newsletterCoupons)) return;
+  for (const coupon of runtimeStore.newsletterCoupons) {
+    if (coupon.usedOrderId !== orderId && coupon.reservedOrderId !== orderId) continue;
+    coupon.isUsed = false;
+    coupon.usedAt = undefined;
+    coupon.usedOrderId = undefined;
+    coupon.reservedOrderId = undefined;
+  }
+  persist();
 }
 
 /** Persist the P24 sessionId used for register (needed for return-page reconcile). */

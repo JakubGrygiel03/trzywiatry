@@ -16,10 +16,12 @@ function firstAvailable(product: UpsellSuggestion["product"]) {
 export function UpsellRail({
   suggestions,
   title = "Dobierz do siebie",
+  subtitle = "Pary i zestawy, które naturalnie uzupełniają wybór.",
   compact = false,
 }: {
   suggestions: UpsellSuggestion[];
   title?: string;
+  subtitle?: string;
   compact?: boolean;
 }) {
   const addItem = useCartStore((state) => state.addItem);
@@ -33,7 +35,7 @@ export function UpsellRail({
     <section className="space-y-4 border-t border-czarny/8 pt-10 md:pt-12">
       <div className="space-y-1">
         <h2 className="font-heading text-sm uppercase tracking-[0.14em]">{title}</h2>
-        <p className="text-xs text-szary">Pary i zestawy, które naturalnie uzupełniają wybór.</p>
+        {subtitle ? <p className="text-xs text-szary">{subtitle}</p> : null}
       </div>
       <ul className={compact ? "space-y-3" : "grid gap-3 sm:grid-cols-2"}>
         {visible.map(({ product, reason }) => {
@@ -49,7 +51,6 @@ export function UpsellRail({
             >
               <Link
                 href={`/sklep/${product.slug}`}
-                scroll={false}
                 prefetch
                 onClick={onProductNavigateClick}
                 className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-krem"
@@ -67,7 +68,6 @@ export function UpsellRail({
                   </p>
                   <Link
                     href={`/sklep/${product.slug}`}
-                    scroll={false}
                     prefetch
                     onClick={onProductNavigateClick}
                     className="mt-0.5 block truncate text-sm font-medium leading-snug"

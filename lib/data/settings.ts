@@ -9,6 +9,7 @@ export const defaultStudioSettings: StudioSettings = {
   /** Align with shop regulamin §5 — free shipping above 300 PLN in Poland. */
   freeShippingThresholdCents: 30000,
   giftWrapPriceCents: 2000,
+  giftWrapEnabled: true,
   /** Na razie wyłączone — włącz w adminie, gdy wrócą terminy. */
   workshopsEnabled: false,
   heroSlots: [],
@@ -21,6 +22,8 @@ export const defaultStudioSettings: StudioSettings = {
     "Kod rabatowy przychodzi mailem. Zero spamu — nowe wypusty, kolekcje i przerwy twórcze.",
   newsletterFormLabel: "Podaj e-mail",
   newsletterButtonLabel: "Odbierz −15%",
+  maintenanceMode: false,
+  maintenancePreviewToken: "",
 };
 
 /** @deprecated Prefer getSettings() — kept for modules that import the constant seed. */

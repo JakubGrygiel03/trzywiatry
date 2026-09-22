@@ -134,7 +134,7 @@ export const EMAIL_TEMPLATES: Record<EmailTemplateKey, EmailTemplateMeta> = {
     tokens: ["code", "highlightBlock"],
     subject: "Twój kod {code} · Trzy Wiatry",
     body: `<h1>Witaj w pracowni</h1>
-<p>Dziękujemy za zapis. Oto Twój kod rabatowy — wpisz go w kasie przy kolejnym zamówieniu.</p>
+<p>Dziękujemy za zapis. Oto Twój jednorazowy kod −15% — wpisz go w kasie przy zamówieniu. Kod jest przypisany do tego adresu e-mail i działa tylko raz.</p>
 {highlightBlock}
 <p>Zachowaj ostrożność i nie udostępniaj kodu publicznie, jeśli nie chcesz się nim dzielić.</p>`,
   },

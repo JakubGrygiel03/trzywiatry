@@ -11,7 +11,7 @@ import {
 } from "@/lib/admin-auth";
 import { ADMIN_COOKIE } from "@/lib/admin-session";
 import { assertAdminSession } from "@/lib/admin-guard";
-import { updateRuntimeSettings, updateOrderStatusInStore } from "@/lib/data/runtime-store";
+import { getRuntimeSettings, updateRuntimeSettings, updateOrderStatusInStore } from "@/lib/data/runtime-store";
 import { ensureOrdersHydrated, flushOrdersSave } from "@/lib/data/order-persist";
 import { flushAtelierSave } from "@/lib/data/atelier-persist";
 import { defaultStudioSettings } from "@/lib/data/settings";
@@ -24,6 +24,7 @@ import {
 import { firstZodMessage } from "@/lib/validations/safe-input";
 import { studioSettingsFormSchema } from "@/lib/validations/settings";
 import { notifyCustomerOrderStatus, sendAdminPasswordResetEmail, customerMailFailureMessage } from "@/lib/resend";
+import { createPreviewToken } from "@/lib/maintenance";
 import { getRequestOrigin } from "@/lib/request-origin";
 import { ORDER_STATUS_LABELS } from "@/lib/constants";
 
@@ -206,12 +207,21 @@ export async function saveStudioSettings(formData: FormData) {
     vacationDispatch: String(formData.get("vacationDispatch") ?? ""),
     freeShipping: formData.get("freeShipping"),
     workshopsEnabled: formData.get("workshopsEnabled") === "true",
+    giftWrapEnabled: formData.get("giftWrapEnabled") === "true",
+    maintenanceMode: formData.get("maintenanceMode") === "true",
   });
   if (!parsed.success) {
     redirect(`/admin/ustawienia-sklepu?blad=${encodeURIComponent(firstZodMessage(parsed.error))}`);
   }
 
   const data = parsed.data;
+  const current = getRuntimeSettings();
+  const rotatePreview = formData.get("intent") === "rotatePreview";
+  const nextToken =
+    rotatePreview || !current.maintenancePreviewToken
+      ? createPreviewToken()
+      : current.maintenancePreviewToken;
+
   updateRuntimeSettings({
     announcementType: data.announcementType,
     announcementText:
@@ -225,6 +235,9 @@ export async function saveStudioSettings(formData: FormData) {
     vacationDispatchDate: data.vacationDispatch || undefined,
     freeShippingThresholdCents: data.freeShipping > 0 ? data.freeShipping : 30000,
     workshopsEnabled: data.workshopsEnabled,
+    giftWrapEnabled: data.giftWrapEnabled,
+    maintenanceMode: data.maintenanceMode,
+    maintenancePreviewToken: nextToken,
     shopHubUzytkowaImage: parseShopHubImage(
       formData.get("shopHubUzytkowaImage"),
       defaultStudioSettings.shopHubUzytkowaImage,
@@ -237,7 +250,9 @@ export async function saveStudioSettings(formData: FormData) {
 
   await flushAtelierSave();
   revalidatePath("/", "layout");
+  revalidatePath("/admin", "layout");
   revalidatePath("/sklep");
+  revalidatePath("/koszyk");
   revalidatePath("/admin/ustawienia-sklepu");
   revalidatePath("/zamowienie");
   revalidatePath("/warsztaty");

@@ -35,6 +35,8 @@ export type Product = {
   id: string;
   name: string;
   slug: string;
+  /** One-sentence teaser next to the price. Full copy stays in `description`. */
+  shortDescription?: string;
   description: string;
   domain: ProductDomain;
   category: string;
@@ -68,6 +70,8 @@ export type StudioSettings = {
   vacationDispatchDate?: string;
   freeShippingThresholdCents: number;
   giftWrapPriceCents: number;
+  /** When false, hide gift wrap in cart and never charge it at checkout. */
+  giftWrapEnabled: boolean;
   /** When false, hide workshops from nav, home and public /warsztaty. */
   workshopsEnabled: boolean;
   /** Ordered photos for the home hero. Empty = automatic bestsellers. */
@@ -82,6 +86,10 @@ export type StudioSettings = {
   newsletterBody: string;
   newsletterFormLabel: string;
   newsletterButtonLabel: string;
+  /** Closes the storefront for visitors; testers use the preview cookie. */
+  maintenanceMode: boolean;
+  /** Opaque token for /podglad/[token] — rotate from admin to revoke access. */
+  maintenancePreviewToken: string;
 };
 
 export type Workshop = {
@@ -157,6 +165,19 @@ export type StoredOrderItem = {
 export type OrderStatusEvent = {
   status: OrderStatus;
   at: string;
+};
+
+/** One-time −15% code minted on newsletter signup (format TW-XXXXXX). */
+export type NewsletterCoupon = {
+  id: string;
+  code: string;
+  email: string;
+  createdAt: string;
+  isUsed: boolean;
+  usedAt?: string;
+  usedOrderId?: string;
+  /** Holds the code on a pending checkout until paid or cancelled. */
+  reservedOrderId?: string;
 };
 
 /** In-memory / file-backed order until Supabase `orders` table is wired. */

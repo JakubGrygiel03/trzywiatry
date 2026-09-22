@@ -6,10 +6,11 @@ import type { AdminBadges } from "@/components/admin/shell/admin-nav-config";
 
 type AdminTopbarProps = {
   badges: AdminBadges;
+  maintenanceMode?: boolean;
   onMenuOpen: () => void;
 };
 
-export function AdminTopbar({ badges, onMenuOpen }: AdminTopbarProps) {
+export function AdminTopbar({ badges, maintenanceMode = false, onMenuOpen }: AdminTopbarProps) {
   const alerts = badges.lowStock + badges.orders;
 
   return (
@@ -29,6 +30,11 @@ export function AdminTopbar({ badges, onMenuOpen }: AdminTopbarProps) {
       </div>
 
       <div className="ml-auto flex items-center gap-2">
+        {maintenanceMode ? (
+          <span className="hidden rounded-md bg-czerwony/12 px-2.5 py-1 text-[11px] font-medium text-czerwony sm:inline">
+            Sklep zamknięty
+          </span>
+        ) : null}
         {alerts > 0 ? (
           <span className="hidden rounded-md bg-ceglany/15 px-2.5 py-1 text-[11px] font-medium text-czerwony sm:inline">
             {alerts} do sprawdzenia
@@ -40,7 +46,7 @@ export function AdminTopbar({ badges, onMenuOpen }: AdminTopbarProps) {
           rel="noreferrer"
           className="inline-flex items-center gap-1.5 rounded-lg border border-czarny/10 bg-bialy px-3 py-1.5 text-xs font-medium text-czarny/75 transition hover:border-czerwony/30 hover:text-czerwony"
         >
-          Zobacz sklep
+          {maintenanceMode ? "Widok klienta" : "Zobacz sklep"}
           <ExternalLink className="h-3 w-3" />
         </Link>
       </div>

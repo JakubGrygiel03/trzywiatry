@@ -24,6 +24,10 @@ export const metadata: Metadata = {
   robots: noIndexRobots,
 };
 
+function orderLead(orderNumber: string, sentence: string) {
+  return `Numer ${orderNumber} · ${sentence.trim()}`;
+}
+
 function outcomeFromPayParam(pay: string | undefined): PaymentOutcomeKey | null {
   if (!pay) return null;
   if (pay === "auth" || pay === "net") return "error";
@@ -53,10 +57,10 @@ export default async function OrderConfirmationPage({
     const reconciled = await reconcilePendingOrderPayment(order);
     order = reconciled.order;
     candidate = reconciled.outcome;
-  } else if (order && order.status !== "pending" && order.status !== "cancelled") {
-    candidate = "paid";
   } else if (order?.status === "cancelled") {
     candidate = "none";
+  } else if (order) {
+    candidate = "paid";
   }
 
   const payOutcome = outcomeFromPayParam(pay);
@@ -81,8 +85,8 @@ export default async function OrderConfirmationPage({
       ? `Szukaliśmy zamówienia ${orderNumber}, ale nie udało się go odczytać. Sprawdź maila albo konto.`
       : "Po płatności wróć linkiem z maila albo zaloguj się na konto."
     : outcome === "paid"
-      ? `Numer ${order.orderNumber}. ${ORDER_STATUS_HINTS[order.status]}`
-      : `Numer ${order.orderNumber}. ${copy.body}`;
+      ? orderLead(order.orderNumber, ORDER_STATUS_HINTS[order.status])
+      : orderLead(order.orderNumber, copy.body);
 
   return (
     <div className="py-14 md:py-20">

@@ -10,7 +10,7 @@ import {
   emailItemsTile,
 } from "@/lib/email/render";
 import { formatPLN } from "@/lib/format";
-import { sendViaSmtp } from "@/lib/smtp-mailer";
+import { sendViaSmtp, type EmailAttachment } from "@/lib/smtp-mailer";
 import type { OrderStatus, StoredOrder } from "@/lib/types";
 import type { EmailTemplateKey } from "@/lib/email/catalog";
 import { escapeHtml } from "@/lib/validations/safe-input";
@@ -22,6 +22,7 @@ type TransactionalEmail = {
   html: string;
   /** Ops copies use the customer address so Reply opens a thread with them. */
   replyTo?: string;
+  attachments?: EmailAttachment[];
 };
 
 export type SendEmailResult = {
@@ -72,6 +73,14 @@ async function postResend(
         reply_to: message.replyTo?.trim() || SITE.email,
         subject: message.subject,
         html: message.html,
+        ...(message.attachments?.length
+          ? {
+              attachments: message.attachments.map((file) => ({
+                filename: file.filename,
+                content: Buffer.from(file.content, "utf8").toString("base64"),
+              })),
+            }
+          : {}),
       }),
     });
   } catch (error) {

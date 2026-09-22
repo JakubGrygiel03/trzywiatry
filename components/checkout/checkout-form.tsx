@@ -56,7 +56,7 @@ export function CheckoutForm({
   const [locker, setLocker] = useState("");
   const settings = useSiteSettings();
   const subtotal = cartSubtotal(items);
-  const gift = cartGiftWrapCost(hasGiftWrapping, settings.giftWrapPriceCents);
+  const gift = cartGiftWrapCost(hasGiftWrapping, settings.giftWrapPriceCents, settings.giftWrapEnabled);
   const thresholdLabel = formatPLN(settings.freeShippingThresholdCents);
   const shippingHint =
     subtotal >= settings.freeShippingThresholdCents
@@ -113,7 +113,7 @@ export function CheckoutForm({
         name="cart"
         value={JSON.stringify(items.map((item) => ({ variantId: item.variantId, quantity: item.quantity })))}
       />
-      <input type="hidden" name="hasGiftWrapping" value={String(hasGiftWrapping)} />
+      <input type="hidden" name="hasGiftWrapping" value={String(settings.giftWrapEnabled && hasGiftWrapping)} />
       <input type="hidden" name="giftMessage" value={giftMessage} />
 
       <div className="space-y-4 md:space-y-5">
@@ -195,7 +195,7 @@ export function CheckoutForm({
             <CheckoutField
               name="discountCode"
               label="Kod rabatowy (opcjonalnie)"
-              hint="Tylko jeśli masz kod z maila — nie jest wymagany."
+              hint="Kod z maila newslettera, np. TW-XXXXXX — jednorazowy, nie jest wymagany."
               required={false}
             />
           </SurfaceTileBody>
