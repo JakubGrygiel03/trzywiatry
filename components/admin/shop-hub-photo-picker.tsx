@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useMemo, useState } from "react";
+import { CmsImagePicker } from "@/components/admin/cms-image-picker";
 import type { HeroPhotoOption } from "@/lib/data/queries";
 import { cn } from "@/lib/utils";
 
@@ -40,15 +41,18 @@ function LanePicker({
         <p className="text-sm font-medium text-czarny">{label}</p>
         <p className="text-xs text-czarny/45">{hint}</p>
       </div>
-      {selected ? (
-        <div className="relative aspect-[4/3] max-w-xs overflow-hidden rounded-xl border border-szary bg-krem">
-          <Image src={selected} alt="" fill className="object-cover object-[center_50%]" sizes="320px" />
-        </div>
-      ) : null}
+      <CmsImagePicker
+        value={selected}
+        onChange={onSelect}
+        folder="cms"
+        aspectClass="aspect-[4/3]"
+        hint="Wgraj kadr z dysku albo weź go z biblioteki."
+      />
       {grouped.length === 0 ? (
-        <p className="text-sm text-czarny/55">Brak zdjęć na tej półce — dodaj je przy produktach.</p>
+        <p className="text-sm text-czarny/55">Brak zdjęć na tej półce — dodaj je przy produktach albo wgraj powyżej.</p>
       ) : (
         <div className="max-h-64 space-y-3 overflow-y-auto pr-1">
+          <p className="text-xs font-medium text-czarny/55">Z katalogu półki</p>
           {grouped.map((group) => (
             <div key={group.photos[0]!.productId}>
               <p className="mb-1.5 text-xs font-medium text-czarny/70">{group.name}</p>

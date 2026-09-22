@@ -3,6 +3,8 @@ export type GalleryWork = {
   alt: string;
 };
 
+export const MAX_ABOUT_GALLERY_WORKS = 40;
+
 /** Studio shots for „Galeria naszych prac” on /o-nas. */
 export const aboutGalleryWorks: GalleryWork[] = [
   { src: "/brand/photos/gallery/praca-01.png", alt: "Czarki ceramiczne — zieleń i bordo" },

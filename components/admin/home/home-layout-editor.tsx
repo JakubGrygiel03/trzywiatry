@@ -55,7 +55,7 @@ export function HomeLayoutEditor({
   }
 
   return (
-    <form action={saveHomeLayout} onSubmit={handleSubmit} className="space-y-4">
+    <form action={saveHomeLayout} onSubmit={handleSubmit} className="space-y-4 pb-28">
       {error ? <AdminAlert variant="error">{error}</AdminAlert> : null}
       <input type="hidden" name="sections" value={JSON.stringify(sections)} />
       <ul className="space-y-3">

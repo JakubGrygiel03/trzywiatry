@@ -53,7 +53,7 @@ export default async function AboutPage() {
         <SurfaceTile>
           <SurfaceTileHeader title={page.galleryTitle} />
           <SurfaceTileBody>
-            <WorksGallery works={aboutGalleryWorks} />
+            <WorksGallery works={page.galleryWorks?.length ? page.galleryWorks : aboutGalleryWorks} />
           </SurfaceTileBody>
         </SurfaceTile>
       </Container>

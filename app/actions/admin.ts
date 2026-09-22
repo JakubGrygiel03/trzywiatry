@@ -15,6 +15,7 @@ import { getRuntimeSettings, updateRuntimeSettings, updateOrderStatusInStore } f
 import { ensureOrdersHydrated, flushOrdersSave } from "@/lib/data/order-persist";
 import { flushAtelierSave } from "@/lib/data/atelier-persist";
 import { defaultStudioSettings } from "@/lib/data/settings";
+import { isAllowedImageSrc } from "@/lib/validations/image-src";
 import type { OrderStatus } from "@/lib/types";
 import {
   adminChangePasswordSchema,
@@ -192,8 +193,7 @@ export async function updateOrderStatus(formData: FormData) {
 
 function parseShopHubImage(raw: unknown, fallback: string) {
   const value = String(raw ?? "").trim();
-  if (value.startsWith("/") && !value.includes("..") && value.length < 300) return value;
-  return fallback;
+  return isAllowedImageSrc(value) ? value : fallback;
 }
 
 export async function saveStudioSettings(formData: FormData) {

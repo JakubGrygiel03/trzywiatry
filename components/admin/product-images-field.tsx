@@ -131,7 +131,7 @@ export function ProductImagesField({ initialImages }: { initialImages: string[] 
         <input
           ref={fileInputRef}
           type="file"
-          name="imageFiles"
+          name={pending.length ? "imageFiles" : undefined}
           accept="image/jpeg,image/png,image/webp,image/gif"
           multiple
           className="hidden"

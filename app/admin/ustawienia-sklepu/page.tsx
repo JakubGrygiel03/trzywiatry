@@ -131,7 +131,7 @@ export default async function ShopSettingsPage({
 
         <AdminFormSection
           title="Zdjęcia na wejściu do sklepu"
-          description="Kafelki „dwa sklepy” na /sklep. Wybierz jedno zdjęcie z katalogu danej półki."
+          description="Kafelki „dwa sklepy” na /sklep. Wgraj własne zdjęcie albo wybierz kadr z katalogu półki."
         >
           <ShopHubPhotoPicker
             uzytkowaOptions={getShopHubPhotoOptions("uzytkowa")}

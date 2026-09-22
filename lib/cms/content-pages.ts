@@ -15,7 +15,7 @@ export const CONTENT_PAGE_META: Record<
     label: "O nas",
     href: "/o-nas",
     adminHref: "/admin/strony/o-nas",
-    hint: "Tytuł, historia, zdjęcie rodziny i nagłówek galerii.",
+    hint: "Tytuł, historia, zdjęcie rodziny i galeria prac.",
   },
   kontakt: {
     label: "Kontakt",
@@ -45,6 +45,7 @@ export type AboutOverlay = {
   imageSrc: string;
   imageAlt: string;
   galleryTitle: string;
+  galleryWorks: { src: string; alt: string }[];
 };
 
 export type ContactOverlay = {

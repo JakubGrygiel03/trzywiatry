@@ -1,12 +1,5 @@
 import "server-only";
-import { mkdirSync, writeFileSync } from "node:fs";
-import path from "node:path";
-import {
-  canUploadToCloud,
-  mustUseCloudStorage,
-  randomImageName,
-  uploadPublicImage,
-} from "@/lib/admin-storage";
+import { persistUploadedImage, randomImageName } from "@/lib/admin-storage";
 
 export const HOME_BANNER_UPLOAD_DIR = "public/brand/photos/home/banner";
 export const HOME_BANNER_UPLOAD_URL_PREFIX = "/brand/photos/home/banner/";
@@ -33,26 +26,14 @@ export async function saveHomeBannerImageUpload(file: File): Promise<string> {
     throw new Error("Dozwolone formaty: JPG, PNG, WebP.");
   }
 
-  const ext = extForMime(file.type);
-  const name = randomImageName("banner", ext);
-  const buffer = Buffer.from(await file.arrayBuffer());
-
-  if (canUploadToCloud()) {
-    return uploadPublicImage({
-      folder: HOME_BANNER_UPLOAD_FOLDER,
-      filename: name,
-      bytes: buffer,
-      contentType: file.type,
-    });
-  }
-  if (mustUseCloudStorage()) {
-    throw new Error(
-      "Na serwerze produkcyjnym zdjęcia idą do Supabase Storage. Uzupełnij klucze Supabase w środowisku.",
-    );
-  }
-
-  const dir = path.join(process.cwd(), HOME_BANNER_UPLOAD_DIR);
-  mkdirSync(dir, { recursive: true });
-  writeFileSync(path.join(dir, name), buffer);
-  return `${HOME_BANNER_UPLOAD_URL_PREFIX}${name}`;
+  const name = randomImageName("banner", extForMime(file.type));
+  const bytes = Buffer.from(await file.arrayBuffer());
+  return persistUploadedImage({
+    folder: HOME_BANNER_UPLOAD_FOLDER,
+    filename: name,
+    bytes,
+    contentType: file.type,
+    localDir: HOME_BANNER_UPLOAD_DIR,
+    urlPrefix: HOME_BANNER_UPLOAD_URL_PREFIX,
+  });
 }

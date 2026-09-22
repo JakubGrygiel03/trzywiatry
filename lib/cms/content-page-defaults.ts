@@ -1,4 +1,5 @@
 import type { AboutOverlay, B2BOverlay, ContactOverlay, ContentOverlayMap, ContentPageKey } from "@/lib/cms/content-pages";
+import { aboutGalleryWorks } from "@/lib/data/gallery";
 
 export function defaultB2BOverlay(): B2BOverlay {
   return {
@@ -28,6 +29,7 @@ export function defaultAboutOverlay(): AboutOverlay {
     imageSrc: "/brand/photos/o-nas-rodzina.jpg",
     imageAlt: "Tusia, Papa Marian i Jędrek — rodzinna pracownia Trzy Wiatry",
     galleryTitle: "Galeria naszych prac",
+    galleryWorks: aboutGalleryWorks,
   };
 }
 

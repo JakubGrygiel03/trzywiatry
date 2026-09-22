@@ -29,7 +29,7 @@ export function ContentPageEditor<K extends ContentPageKey>({
   }
 
   return (
-    <form action={saveContentPage} onSubmit={handleSubmit} className="space-y-5">
+    <form action={saveContentPage} onSubmit={handleSubmit} className="space-y-5 pb-28">
       {error ? <AdminAlert variant="error">{error}</AdminAlert> : null}
       <input type="hidden" name="pageKey" value={pageKey} />
       <input type="hidden" name="overlay" value={JSON.stringify(overlay)} />

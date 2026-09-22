@@ -1,15 +1,8 @@
 import "server-only";
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
-import path from "node:path";
 import { MAX_IMAGE_BYTES, MAX_PRODUCT_IMAGES } from "@/lib/admin-product-constants";
-import {
-  canUploadToCloud,
-  listPublicImages,
-  mustUseCloudStorage,
-  randomImageName,
-  uploadPublicImage,
-} from "@/lib/admin-storage";
+import { listLocalPublicImages, listPublicImages, persistUploadedImage, randomImageName } from "@/lib/admin-storage";
 import { PRODUCT_IMAGE_OPTIONS } from "@/lib/constants";
+import { aboutGalleryWorks } from "@/lib/data/gallery";
 
 export { MAX_IMAGE_BYTES, MAX_PRODUCT_IMAGES };
 
@@ -40,60 +33,61 @@ function safeSlugPart(value: string) {
 
 export type AdminImageOption = { url: string; label: string };
 
-function localUploadLibrary(): AdminImageOption[] {
-  const uploads: AdminImageOption[] = [];
-  const dir = path.join(process.cwd(), PRODUCT_UPLOAD_DIR);
-  if (!existsSync(dir)) return uploads;
-  for (const file of readdirSync(dir)) {
-    if (!/\.(jpe?g|png|webp|gif)$/i.test(file)) continue;
-    uploads.push({ url: `${PRODUCT_UPLOAD_URL_PREFIX}${file}`, label: file });
+function mergeLibrary(groups: AdminImageOption[][]): AdminImageOption[] {
+  const seen = new Set<string>();
+  const unique: AdminImageOption[] = [];
+  for (const group of groups) {
+    for (const item of group) {
+      if (seen.has(item.url)) continue;
+      seen.add(item.url);
+      unique.push(item);
+    }
   }
-  uploads.sort((a, b) => b.label.localeCompare(a.label));
-  return uploads;
+  return unique;
 }
 
 export async function getAdminProductImageLibrary(): Promise<AdminImageOption[]> {
-  const cloud = await listPublicImages(PRODUCT_UPLOAD_FOLDER);
-  const uploads = [...cloud, ...localUploadLibrary()];
-  const seen = new Set<string>();
-  const unique = uploads.filter((item) => {
-    if (seen.has(item.url)) return false;
-    seen.add(item.url);
-    return true;
-  });
+  const [products, cms, gallery, banners] = await Promise.all([
+    listPublicImages(PRODUCT_UPLOAD_FOLDER),
+    listPublicImages("cms"),
+    listPublicImages("gallery"),
+    listPublicImages("home-banner"),
+  ]);
 
-  const presets: AdminImageOption[] = PRODUCT_IMAGE_OPTIONS.map((option) => ({
-    url: option.value,
-    label: option.label,
-  }));
+  const uploads = [
+    ...products,
+    ...cms,
+    ...gallery,
+    ...banners,
+    ...listLocalPublicImages(PRODUCT_UPLOAD_DIR, PRODUCT_UPLOAD_URL_PREFIX),
+    ...listLocalPublicImages("public/brand/photos/cms/uploads", "/brand/photos/cms/uploads/"),
+    ...listLocalPublicImages("public/brand/photos/gallery/uploads", "/brand/photos/gallery/uploads/"),
+    ...listLocalPublicImages("public/brand/photos/home/banner", "/brand/photos/home/banner/"),
+  ];
+  uploads.sort((a, b) => b.label.localeCompare(a.label));
 
-  return [...unique, ...presets];
+  const presets: AdminImageOption[] = [
+    ...aboutGalleryWorks.map((work, index) => ({
+      url: work.src,
+      label: work.alt || `Galeria ${index + 1}`,
+    })),
+    ...PRODUCT_IMAGE_OPTIONS.map((option) => ({ url: option.value, label: option.label })),
+  ];
+
+  return mergeLibrary([uploads, presets]);
 }
 
 async function persistProductFile(file: File, slugPart: string): Promise<string> {
-  const ext = extForMime(file.type);
-  const name = randomImageName(slugPart, ext);
+  const name = randomImageName(slugPart, extForMime(file.type));
   const buffer = Buffer.from(await file.arrayBuffer());
-
-  if (canUploadToCloud()) {
-    return uploadPublicImage({
-      folder: PRODUCT_UPLOAD_FOLDER,
-      filename: name,
-      bytes: buffer,
-      contentType: file.type,
-    });
-  }
-
-  if (mustUseCloudStorage()) {
-    throw new Error(
-      "Na serwerze produkcyjnym zdjęcia idą do Supabase Storage. Uzupełnij klucze Supabase w środowisku.",
-    );
-  }
-
-  const dir = path.join(process.cwd(), PRODUCT_UPLOAD_DIR);
-  mkdirSync(dir, { recursive: true });
-  writeFileSync(path.join(dir, name), buffer);
-  return `${PRODUCT_UPLOAD_URL_PREFIX}${name}`;
+  return persistUploadedImage({
+    folder: PRODUCT_UPLOAD_FOLDER,
+    filename: name,
+    bytes: buffer,
+    contentType: file.type,
+    localDir: PRODUCT_UPLOAD_DIR,
+    urlPrefix: PRODUCT_UPLOAD_URL_PREFIX,
+  });
 }
 
 /** Saves validated product photos to cloud storage (Vercel) or local /public in dev. */

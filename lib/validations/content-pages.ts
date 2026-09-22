@@ -1,14 +1,9 @@
 import { z } from "zod";
 import { defaultContentOverlay } from "@/lib/cms/content-page-defaults";
 import type { ContentOverlayMap, ContentPageKey } from "@/lib/cms/content-pages";
+import { MAX_ABOUT_GALLERY_WORKS } from "@/lib/data/gallery";
+import { cmsImageSrcSchema } from "@/lib/validations/image-src";
 import { firstZodMessage, plainText } from "@/lib/validations/safe-input";
-
-const imageSrc = z
-  .string()
-  .trim()
-  .startsWith("/", "Zdjęcie musi być z katalogu pracowni.")
-  .max(300)
-  .refine((value) => !value.includes(".."), "Nieprawidłowa ścieżka zdjęcia.");
 
 const seo = {
   metaTitle: plainText("Tytuł SEO", 80, 1),
@@ -33,9 +28,18 @@ export const aboutOverlaySchema = z.object({
     .array(plainText("Akapit", 2000, 10))
     .min(1, "Dodaj przynajmniej jeden akapit.")
     .max(6, "Maksimum 6 akapitów."),
-  imageSrc,
+  imageSrc: cmsImageSrcSchema,
   imageAlt: plainText("Opis zdjęcia", 160, 4),
   galleryTitle: plainText("Tytuł galerii", 80, 1),
+  galleryWorks: z
+    .array(
+      z.object({
+        src: cmsImageSrcSchema,
+        alt: plainText("Opis zdjęcia w galerii", 160, 2),
+      }),
+    )
+    .min(1, "Galeria potrzebuje przynajmniej jednego zdjęcia.")
+    .max(MAX_ABOUT_GALLERY_WORKS, `Maksimum ${MAX_ABOUT_GALLERY_WORKS} zdjęć w galerii.`),
 });
 
 export const contactOverlaySchema = z.object({

@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { FacebookIcon, InstagramIcon } from "@/components/brand/social-icons";
 import { Logo } from "@/components/layout/logo";
 import { MailtoLink } from "@/components/layout/mailto-link";
+import { OutboundSocialLink } from "@/components/layout/outbound-social-link";
 import { SITE } from "@/lib/constants";
 
 const helpLinks = [
@@ -18,6 +20,21 @@ function FooterLink({ href, children }: { href: string; children: string }) {
     <Link href={href} prefetch className="relative z-[1] transition-colors hover:text-czerwony">
       {children}
     </Link>
+  );
+}
+
+function FooterSocials() {
+  const iconClass =
+    "relative z-[1] flex size-8 items-center justify-center rounded-full text-czarny/55 transition-colors hover:text-czerwony";
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      <OutboundSocialLink href={SITE.instagram} className={iconClass} aria-label="Instagram Trzy Wiatry">
+        <InstagramIcon className="size-4" />
+      </OutboundSocialLink>
+      <OutboundSocialLink href={SITE.facebook} className={iconClass} aria-label="Facebook Trzy Wiatry">
+        <FacebookIcon className="size-4" />
+      </OutboundSocialLink>
+    </span>
   );
 }
 
@@ -55,14 +72,7 @@ export function Footer() {
               <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-center">
                 <FooterLink href={contactLink.href}>{contactLink.label}</FooterLink>
                 <MailtoLink email={SITE.email} className="min-w-0 truncate" />
-                <a
-                  href={SITE.instagram}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="relative z-[1] shrink-0 transition-colors hover:text-czerwony"
-                >
-                  Instagram
-                </a>
+                <FooterSocials />
               </div>
             </div>
 
@@ -73,14 +83,7 @@ export function Footer() {
                 </FooterLink>
               ))}
               <MailtoLink email={SITE.email} />
-              <a
-                href={SITE.instagram}
-                target="_blank"
-                rel="noreferrer"
-                className="relative z-[1] transition-colors hover:text-czerwony"
-              >
-                Instagram
-              </a>
+              <FooterSocials />
             </div>
           </nav>
 
@@ -92,7 +95,7 @@ export function Footer() {
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-czarny/8 pt-3 text-[11px] tracking-wide text-czarny/40">
           <p>
             © {year} {SITE.name}
-            <span className="hidden sm:inline"> · {SITE.address}</span>
+            <span> · Copyright Jakub Grygiel</span>
           </p>
           <nav aria-label="Dokumenty sklepu" className="flex gap-4">
             <FooterLink href="/regulamin">Regulamin</FooterLink>

@@ -175,7 +175,9 @@ async function resolveProductImages(formData: FormData, slug: string) {
 
   let uploaded: string[] = [];
   try {
-    uploaded = await saveProductImageUploads(files, slug);
+    if (files.length > 0) {
+      uploaded = await saveProductImageUploads(files, slug);
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nie udało się zapisać zdjęć.";
     throw new Error(message);

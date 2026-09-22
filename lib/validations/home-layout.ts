@@ -7,6 +7,7 @@ import {
   type HomeSectionType,
 } from "@/lib/cms/home-layout";
 import { revealsPromoOnStorefront } from "@/lib/cms/tokens";
+import { cmsImageSrcSchema, optionalCmsImageSrcSchema } from "@/lib/validations/image-src";
 import { firstZodMessage, plainText, safeHrefSchema } from "@/lib/validations/safe-input";
 
 const ctaSchema = z.object({
@@ -23,11 +24,7 @@ const pillarCardSchema = z.object({
 
 const heroSlotSchema = z.object({
   productId: z.string().min(1),
-  image: z
-    .string()
-    .startsWith("/", "Zdjęcie musi być z katalogu pracowni.")
-    .max(300)
-    .refine((value) => !value.includes(".."), "Nieprawidłowa ścieżka zdjęcia."),
+  image: cmsImageSrcSchema,
 });
 
 const sectionBase = z.object({
@@ -39,23 +36,7 @@ export const homeSectionSchema = z.discriminatedUnion("type", [
   sectionBase.extend({
     type: z.literal("banner"),
     payload: z.object({
-      panels: z.tuple([
-        z
-          .string()
-          .max(400)
-          .refine((value) => value === "" || value.startsWith("/"), "Zdjęcie musi być z katalogu pracowni.")
-          .refine((value) => !value.includes(".."), "Nieprawidłowa ścieżka zdjęcia."),
-        z
-          .string()
-          .max(400)
-          .refine((value) => value === "" || value.startsWith("/"), "Zdjęcie musi być z katalogu pracowni.")
-          .refine((value) => !value.includes(".."), "Nieprawidłowa ścieżka zdjęcia."),
-        z
-          .string()
-          .max(400)
-          .refine((value) => value === "" || value.startsWith("/"), "Zdjęcie musi być z katalogu pracowni.")
-          .refine((value) => !value.includes(".."), "Nieprawidłowa ścieżka zdjęcia."),
-      ]),
+      panels: z.tuple([optionalCmsImageSrcSchema, optionalCmsImageSrcSchema, optionalCmsImageSrcSchema]),
       eyebrow: plainText("Etykieta banera", 80),
       title: plainText("Tytuł banera", 120, 1),
       subtitle: plainText("Podtytuł banera", 320),
