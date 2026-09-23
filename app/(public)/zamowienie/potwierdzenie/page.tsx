@@ -11,6 +11,7 @@ import { reconcilePendingOrderPayment } from "@/lib/p24-reconcile";
 import {
   alignOutcomeWithOrderStatus,
   parsePaymentOutcomeParam,
+  PAYMENT_OUTCOMES,
   type PaymentOutcomeKey,
 } from "@/lib/payment-outcome";
 import { resolvePaymentAccess } from "@/lib/payment-access";
@@ -32,6 +33,14 @@ function outcomeFromPayParam(pay: string | undefined): PaymentOutcomeKey | null 
   if (pay === "auth" || pay === "net") return "error";
   if (pay === "0") return "retry";
   return null;
+}
+
+function pendingLead(outcome: PaymentOutcomeKey) {
+  return PAYMENT_OUTCOMES[outcome].lead;
+}
+
+function pendingSummaryLabel(outcome: PaymentOutcomeKey) {
+  return PAYMENT_OUTCOMES[outcome].eyebrow;
 }
 
 export default async function OrderConfirmationPage({
@@ -82,7 +91,10 @@ export default async function OrderConfirmationPage({
     ? orderNumber
       ? `Szukaliśmy zamówienia ${orderNumber}, ale nie udało się go odczytać. Sprawdź maila albo konto.`
       : "Po płatności wróć linkiem z maila albo zaloguj się na konto."
-    : orderLead(order.orderNumber, ORDER_STATUS_HINTS[order.status]);
+    : orderLead(
+        order.orderNumber,
+        order.status === "pending" ? pendingLead(outcome) : ORDER_STATUS_HINTS[order.status],
+      );
 
   return (
     <div className="py-14 md:py-20">
@@ -97,10 +109,12 @@ export default async function OrderConfirmationPage({
         {order ? (
           <>
             <ClearCartOnMount />
-            <PendingPaymentRefresh pending={order.status === "pending"} />
+            <PendingPaymentRefresh active={order.status === "pending" && outcome === "awaiting"} />
             <div className="space-y-4 rounded-[28px] bg-krem p-6">
               <p className="font-heading text-sm uppercase tracking-[0.14em] text-czerwony">
-                {ORDER_STATUS_LABELS[order.status]}
+                {order.status === "pending"
+                  ? pendingSummaryLabel(outcome)
+                  : ORDER_STATUS_LABELS[order.status]}
               </p>
               <ul className="space-y-2 text-sm">
                 {order.items.map((item) => (

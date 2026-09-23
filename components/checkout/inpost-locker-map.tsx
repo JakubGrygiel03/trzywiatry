@@ -4,44 +4,61 @@ import { useEffect, useRef, useState } from "react";
 import type { InpostPoint } from "@/lib/inpost-points";
 import "leaflet/dist/leaflet.css";
 
-const MAP_PIN_LIMIT = 8;
-const NEAR_PIN_LIMIT = 5;
+const POLAND_CENTER: [number, number] = [52.12, 19.4];
+const POLAND_BOUNDS: [[number, number], [number, number]] = [
+  [49.0, 14.07],
+  [55.12, 24.15],
+];
+const MAX_PINS = 280;
 
 function pinHtml(selected: boolean) {
   const size = selected ? 40 : 30;
   const icon = selected ? 18 : 14;
   const bg = selected ? "#D39058" : "#9C644E";
   const ring = selected ? "3px solid #fff" : "2px solid #fff";
-  // Inline parcel glyph — Lucide-style box so pins stay readable without external assets.
   const parcel = `<svg width="${icon}" height="${icon}" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3.2 20 7.5v9L12 20.8 4 16.5v-9L12 3.2Z" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 12.2 20 7.5M12 12.2 4 7.5M12 12.2V20.8" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-  return `<div style="width:${size}px;height:${size}px;border-radius:999px;background:${bg};border:${ring};box-shadow:0 2px 6px rgba(1,1,1,.3);display:flex;align-items:center;justify-content:center" aria-hidden="true">${parcel}</div>`;
+  return `<div style="width:${size}px;height:${size}px;border-radius:999px;background:${bg};border:${ring};box-shadow:0 2px 6px rgba(1,1,1,.3);display:flex;align-items:center;justify-center" aria-hidden="true">${parcel}</div>`;
 }
 
-function sortByDistance(points: InpostPoint[], focus: { lat: number; lng: number }) {
-  return [...points].sort((a, b) => {
-    const da = (a.lat - focus.lat) ** 2 + (a.lng - focus.lng) ** 2;
-    const db = (b.lat - focus.lat) ** 2 + (b.lng - focus.lng) ** 2;
-    return da - db;
-  });
+function pinsForView(
+  points: InpostPoint[],
+  contains: (lat: number, lng: number) => boolean,
+  selectedName?: string,
+) {
+  const selected = selectedName ? points.find((point) => point.name === selectedName) : undefined;
+  const inView = points.filter((point) => contains(point.lat, point.lng));
+  const head = inView.slice(0, MAX_PINS);
+  if (selected && !head.some((point) => point.name === selected.name)) {
+    return [selected, ...head.slice(0, MAX_PINS - 1)];
+  }
+  return head;
 }
 
 export function InpostLockerMap({
   points,
   selectedName,
   focus = null,
+  fit = "auto",
   onSelect,
+  onIdle,
 }: {
   points: InpostPoint[];
   selectedName?: string;
   focus?: { lat: number; lng: number } | null;
+  /** `none` while the customer pans Poland so we don't yank the view back. */
+  fit?: "auto" | "none";
   onSelect: (point: InpostPoint) => void;
+  onIdle?: (center: { lat: number; lng: number }, zoom: number) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const onSelectRef = useRef(onSelect);
+  const onIdleRef = useRef(onIdle);
   const mapRef = useRef<import("leaflet").Map | null>(null);
   const markersRef = useRef<import("leaflet").Marker[]>([]);
+  const ignoreMoveUntil = useRef(0);
   const [mapReady, setMapReady] = useState(false);
   onSelectRef.current = onSelect;
+  onIdleRef.current = onIdle;
 
   useEffect(() => {
     const node = containerRef.current;
@@ -58,14 +75,24 @@ export function InpostLockerMap({
       const map = L.map(containerRef.current, {
         zoomControl: true,
         attributionControl: true,
-        minZoom: 11,
-      }).setView([54.352, 18.646], 13);
+        minZoom: 6,
+        maxBounds: L.latLngBounds(POLAND_BOUNDS[0], POLAND_BOUNDS[1]),
+        maxBoundsViscosity: 0.85,
+      }).setView(POLAND_CENTER, 6);
       mapRef.current = map;
 
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         maxZoom: 19,
       }).addTo(map);
+
+      const emitIdle = () => {
+        if (Date.now() < ignoreMoveUntil.current) return;
+        const center = map.getCenter();
+        onIdleRef.current?.({ lat: center.lat, lng: center.lng }, map.getZoom());
+      };
+      map.on("dragend", emitIdle);
+      map.on("zoomend", emitIdle);
 
       window.setTimeout(() => map.invalidateSize(), 80);
       resizeObserver = new ResizeObserver(() => map.invalidateSize());
@@ -97,20 +124,14 @@ export function InpostLockerMap({
       for (const marker of markersRef.current) marker.remove();
       markersRef.current = [];
 
-      if (points.length === 0) return;
+      const bounds = map.getBounds().pad(0.2);
+      const visible = pinsForView(
+        points,
+        (lat, lng) => bounds.contains(L.latLng(lat, lng)),
+        selectedName,
+      );
 
-      const selected = selectedName ? points.find((point) => point.name === selectedName) : undefined;
-      const limit = focus ? NEAR_PIN_LIMIT : MAP_PIN_LIMIT;
-      const ordered = focus ? sortByDistance(points, focus) : points;
-      const visible = (() => {
-        const head = ordered.slice(0, limit);
-        if (selected && !head.some((point) => point.name === selected.name)) {
-          return [selected, ...head.slice(0, limit - 1)];
-        }
-        return head;
-      })();
-
-      const bounds = L.latLngBounds([]);
+      const fitBounds = L.latLngBounds([]);
       for (const point of visible) {
         const isSelected = point.name === selectedName;
         const marker = L.marker([point.lat, point.lng], {
@@ -131,30 +152,32 @@ export function InpostLockerMap({
         });
         marker.on("click", () => onSelectRef.current(point));
         markersRef.current.push(marker);
-        bounds.extend([point.lat, point.lng]);
+        fitBounds.extend([point.lat, point.lng]);
       }
 
       map.invalidateSize();
+      ignoreMoveUntil.current = Date.now() + 700;
+      if (fit === "none") return;
       if (focus) {
-        // Zoom to the user first; then tighten around the nearest handful of lockers.
-        if (visible.length >= 2 && bounds.isValid()) {
-          map.fitBounds(bounds.pad(0.35), { maxZoom: 17, animate: true });
+        if (visible.length >= 2 && fitBounds.isValid()) {
+          map.fitBounds(fitBounds.pad(0.35), { maxZoom: 17, animate: true });
         } else {
           map.setView([focus.lat, focus.lng], 16, { animate: true });
         }
-      } else if (selected) {
-        map.setView([selected.lat, selected.lng], Math.max(map.getZoom(), 15));
+      } else if (selectedName) {
+        const selected = points.find((point) => point.name === selectedName);
+        if (selected) map.setView([selected.lat, selected.lng], Math.max(map.getZoom(), 14));
       } else if (visible.length === 1) {
         map.setView([visible[0].lat, visible[0].lng], 15);
-      } else if (bounds.isValid()) {
-        map.fitBounds(bounds.pad(0.15), { maxZoom: 15, animate: false });
+      } else if (fitBounds.isValid() && points.length > 0) {
+        map.fitBounds(fitBounds.pad(0.12), { maxZoom: 14, animate: false });
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [mapReady, points, selectedName, focus]);
+  }, [mapReady, points, selectedName, focus, fit]);
 
   return <div ref={containerRef} className="h-full min-h-[280px] w-full rounded-[22px] bg-krem" />;
 }

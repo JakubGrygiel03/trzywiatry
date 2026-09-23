@@ -69,17 +69,11 @@ export function PaymentOutcomePanel({
         <h2 className="font-heading text-xl uppercase tracking-[0.06em] text-czarny">{copy.title}</h2>
         <p className="text-sm leading-relaxed text-czarny/75">{copy.body}</p>
 
-        {copy.showRefreshHint && orderStatus === "pending" ? (
-          <p className="text-xs text-czarny/50">
-            Status odświeża się automatycznie przez chwilę. Możesz też odświeżyć stronę ręcznie.
-          </p>
-        ) : null}
-
         {payEnabled ? (
           <PayP24Button
             orderNumber={orderNumber}
             orderId={orderId}
-            label={outcome === "retry" ? "Zapłać ponownie" : "Zapłać teraz"}
+            label={copy.payLabel ?? "Zapłać teraz"}
           />
         ) : null}
 
@@ -97,10 +91,16 @@ export function PaymentOutcomePanel({
       <p className="text-sm text-czarny/60">
         {mailFailed ? (
           <>
-            Potwierdzenie nie doszło na {customerEmail}. Zamówienie i tak jest zapisane — status zobaczysz w{" "}
+            Mail ze złożeniem zamówienia nie doszedł na {customerEmail}. Zamówienie i tak jest zapisane — status
+            zobaczysz w{" "}
           </>
+        ) : outcome === "paid" ? (
+          <>Potwierdzenie płatności wysłaliśmy na {customerEmail}. Status zamówienia zobaczysz też w </>
         ) : (
-          <>Potwierdzenie poszło na {customerEmail}. Status śledzisz też w </>
+          <>
+            Zapis zamówienia wysłaliśmy na {customerEmail}. To jeszcze nie jest potwierdzenie płatności — status
+            zobaczysz też w{" "}
+          </>
         )}
         <Link href="/konto" className="text-czerwony underline-offset-2 hover:underline">
           koncie

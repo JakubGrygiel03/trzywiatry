@@ -7,8 +7,6 @@ export type InpostPoint = {
   distance?: number;
 };
 
-export const INPOST_ATELIER_POSTAL = "80-176";
-
 export function formatLockerLabel(point: InpostPoint) {
   const label = point.description
     ? `${point.name} · ${point.address} (${point.description})`
@@ -20,6 +18,36 @@ export function normalizePostal(raw: string) {
   const digits = raw.replace(/\D/g, "");
   if (digits.length !== 5) return null;
   return `${digits.slice(0, 2)}-${digits.slice(2)}`;
+}
+
+/** ShipX locker codes: GDA09M, WAW123A */
+export function isLockerName(raw: string) {
+  return /^[A-Za-z]{2,3}\d+[A-Za-z]?$/.test(raw.trim());
+}
+
+/** Single city token — “Gdańsk”, not a street like “Targ Sienny”. */
+export function isCityQuery(raw: string) {
+  const query = raw.trim();
+  if (query.length < 2 || query.includes(" ")) return false;
+  return /^[\p{L}][\p{L}.'-]{1,39}$/u.test(query);
+}
+
+function fold(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "");
+}
+
+/** Match street / landmark / locker code against a typed phrase. */
+export function lockerMatchesPhrase(point: InpostPoint, phrase: string) {
+  const words = fold(phrase)
+    .split(/\s+/)
+    .map((word) => word.replace(/[^\p{L}\d]/gu, ""))
+    .filter((word) => word.length >= 2);
+  if (words.length === 0) return true;
+  const blob = fold(`${point.name} ${point.address} ${point.description}`);
+  return words.every((word) => blob.includes(word));
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {

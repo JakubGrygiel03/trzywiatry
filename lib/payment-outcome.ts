@@ -20,72 +20,78 @@ export type PaymentOutcomeCopy = {
   sandboxLabel: string;
   eyebrow: string;
   title: string;
+  /** One sentence under the page title — must not contradict the panel. */
+  lead: string;
   body: string;
   tone: "ok" | "wait" | "warn" | "error" | "neutral";
   showPayButton: boolean;
-  showRefreshHint: boolean;
+  payLabel?: string;
 };
 
 export const PAYMENT_OUTCOMES: Record<PaymentOutcomeKey, PaymentOutcomeCopy> = {
   paid: {
     key: "paid",
     sandboxLabel: "Zapłać",
-    eyebrow: "Płatność OK",
-    title: "Płatność potwierdzona",
-    body: "Dziękujemy. BLIK, karta albo przelew przeszły — pracownia może pakować zamówienie.",
+    eyebrow: "Opłacone",
+    title: "Płatność doszła",
+    lead: "Dziękujemy — płatność jest potwierdzona i możemy pakować naczynia.",
+    body: "Pieniądze z BLIK-a, karty albo przelewu są już u nas. Dalszy status zobaczysz w mailu i na koncie.",
     tone: "ok",
     showPayButton: false,
-    showRefreshHint: false,
   },
   awaiting: {
     key: "awaiting",
     sandboxLabel: "Oczekiwanie na wpłatę",
-    eyebrow: "Czekamy na wpływ",
-    title: "Oczekiwanie na wpłatę",
-    body: "Zamówienie jest zapisane. Przy przelewie tradycyjnym wpływ bywa z opóźnieniem — jak tylko bank i Przelewy24 potwierdzą pieniądze, status zmieni się na opłacone. Możesz zostawić tę kartę otwartą albo wrócić później.",
+    eyebrow: "Czekamy na wpłatę",
+    title: "Zamówienie czeka na płatność",
+    lead: "Zamówienie jest zapisane. Czekamy, aż bank przekaże pieniądze do Przelewy24.",
+    body: "Przy BLIK-u i karcie status zwykle zmienia się sam w ciągu chwili. Przy zwykłym przelewie może to zająć do jednego dnia roboczego — nie płać drugi raz, jeśli środki są już w drodze.",
     tone: "wait",
     showPayButton: false,
-    showRefreshHint: true,
   },
   error: {
     key: "error",
     sandboxLabel: "Błąd płatności",
-    eyebrow: "Problem z płatnością",
-    title: "Błąd płatności",
-    body: "Płatność nie doszła do skutku (odrzucenie banku, timeout albo błąd bramki). Zamówienie zostało zapisane — spróbuj ponownie albo wybierz inną metodę: BLIK, karta, przelew.",
+    eyebrow: "Płatność nie przeszła",
+    title: "Nie udało się pobrać pieniędzy",
+    lead: "Płatność się nie udała. Zamówienie jest zapisane — możesz spróbować jeszcze raz.",
+    body: "Bank albo Przelewy24 nie dokończyły płatności. Z karty i BLIK-a nic nie powinno zejść. Jeśli jednak widzisz obciążenie, napisz do pracowni, zanim zapłacisz ponownie.",
     tone: "error",
     showPayButton: true,
-    showRefreshHint: false,
+    payLabel: "Zapłać ponownie",
   },
   none: {
     key: "none",
     sandboxLabel: "Brak wpłaty",
-    eyebrow: "Bez wpłaty",
-    title: "Brak wpłaty",
-    body: "Nie odnotowaliśmy płatności — najpewniej anulowanie albo wyjście z bramki przed końcem. Zamówienie czeka; możesz dokończyć płatność poniżej.",
+    eyebrow: "Brak wpłaty",
+    title: "Płatność nie została dokończona",
+    lead: "Okno płatności zamknęło się wcześniej. Nic nie pobraliśmy z Twojego konta.",
+    body: "Zamówienie czeka w pracowni. Możesz dokończyć płatność, kiedy chcesz — BLIK, karta albo przelew.",
     tone: "neutral",
     showPayButton: true,
-    showRefreshHint: false,
+    payLabel: "Zapłać teraz",
   },
   amount: {
     key: "amount",
     sandboxLabel: "Nieprawidłowa kwota",
-    eyebrow: "Kwota się nie zgadza",
-    title: "Nieprawidłowa kwota",
-    body: "Kwota w płatności różni się od zamówienia w sklepie, więc nie oznaczamy go jako opłaconego. Napisz do pracowni albo uruchom nową płatność z poprawną kwotą.",
+    eyebrow: "Kwoty się nie zgadzają",
+    title: "Wpłata ma inną kwotę niż zamówienie",
+    lead: "W Przelewy24 jest inna suma niż w koszyku, więc zamówienia nie oznaczamy jako opłaconego.",
+    body: "Paczki nie wysyłamy, dopóki kwoty się nie zgadzają. Najprościej zapłacić ponownie poprawną kwotą albo napisać do pracowni — sprawdzimy, co poszło nie tak.",
     tone: "warn",
     showPayButton: true,
-    showRefreshHint: false,
+    payLabel: "Zapłać ponownie",
   },
   retry: {
     key: "retry",
     sandboxLabel: "Zapłać ponownie",
-    eyebrow: "Spróbuj jeszcze raz",
-    title: "Dokończ płatność",
-    body: "Poprzednia próba nie domknęła się. Zamówienie jest nadal aktywne — otwórz ponownie Przelewy24 i zapłać BLIK-iem, kartą albo przelewem.",
+    eyebrow: "Dokończ płatność",
+    title: "Poprzednia próba się nie skończyła",
+    lead: "Zamówienie jest zapisane i nadal czeka na wpłatę. Możesz otworzyć Przelewy24 jeszcze raz.",
+    body: "Wejdź ponownie do płatności i wybierz BLIK, kartę albo przelew. Jeśli pierwsza wpłata jednak dojdzie, daj nam znać — nie musisz płacić dwa razy.",
     tone: "neutral",
     showPayButton: true,
-    showRefreshHint: false,
+    payLabel: "Zapłać ponownie",
   },
 };
 

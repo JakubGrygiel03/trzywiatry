@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/field";
 import { InpostLockerMap } from "@/components/checkout/inpost-locker-map";
@@ -22,19 +22,29 @@ export function InpostLockerPicker({
 }) {
   const [query, setQuery] = useState(postalCode || city);
   const [points, setPoints] = useState<InpostPoint[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [focus, setFocus] = useState<{ lat: number; lng: number } | null>(null);
+  const [fit, setFit] = useState<"auto" | "none">("none");
   const [locating, setLocating] = useState(false);
   const [listOpen, setListOpen] = useState(true);
+  const exploreTimer = useRef(0);
   const selectedName = value.split(" · ")[0];
 
-  function search(nextQuery = query, coords?: { lat: number; lng: number }) {
+  function search(
+    nextQuery = query,
+    coords?: { lat: number; lng: number },
+    mode: "search" | "explore" = "search",
+  ) {
     const params = new URLSearchParams();
+    if (mode !== "explore") {
+      if (city.trim()) params.set("city", city.trim());
+      if (postalCode.trim()) params.set("postal", postalCode.trim());
+    }
     if (coords) {
       params.set("lat", String(coords.lat));
       params.set("lng", String(coords.lng));
-      setFocus(coords);
+      setFocus(mode === "search" ? coords : null);
     } else if (nextQuery.trim()) {
       params.set("q", nextQuery.trim());
       setFocus(null);
@@ -42,6 +52,7 @@ export function InpostLockerPicker({
       setFocus(null);
     }
 
+    setFit(mode === "explore" ? "none" : "auto");
     setLoading(true);
     setError("");
     void fetch(`/api/inpost/points?${params}`)
@@ -49,11 +60,11 @@ export function InpostLockerPicker({
         const payload = (await response.json()) as { items?: InpostPoint[] };
         const items = payload.items ?? [];
         setPoints(items);
-        if (items.length === 0) {
+        if (items.length === 0 && (coords || nextQuery.trim() || city.trim() || postalCode.trim())) {
           setError(
             coords
-              ? "Brak paczkomatów w promieniu ~3 km. Spróbuj wpisać kod pocztowy."
-              : "Nie znaleziono paczkomatów. Spróbuj innego miasta lub kodu.",
+              ? "W tym fragmencie mapy nie ma paczkomatu. Przybliż albo wpisz inne miasto."
+              : "Nie znaleziono paczkomatu. Wpisz miasto (np. Warszawa), ulicę albo kod.",
           );
         }
       })
@@ -65,10 +76,9 @@ export function InpostLockerPicker({
   }
 
   useEffect(() => {
-    const next = (postalCode || city).trim();
+    const next = (city || postalCode).trim();
     setQuery(next);
-    search(next);
-    // Re-search when checkout address changes (also covers initial empty → atelier default).
+    if (next) search(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postalCode, city]);
 
@@ -83,7 +93,7 @@ export function InpostLockerPicker({
       (position) => search(query, { lat: position.coords.latitude, lng: position.coords.longitude }),
       () => {
         setLocating(false);
-        setError("Nie udało się pobrać lokalizacji. Wpisz miasto lub kod pocztowy.");
+        setError("Nie udało się pobrać lokalizacji. Wpisz ulicę, miasto albo kod pocztowy.");
       },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 60_000 },
     );
@@ -105,7 +115,7 @@ export function InpostLockerPicker({
           Paczkomat InPost <span className="text-czerwony">*</span>
         </Label>
         <p className="mt-1 text-xs text-szary">
-          Wybierz punkt z listy albo kliknij pinezkę na mapie. „Najbliższe” przybliża mapę wokół Ciebie.
+          Mapa obejmuje całą Polskę — przesuń i przybliż, albo wpisz miasto (Warszawa, Kraków, Gdańsk…).
         </p>
       </div>
 
@@ -119,7 +129,7 @@ export function InpostLockerPicker({
               search(query);
             }
           }}
-          placeholder="Miasto, kod pocztowy lub numer, np. GDA97M"
+          placeholder="Miasto lub ulica, np. Gdańsk, Targ Sienny, Warszawa"
           className="min-w-0"
         />
         <Button type="button" variant="secondary" onClick={() => search(query)}>
@@ -161,6 +171,11 @@ export function InpostLockerPicker({
               {loading && points.length === 0 ? (
                 <li className="px-1 py-3 text-sm text-szary">Szukam paczkomatów…</li>
               ) : null}
+              {!loading && points.length === 0 && !error ? (
+                <li className="px-1 py-3 text-sm text-szary">
+                  Przybliż mapę albo wpisz miasto — paczkomaty są w całej Polsce.
+                </li>
+              ) : null}
               {error ? <li className="px-1 py-3 text-sm text-czerwony">{error}</li> : null}
               {points.map((point) => (
                 <li key={point.name}>
@@ -197,7 +212,15 @@ export function InpostLockerPicker({
             points={points}
             selectedName={selectedName}
             focus={focus}
+            fit={fit}
             onSelect={selectPoint}
+            onIdle={(center, zoom) => {
+              if (zoom < 8) return;
+              window.clearTimeout(exploreTimer.current);
+              exploreTimer.current = window.setTimeout(() => {
+                search(query, center, "explore");
+              }, 500);
+            }}
           />
         </div>
       </div>
