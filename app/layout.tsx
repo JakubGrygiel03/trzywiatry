@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { P24HandoffOverlay } from "@/components/checkout/p24-handoff-overlay";
 import { PwaRegister } from "@/components/pwa/pwa-register";
 import { Geist, Space_Mono } from "next/font/google";
 import { SITE } from "@/lib/constants";
@@ -70,6 +71,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="min-h-full w-full max-w-full bg-papier text-czarny">
         <PwaRegister />
         {children}
+        <P24HandoffOverlay />
       </body>
     </html>
   );

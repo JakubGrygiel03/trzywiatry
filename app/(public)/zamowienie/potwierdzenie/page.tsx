@@ -11,7 +11,6 @@ import { reconcilePendingOrderPayment } from "@/lib/p24-reconcile";
 import {
   alignOutcomeWithOrderStatus,
   parsePaymentOutcomeParam,
-  PAYMENT_OUTCOMES,
   type PaymentOutcomeKey,
 } from "@/lib/payment-outcome";
 import { resolvePaymentAccess } from "@/lib/payment-access";
@@ -72,21 +71,18 @@ export default async function OrderConfirmationPage({
   const outcome = order
     ? alignOutcomeWithOrderStatus(order.status, candidate)
     : candidate;
-  const copy = PAYMENT_OUTCOMES[outcome];
 
   const firstName = order?.customerName.split(" ")[0] ?? "";
   const headingTitle = !order
     ? "Nie znaleziono zamówienia"
     : outcome === "paid"
       ? `Dziękujemy, ${firstName}`
-      : copy.title;
+      : "Zamówienie zapisane";
   const headingDescription = !order
     ? orderNumber
       ? `Szukaliśmy zamówienia ${orderNumber}, ale nie udało się go odczytać. Sprawdź maila albo konto.`
       : "Po płatności wróć linkiem z maila albo zaloguj się na konto."
-    : outcome === "paid"
-      ? orderLead(order.orderNumber, ORDER_STATUS_HINTS[order.status])
-      : orderLead(order.orderNumber, copy.body);
+    : orderLead(order.orderNumber, ORDER_STATUS_HINTS[order.status]);
 
   return (
     <div className="py-14 md:py-20">
@@ -101,7 +97,7 @@ export default async function OrderConfirmationPage({
         {order ? (
           <>
             <ClearCartOnMount />
-            <PendingPaymentRefresh pending={order.status === "pending" && (outcome === "awaiting" || outcome === "retry")} />
+            <PendingPaymentRefresh pending={order.status === "pending"} />
             <div className="space-y-4 rounded-[28px] bg-krem p-6">
               <p className="font-heading text-sm uppercase tracking-[0.14em] text-czerwony">
                 {ORDER_STATUS_LABELS[order.status]}

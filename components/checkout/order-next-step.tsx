@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { startPendingOrderPayment } from "@/app/actions/pay-order";
-import { Button } from "@/components/ui/button";
+import { PayP24Button } from "@/components/checkout/pay-p24-button";
 import { SITE } from "@/lib/constants";
 import { isP24Sandbox } from "@/lib/p24";
 import type { OrderStatus } from "@/lib/types";
@@ -57,11 +56,7 @@ export function OrderNextStep({
           </p>
           {payMessage ? <p className="text-sm text-czerwony">{payMessage}</p> : null}
           {canPay ? (
-            <form action={startPendingOrderPayment}>
-              <input type="hidden" name="orderNumber" value={orderNumber} />
-              <input type="hidden" name="orderId" value={orderId} />
-              <Button type="submit">Zapłać teraz</Button>
-            </form>
+            <PayP24Button orderNumber={orderNumber} orderId={orderId} label="Zapłać teraz" />
           ) : (
             <p className="text-sm text-szary">
               O płatności damy znać mailem. W razie pytań napisz na{" "}

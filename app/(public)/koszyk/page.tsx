@@ -7,6 +7,8 @@ import { CartUpsell } from "@/components/cart/cart-upsell";
 import { FreeShippingMeter, GiftWrappingCard } from "@/components/cart/gift-and-shipping";
 import { usePaymentAccess, useSiteSettings } from "@/components/cms/site-settings-provider";
 import { useCartEmptyFast } from "@/hooks/use-cart-hydration";
+import { P24HandoffNotice } from "@/components/checkout/p24-handoff-notice";
+import { useP24Handoff } from "@/lib/p24-handoff";
 import { SurfacePageIntro } from "@/components/layout/surface-page";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/badge";
@@ -18,6 +20,7 @@ export default function CartPage() {
   const items = useCartStore((state) => state.items);
   const hasGiftWrapping = useCartStore((state) => state.hasGiftWrapping);
   const { ready, empty } = useCartEmptyFast();
+  const handingOff = useP24Handoff();
   const { giftWrapPriceCents, giftWrapEnabled } = useSiteSettings();
   const { isPublic, isTester } = usePaymentAccess();
   const subtotal = cartSubtotal(items);
@@ -27,12 +30,14 @@ export default function CartPage() {
     <div className="py-8 md:py-10">
       <Container className="space-y-4 md:space-y-5">
         <SurfacePageIntro eyebrow="Koszyk" title="Twoje naczynia" />
-        {!ready ? (
+        {!ready && !handingOff ? (
           <SurfaceTile>
             <SurfaceTileBody>
               <div className="h-4 w-40 animate-pulse rounded-full bg-czarny/8" aria-hidden />
             </SurfaceTileBody>
           </SurfaceTile>
+        ) : handingOff ? (
+          <P24HandoffNotice />
         ) : empty ? (
           <SurfaceTile>
             <SurfaceTileBody className="space-y-4">

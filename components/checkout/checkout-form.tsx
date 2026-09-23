@@ -10,9 +10,11 @@ import { Label, Textarea } from "@/components/ui/field";
 import { SurfaceTile, SurfaceTileBody, SurfaceTileHeader } from "@/components/ui/surface-tile";
 import { useActionState, useEffect, useState } from "react";
 import { createCheckoutSession, type CheckoutState } from "@/app/actions/checkout";
+import { P24HandoffNotice } from "@/components/checkout/p24-handoff-notice";
 import { useSiteSettings } from "@/components/cms/site-settings-provider";
 import { SHIPPING_METHODS } from "@/lib/constants";
 import { formatPLN } from "@/lib/format";
+import { beginP24Handoff, endP24Handoff, goToP24 } from "@/lib/p24-handoff";
 import { cartGiftWrapCost, cartSubtotal, useCartStore } from "@/store/use-cart-store";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -37,18 +39,14 @@ export function CheckoutForm({
   defaultEmail = "",
   defaultName = "",
   paymentsLive = false,
-  onHandoff,
 }: {
   defaultEmail?: string;
   defaultName?: string;
   paymentsLive?: boolean;
-  /** Fired before redirect so CheckoutGate never flashes “koszyk pusty”. */
-  onHandoff?: () => void;
 }) {
   const items = useCartStore((state) => state.items);
   const hasGiftWrapping = useCartStore((state) => state.hasGiftWrapping);
   const giftMessage = useCartStore((state) => state.giftMessage);
-  const clear = useCartStore((state) => state.clear);
   const [state, action, pending] = useActionState(createCheckoutSession, initial);
   const [shippingMethod, setShippingMethod] = useState<(typeof SHIPPING_METHODS)[number]["id"]>("inpost");
   const [postalCode, setPostalCode] = useState("");
@@ -66,16 +64,46 @@ export function CheckoutForm({
   useEffect(() => {
     if (!state.ok || !state.redirectTo) return;
     const url = state.redirectTo;
-    onHandoff?.();
-    // Clear on leave — never clear before assign (CheckoutGate would flash “koszyk pusty”).
-    const wipeCart = () => clear();
-    window.addEventListener("pagehide", wipeCart);
+    const toP24 = url.includes("przelewy24") || url.includes("trnRequest");
+    if (toP24) {
+      goToP24(url);
+      return;
+    }
+    endP24Handoff();
     window.location.assign(url);
-    return () => window.removeEventListener("pagehide", wipeCart);
-  }, [state.ok, state.redirectTo, clear, onHandoff]);
+  }, [state.ok, state.redirectTo]);
 
-  // Safety net — CheckoutGate usually catches empty carts first.
-  if (items.length === 0 && !state.ok) {
+  useEffect(() => {
+    if (!state.ok && state.message) endP24Handoff();
+  }, [state.ok, state.message]);
+
+  if (pending) {
+    return paymentsLive ? (
+      <P24HandoffNotice />
+    ) : (
+      <SurfaceTile>
+        <SurfaceTileBody className="sm:py-8">
+          <p className="font-heading text-sm uppercase tracking-[0.14em] text-czerwony">Zapisuję zamówienie</p>
+          <p className="mt-4 text-lg leading-relaxed">Chwilę… składamy zamówienie w pracowni.</p>
+        </SurfaceTileBody>
+      </SurfaceTile>
+    );
+  }
+
+  if (state.ok) {
+    const toPayment = Boolean(state.redirectTo?.includes("przelewy24") || state.redirectTo?.includes("trnRequest"));
+    if (toPayment) return <P24HandoffNotice />;
+    return (
+      <SurfaceTile>
+        <SurfaceTileBody className="sm:py-8">
+          <p className="font-heading text-sm uppercase tracking-[0.14em] text-czerwony">Zamówienie przyjęte</p>
+          <p className="mt-4 text-lg leading-relaxed">{state.message}</p>
+        </SurfaceTileBody>
+      </SurfaceTile>
+    );
+  }
+
+  if (items.length === 0) {
     return (
       <SurfaceTile>
         <SurfaceTileBody className="space-y-4">
@@ -88,26 +116,15 @@ export function CheckoutForm({
     );
   }
 
-  if (state.ok) {
-    const toPayment = Boolean(state.redirectTo?.includes("przelewy24") || state.redirectTo?.includes("trnRequest"));
-    return (
-      <SurfaceTile>
-        <SurfaceTileBody className="sm:py-8">
-          <p className="font-heading text-sm uppercase tracking-[0.14em] text-czerwony">
-            {toPayment ? "Przekierowanie do płatności" : "Zamówienie przyjęte"}
-          </p>
-          <p className="mt-4 text-lg leading-relaxed">
-            {toPayment
-              ? "Chwilę… otwieramy Przelewy24 (BLIK, karta, przelew)."
-              : state.message}
-          </p>
-        </SurfaceTileBody>
-      </SurfaceTile>
-    );
-  }
-
   return (
-    <form action={action} className="grid gap-4 md:gap-5 lg:grid-cols-[1.2fr_0.8fr]" noValidate>
+    <form
+      action={action}
+      className="grid gap-4 md:gap-5 lg:grid-cols-[1.2fr_0.8fr]"
+      noValidate
+      onSubmit={() => {
+        if (paymentsLive) beginP24Handoff();
+      }}
+    >
       <input
         type="hidden"
         name="cart"

@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useState } from "react";
 import { CheckoutForm } from "@/components/checkout/checkout-form";
+import { P24HandoffNotice } from "@/components/checkout/p24-handoff-notice";
 import { useCartEmptyFast } from "@/hooks/use-cart-hydration";
+import { useP24Handoff } from "@/lib/p24-handoff";
 import { Button } from "@/components/ui/button";
 import { SurfaceTile, SurfaceTileBody } from "@/components/ui/surface-tile";
 
@@ -24,7 +25,7 @@ function EmptyCheckout() {
   );
 }
 
-/** Skip heavy checkout when cart is empty; no async “Ładowanie koszyka…” wait. */
+/** Skip heavy checkout when cart is empty; keep the form mounted during P24 handoff. */
 export function CheckoutGate({
   defaultEmail = "",
   defaultName = "",
@@ -35,10 +36,10 @@ export function CheckoutGate({
   paymentsLive?: boolean;
 }) {
   const { ready, empty } = useCartEmptyFast();
-  const [handingOff, setHandingOff] = useState(false);
-  const onHandoff = useCallback(() => setHandingOff(true), []);
+  const handingOff = useP24Handoff();
 
-  // Before paint hydrate: tiny placeholder (usually never visible).
+  if (handingOff && empty) return <P24HandoffNotice />;
+
   if (!ready) {
     return (
       <SurfaceTile>
@@ -49,28 +50,9 @@ export function CheckoutGate({
     );
   }
 
-  // After successful checkout the cart may clear on pagehide — never flash empty UI mid-redirect.
-  if (empty && !handingOff) return <EmptyCheckout />;
-
-  if (empty && handingOff) {
-    return (
-      <SurfaceTile>
-        <SurfaceTileBody className="sm:py-8">
-          <p className="font-heading text-sm uppercase tracking-[0.14em] text-czerwony">
-            Przekierowanie do płatności
-          </p>
-          <p className="mt-4 text-lg leading-relaxed">Chwilę… otwieramy Przelewy24.</p>
-        </SurfaceTileBody>
-      </SurfaceTile>
-    );
-  }
+  if (empty) return <EmptyCheckout />;
 
   return (
-    <CheckoutForm
-      defaultEmail={defaultEmail}
-      defaultName={defaultName}
-      paymentsLive={paymentsLive}
-      onHandoff={onHandoff}
-    />
+    <CheckoutForm defaultEmail={defaultEmail} defaultName={defaultName} paymentsLive={paymentsLive} />
   );
 }

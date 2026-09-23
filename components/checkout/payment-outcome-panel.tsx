@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { startPendingOrderPayment } from "@/app/actions/pay-order";
-import { Button } from "@/components/ui/button";
+import { PayP24Button } from "@/components/checkout/pay-p24-button";
 import { SITE } from "@/lib/constants";
 import {
   orderAllowsPayButton,
@@ -77,13 +76,11 @@ export function PaymentOutcomePanel({
         ) : null}
 
         {payEnabled ? (
-          <form action={startPendingOrderPayment} className="pt-1">
-            <input type="hidden" name="orderNumber" value={orderNumber} />
-            <input type="hidden" name="orderId" value={orderId} />
-            <Button type="submit">
-              {outcome === "retry" ? "Zapłać ponownie" : "Zapłać teraz"}
-            </Button>
-          </form>
+          <PayP24Button
+            orderNumber={orderNumber}
+            orderId={orderId}
+            label={outcome === "retry" ? "Zapłać ponownie" : "Zapłać teraz"}
+          />
         ) : null}
 
         {orderAllowsPayButton(orderStatus, outcome) && !canPay ? (

@@ -1,11 +1,16 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { buildP24Session, registerP24Transaction } from "@/lib/p24";
 import { resolvePaymentAccess } from "@/lib/payment-access";
 import { ensureOrdersHydrated, flushOrdersSave } from "@/lib/data/order-persist";
 import { getOrderByNumber, setOrderP24SessionInStore } from "@/lib/data/runtime-store";
 import { getPublicSiteUrl } from "@/lib/site-url";
+
+export type PayOrderState = {
+  ok: boolean;
+  redirectTo?: string;
+  message?: string;
+};
 
 function confirmPath(orderNumber: string, orderId: string, extra: Record<string, string> = {}) {
   const params = new URLSearchParams({ order: orderNumber, k: orderId, ...extra });
@@ -13,7 +18,10 @@ function confirmPath(orderNumber: string, orderId: string, extra: Record<string,
 }
 
 /** Restarts P24 for a pending order from the thank-you page. */
-export async function startPendingOrderPayment(formData: FormData) {
+export async function startPendingOrderPayment(
+  _prev: PayOrderState,
+  formData: FormData,
+): Promise<PayOrderState> {
   const orderNumber = String(formData.get("orderNumber") ?? "");
   const orderId = String(formData.get("orderId") ?? "");
   await ensureOrdersHydrated({ force: true });
@@ -21,11 +29,11 @@ export async function startPendingOrderPayment(formData: FormData) {
   const origin = getPublicSiteUrl();
 
   if (!order || order.id !== orderId || order.status !== "pending") {
-    redirect(confirmPath(orderNumber || "brak", orderId || "brak"));
+    return { ok: false, message: "Nie znaleziono zamówienia do opłacenia." };
   }
 
   if (!(await resolvePaymentAccess()).canPay) {
-    redirect(`${origin}${confirmPath(order.orderNumber, order.id, { pay: "0" })}`);
+    return { ok: false, message: "Płatności online są chwilowo niedostępne." };
   }
 
   // Unique session per retry — P24 rejects reusing the same sessionId after a failed attempt.
@@ -45,10 +53,18 @@ export async function startPendingOrderPayment(formData: FormData) {
   if (registered.ok) {
     setOrderP24SessionInStore(order.id, sessionId);
     await flushOrdersSave();
-    redirect(registered.redirectUrl);
+    return { ok: true, redirectTo: registered.redirectUrl };
   }
 
   const payCode =
     registered.reason === "auth-failed" ? "auth" : registered.reason === "network-failed" ? "net" : "0";
-  redirect(`${origin}${confirmPath(order.orderNumber, order.id, { pay: payCode })}`);
+  return {
+    ok: false,
+    message:
+      payCode === "auth"
+        ? "Przelewy24 odrzuciło klucz API. Spróbuj ponownie albo napisz do pracowni."
+        : payCode === "net"
+          ? "Nie udało się połączyć z Przelewy24. Sprawdź sieć i spróbuj ponownie."
+          : "Płatność nie wystartowała. Spróbuj ponownie.",
+  };
 }
