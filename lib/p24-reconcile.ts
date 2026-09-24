@@ -16,9 +16,11 @@ export type ReconcileResult = {
   transaction: P24TransactionLookup | null;
 };
 
-/** P24 method 136 = traditional transfer — studio marks paid, we do not auto-flip. */
+/** Map an unpaid P24 session to a distinct customer screen. */
 function outcomeFromUnpaid(tx: P24TransactionLookup): PaymentOutcomeKey {
+  if (tx.status === 3) return "error";
   if (tx.status === 1 || isTraditionalTransfer(tx.paymentMethod)) return "awaiting";
+  if (!tx.paymentMethod) return "none";
   return "error";
 }
 
@@ -103,7 +105,21 @@ export async function reconcilePendingOrderPayment(order: StoredOrder): Promise<
   }
 
   if (latestUnpaid) {
-    return { order, outcome: outcomeFromUnpaid(latestUnpaid), transaction: latestUnpaid };
+    const outcome = outcomeFromUnpaid(latestUnpaid);
+    let next = order;
+    if (outcome === "awaiting" && latestUnpaid.paymentMethod) {
+      const stamped = updateOrderStatusInStore(order.id, "pending", undefined, {
+        paymentProvider: "p24",
+        paymentMethodId: latestUnpaid.paymentMethod,
+        paymentMethodLabel: p24MethodLabel(latestUnpaid.paymentMethod),
+        p24SessionId: latestUnpaid.sessionId,
+      });
+      if (stamped) {
+        next = stamped;
+        await flushOrdersSave();
+      }
+    }
+    return { order: next, outcome, transaction: latestUnpaid };
   }
   if (settledMismatch) {
     return { order, outcome: "amount", transaction: settledMismatch };
@@ -111,5 +127,8 @@ export async function reconcilePendingOrderPayment(order: StoredOrder): Promise<
   if (verifyFailed) {
     return { order, outcome: "error", transaction: verifyFailed };
   }
-  return { order, outcome: "error", transaction: null };
+  if (isTraditionalTransfer(order.paymentMethodId)) {
+    return { order, outcome: "awaiting", transaction: null };
+  }
+  return { order, outcome: "none", transaction: null };
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PayP24Button } from "@/components/checkout/pay-p24-button";
 import { SITE } from "@/lib/constants";
 import {
+  CANCELLED_ORDER_COPY,
   orderAllowsPayButton,
   PAYMENT_OUTCOMES,
   type PaymentOutcomeKey,
@@ -44,7 +45,7 @@ export function PaymentOutcomePanel({
   mailFailed: boolean;
   customerEmail: string;
 }) {
-  const copy = PAYMENT_OUTCOMES[outcome];
+  const copy = orderStatus === "cancelled" ? CANCELLED_ORDER_COPY : PAYMENT_OUTCOMES[outcome];
   // Hard gate: pay CTA only while order is still pending in our store.
   const payEnabled = orderAllowsPayButton(orderStatus, outcome) && canPay;
 
@@ -91,7 +92,11 @@ export function PaymentOutcomePanel({
           <>Potwierdzenie płatności wysłaliśmy na {customerEmail}. Status zamówienia zobaczysz też w </>
         ) : outcome === "awaiting" ? (
           <>
-            Zapis zamówienia wysłaliśmy na {customerEmail}. Jak pracownia oznaczy wpłatę, status zmieni się w{" "}
+            Zapis zamówienia wysłaliśmy na {customerEmail}. Jak pracownia oznaczy przelew, status zmieni się w{" "}
+          </>
+        ) : outcome === "none" ? (
+          <>
+            Zapis zamówienia wysłaliśmy na {customerEmail}. Płatności jeszcze nie było — status zobaczysz też w{" "}
           </>
         ) : (
           <>

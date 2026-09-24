@@ -1,7 +1,6 @@
 /**
- * Customer-facing payment outcomes. Four real stories:
- * paid · awaiting transfer (admin ticks paid) · payment failed · wrong amount.
- * `none` / `retry` are aliases of failed payment so sandbox/old URLs still work.
+ * Three unpaid stories after Przelewy24, plus paid / wrong amount:
+ * error = failed BLIK/card · none = closed the window · awaiting = bank transfer.
  */
 export const PAYMENT_OUTCOME_KEYS = [
   "paid",
@@ -19,24 +18,12 @@ export type PaymentOutcomeCopy = {
   sandboxLabel: string;
   eyebrow: string;
   title: string;
-  /** H1 on the confirmation page. */
   pageTitle: string;
   lead: string;
   body: string;
   tone: "ok" | "wait" | "warn" | "error" | "neutral";
   showPayButton: boolean;
   payLabel?: string;
-};
-
-const FAILED_PAYMENT: Omit<PaymentOutcomeCopy, "key" | "sandboxLabel"> = {
-  eyebrow: "Płatność nie przeszła",
-  title: "Nie otrzymaliśmy płatności",
-  pageTitle: "Płatność nie przeszła",
-  lead: "Zamówienie jest zapisane, ale nieopłacone. Możesz spróbować jeszcze raz.",
-  body: "BLIK, karta albo okno płatności nie doszły do skutku. Nic nie powinno zejść z konta. Zapłać ponownie poniżej — albo napisz do pracowni, jeśli widzisz obciążenie.",
-  tone: "error",
-  showPayButton: true,
-  payLabel: "Zapłać ponownie",
 };
 
 export const PAYMENT_OUTCOMES: Record<PaymentOutcomeKey, PaymentOutcomeCopy> = {
@@ -54,29 +41,37 @@ export const PAYMENT_OUTCOMES: Record<PaymentOutcomeKey, PaymentOutcomeCopy> = {
   awaiting: {
     key: "awaiting",
     sandboxLabel: "Oczekiwanie na wpłatę",
-    eyebrow: "Czekamy na przelew",
-    title: "Pracownia potwierdzi wpłatę",
-    pageTitle: "Zamówienie zapisane",
-    lead: "Przy przelewie bankowym płatność nie schodzi od razu. Zamówienie czeka, aż pracownia zobaczy pieniądze na koncie i oznaczy je jako opłacone.",
-    body: "Nie odświeżaj tej strony w kółko. Status sprawdzisz na koncie. Jak tylko oznaczymy wpłatę, przyjdzie mail.",
+    eyebrow: "Oczekiwanie na przelew",
+    title: "Czekamy, aż pieniądze dojdą",
+    pageTitle: "Czekamy na przelew",
+    lead: "Wybrałeś przelew. Pracownia oznaczy zamówienie jako opłacone, gdy wpłata będzie na koncie.",
+    body: "Nie płać drugi raz i nie odświeżaj tej strony w kółko. Status sprawdzisz na koncie — jak oznaczymy wpłatę, przyjdzie mail.",
     tone: "wait",
     showPayButton: false,
   },
   error: {
     key: "error",
     sandboxLabel: "Błąd płatności",
-    ...FAILED_PAYMENT,
+    eyebrow: "Błąd płatności",
+    title: "Płatność nie przeszła",
+    pageTitle: "Płatność nie przeszła",
+    lead: "BLIK, karta albo przelew online nie doszły do skutku. Zamówienie jest zapisane.",
+    body: "Nic nie powinno zejść z konta. Zapłać ponownie poniżej — albo napisz do pracowni, jeśli widzisz obciążenie.",
+    tone: "error",
+    showPayButton: true,
+    payLabel: "Zapłać ponownie",
   },
   none: {
     key: "none",
     sandboxLabel: "Brak wpłaty",
-    eyebrow: "Anulowane",
-    title: "To zamówienie jest anulowane",
-    pageTitle: "Zamówienie anulowane",
-    lead: "Zamówienie nie jest opłacone i nie realizujemy go.",
-    body: "Jeśli to pomyłka, napisz do pracowni.",
+    eyebrow: "Brak wpłaty",
+    title: "Nie dokończyłeś płatności",
+    pageTitle: "Brak wpłaty",
+    lead: "Okno Przelewy24 zamknęło się, zanim pieniądze zeszły. Zamówienie czeka w pracowni.",
+    body: "Nic nie pobraliśmy. Możesz zapłacić teraz — BLIK, karta albo przelew.",
     tone: "neutral",
-    showPayButton: false,
+    showPayButton: true,
+    payLabel: "Zapłać teraz",
   },
   amount: {
     key: "amount",
@@ -93,11 +88,18 @@ export const PAYMENT_OUTCOMES: Record<PaymentOutcomeKey, PaymentOutcomeCopy> = {
   retry: {
     key: "retry",
     sandboxLabel: "Zapłać ponownie",
-    ...FAILED_PAYMENT,
+    eyebrow: "Dokończ płatność",
+    title: "Poprzednia próba się nie skończyła",
+    pageTitle: "Dokończ płatność",
+    lead: "Zamówienie czeka. Możesz otworzyć Przelewy24 jeszcze raz.",
+    body: "Wejdź ponownie do płatności i wybierz BLIK, kartę albo przelew.",
+    tone: "neutral",
+    showPayButton: true,
+    payLabel: "Zapłać ponownie",
   },
 };
 
-/** Dev/admin preview: ?wynik=zaplac|oczekiwanie|blad|kwota */
+/** Dev preview: ?wynik=zaplac|oczekiwanie|blad|brak|kwota */
 export function parsePaymentOutcomeParam(raw: string | undefined): PaymentOutcomeKey | null {
   if (!raw) return null;
   const map: Record<string, PaymentOutcomeKey> = {
@@ -107,12 +109,12 @@ export function parsePaymentOutcomeParam(raw: string | undefined): PaymentOutcom
     awaiting: "awaiting",
     blad: "error",
     error: "error",
-    brak: "error",
-    none: "error",
+    brak: "none",
+    none: "none",
     kwota: "amount",
     amount: "amount",
-    ponownie: "error",
-    retry: "error",
+    ponownie: "retry",
+    retry: "retry",
   };
   return map[raw.trim().toLowerCase()] ?? null;
 }
@@ -120,8 +122,8 @@ export function parsePaymentOutcomeParam(raw: string | undefined): PaymentOutcom
 const PAID_STATUSES = new Set(["paid", "processing", "shipped", "completed"]);
 
 /**
- * Customer screen: failed / abandoned / retry all look like “pay again”.
- * Cancelled stays a closed order (no pay button).
+ * Paid orders stay paid. Cancelled stays closed. Pending keeps the P24 story
+ * (error / brak wpłaty / przelew) — do not collapse them into one card.
  */
 export function alignOutcomeWithOrderStatus(
   orderStatus: string,
@@ -130,7 +132,6 @@ export function alignOutcomeWithOrderStatus(
   if (PAID_STATUSES.has(orderStatus)) return "paid";
   if (orderStatus === "cancelled") return "none";
   if (candidate === "paid") return "awaiting";
-  if (candidate === "none" || candidate === "retry") return "error";
   return candidate;
 }
 
@@ -138,3 +139,15 @@ export function orderAllowsPayButton(orderStatus: string, outcome: PaymentOutcom
   if (orderStatus !== "pending") return false;
   return PAYMENT_OUTCOMES[outcome].showPayButton;
 }
+
+export const CANCELLED_ORDER_COPY: PaymentOutcomeCopy = {
+  key: "none",
+  sandboxLabel: "Anulowane",
+  eyebrow: "Anulowane",
+  title: "To zamówienie jest anulowane",
+  pageTitle: "Zamówienie anulowane",
+  lead: "Zamówienie nie jest opłacone i nie realizujemy go.",
+  body: "Jeśli to pomyłka, napisz do pracowni.",
+  tone: "neutral",
+  showPayButton: false,
+};

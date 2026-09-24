@@ -52,7 +52,7 @@ export default async function OrderConfirmationPage({
 
   const { canPay } = await resolvePaymentAccess();
 
-  let candidate: PaymentOutcomeKey = "error";
+  let candidate: PaymentOutcomeKey = "none";
 
   if (order?.status === "pending") {
     const reconciled = await reconcilePendingOrderPayment(order);
@@ -64,8 +64,9 @@ export default async function OrderConfirmationPage({
     candidate = "paid";
   }
 
+  // `pay=` is only set when P24 register failed before the customer left our site.
   const payOutcome = outcomeFromPayParam(pay);
-  if (payOutcome && order?.status === "pending") {
+  if (payOutcome && order?.status === "pending" && candidate === "none") {
     candidate = payOutcome;
   }
 
