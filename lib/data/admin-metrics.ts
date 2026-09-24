@@ -10,12 +10,11 @@ import {
 import { ensureOrdersHydrated } from "@/lib/data/order-persist";
 import { ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 import { runtimeStore } from "@/lib/data/runtime-store";
+import { isAbandonedCheckout, isStudioQueueOrder } from "@/lib/orders/studio-queue";
 import type { OrderStatus } from "@/lib/types";
 
-const OPEN_ORDER_STATUSES: OrderStatus[] = ["pending", "paid", "processing"];
-
 export async function getAdminBadges(): Promise<AdminBadges> {
-  await ensureOrdersHydrated();
+  await ensureOrdersHydrated({ force: true });
   await ensureAtelierHydrated();
   const catalog = getAllProducts();
   const lowStock = catalog.filter((product) =>
@@ -24,7 +23,7 @@ export async function getAdminBadges(): Promise<AdminBadges> {
     ),
   ).length;
 
-  const orders = runtimeStore.orders.filter((order) => OPEN_ORDER_STATUSES.includes(order.status)).length;
+  const orders = runtimeStore.orders.filter((order) => isStudioQueueOrder(order)).length;
   const b2b = runtimeStore.b2b.length + runtimeStore.contacts.length;
 
   return { orders, lowStock, b2b };
@@ -75,7 +74,7 @@ export const getDashboardMetrics = cache(async function getDashboardMetrics() {
     draftCount: catalog.length - published.length,
     lowStockProducts,
     outOfStockCount: outOfStock.length,
-    recentOrders: orders.slice(0, 6),
+    recentOrders: orders.filter((order) => !isAbandonedCheckout(order)).slice(0, 6),
     statusCounts,
     tightWorkshops,
     b2bCount: runtimeStore.b2b.length,

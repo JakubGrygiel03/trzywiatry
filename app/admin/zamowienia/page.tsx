@@ -11,6 +11,7 @@ import { runtimeStore } from "@/lib/data/runtime-store";
 import { formatPLN } from "@/lib/format";
 import { orderPaymentDisplay } from "@/lib/p24-methods";
 import { filterOrders, monthWindow } from "@/lib/reports/orders-csv";
+import { isAbandonedCheckout } from "@/lib/orders/studio-queue";
 
 export default async function AdminOrdersPage({
   searchParams,
@@ -25,13 +26,13 @@ export default async function AdminOrdersPage({
   }>;
 }) {
   const query = await searchParams;
-  await ensureOrdersHydrated();
+  await ensureOrdersHydrated({ force: true });
   const q = query.q?.trim() ?? "";
   const period = monthWindow();
   const orders = filterOrders(
-    [...runtimeStore.orders].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    ),
+    [...runtimeStore.orders]
+      .filter((order) => !isAbandonedCheckout(order))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
     q,
   );
   const exportHref = q

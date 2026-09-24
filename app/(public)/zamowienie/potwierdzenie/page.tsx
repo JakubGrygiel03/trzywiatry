@@ -7,7 +7,7 @@ import { ORDER_STATUS_HINTS, ORDER_STATUS_LABELS } from "@/lib/constants";
 import { ensureOrdersHydrated } from "@/lib/data/order-persist";
 import { getOrderByNumber } from "@/lib/data/runtime-store";
 import { formatPLN } from "@/lib/format";
-import { reconcilePendingOrderPayment } from "@/lib/p24-reconcile";
+import { reconcilePendingOrderPayment, stampPendingCheckoutOutcome } from "@/lib/p24-reconcile";
 import { outcomeFromP24ReturnQuery } from "@/lib/p24-session-outcome";
 import {
   alignOutcomeWithOrderStatus,
@@ -89,6 +89,10 @@ export default async function OrderConfirmationPage({
   const outcome = order
     ? alignOutcomeWithOrderStatus(order.status, candidate)
     : candidate;
+
+  if (order?.status === "pending" && (outcome === "none" || outcome === "error" || outcome === "retry")) {
+    order = await stampPendingCheckoutOutcome(order, outcome);
+  }
 
   const copy = order ? PAYMENT_OUTCOMES[outcome] : null;
   const firstName = order?.customerName.split(" ")[0] ?? "";

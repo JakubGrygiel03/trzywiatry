@@ -23,7 +23,7 @@ export function AdminShell({ children, maintenanceMode = false }: AdminShellProp
     pathname.startsWith("/admin/reset-hasla") ||
     pathname.startsWith("/admin/nowe-haslo");
 
-  const badges = useAdminBadges(!isAuthPage);
+  const badges = useAdminBadges(!isAuthPage, pathname);
 
   if (isAuthPage) {
     return <div className="min-h-screen bg-papier">{children}</div>;

@@ -58,14 +58,14 @@ async function markPaid(order: StoredOrder, tx: P24TransactionLookup): Promise<S
 
 async function stampUnpaid(
   order: StoredOrder,
-  tx: P24TransactionLookup,
+  tx: P24TransactionLookup | null,
   outcome: PaymentOutcomeKey,
 ): Promise<ReconcileResult> {
   const stamped = updateOrderStatusInStore(order.id, "pending", undefined, {
     paymentProvider: "p24",
-    paymentMethodId: tx.paymentMethod || undefined,
-    paymentMethodLabel: tx.paymentMethod ? p24MethodLabel(tx.paymentMethod) : undefined,
-    p24SessionId: tx.sessionId,
+    paymentMethodId: tx?.paymentMethod || undefined,
+    paymentMethodLabel: tx?.paymentMethod ? p24MethodLabel(tx.paymentMethod) : undefined,
+    p24SessionId: tx?.sessionId,
     p24Outcome: outcome,
   });
   if (stamped) await flushOrdersSave();
@@ -130,5 +130,13 @@ export async function reconcilePendingOrderPayment(order: StoredOrder): Promise<
   if (isTraditionalTransfer(order.paymentMethodId)) {
     return { order, outcome: "awaiting", transaction: null };
   }
-  return { order, outcome: attempts > 1 ? "retry" : "none", transaction: null };
+  return stampUnpaid(order, null, attempts > 1 ? "retry" : "none");
+}
+
+/** Confirmation return (back from P24) — hide unpaid abandonments from the studio queue. */
+export async function stampPendingCheckoutOutcome(order: StoredOrder, outcome: PaymentOutcomeKey) {
+  if (order.status !== "pending") return order;
+  if (outcome === "paid" || outcome === "awaiting" || outcome === "amount") return order;
+  const stamped = await stampUnpaid(order, null, outcome);
+  return stamped.order;
 }

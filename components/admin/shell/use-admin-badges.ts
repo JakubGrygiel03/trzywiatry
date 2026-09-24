@@ -5,26 +5,17 @@ import type { AdminBadges } from "@/components/admin/shell/admin-nav-config";
 
 const EMPTY: AdminBadges = { orders: 0, lowStock: 0, b2b: 0 };
 
-let cached: AdminBadges | null = null;
-
-export function useAdminBadges(enabled: boolean) {
-  const [badges, setBadges] = useState<AdminBadges>(cached ?? EMPTY);
+export function useAdminBadges(enabled: boolean, pathname = "") {
+  const [badges, setBadges] = useState<AdminBadges>(EMPTY);
 
   useEffect(() => {
     if (!enabled) return;
 
-    if (cached) {
-      setBadges(cached);
-      return;
-    }
-
     let cancelled = false;
-    fetch("/api/admin/badges", { credentials: "same-origin" })
+    fetch("/api/admin/badges", { credentials: "same-origin", cache: "no-store" })
       .then((res) => (res.ok ? res.json() : EMPTY))
       .then((data: AdminBadges) => {
-        if (cancelled) return;
-        cached = data;
-        setBadges(data);
+        if (!cancelled) setBadges(data);
       })
       .catch(() => {
         if (!cancelled) setBadges(EMPTY);
@@ -33,12 +24,7 @@ export function useAdminBadges(enabled: boolean) {
     return () => {
       cancelled = true;
     };
-  }, [enabled]);
+  }, [enabled, pathname]);
 
   return badges;
-}
-
-/** Call after mutations that affect sidebar counts. */
-export function invalidateAdminBadges() {
-  cached = null;
 }
