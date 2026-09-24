@@ -9,6 +9,12 @@ import type { InpostPoint } from "@/lib/inpost-points";
 import { formatLockerLabel } from "@/lib/inpost-points";
 import { cn } from "@/lib/utils";
 
+function mergeLockers(current: InpostPoint[], incoming: InpostPoint[]) {
+  const byName = new Map(current.map((point) => [point.name, point]));
+  for (const point of incoming) byName.set(point.name, point);
+  return [...byName.values()];
+}
+
 export function InpostLockerPicker({
   postalCode,
   city,
@@ -34,9 +40,12 @@ export function InpostLockerPicker({
   function search(
     nextQuery = query,
     coords?: { lat: number; lng: number },
-    mode: "search" | "explore" = "search",
+    mode: "search" | "explore" | "near" = "search",
+    zoom = 14,
   ) {
     const params = new URLSearchParams();
+    params.set("mode", mode);
+    if (mode === "explore") params.set("zoom", String(Math.round(zoom)));
     if (mode !== "explore") {
       if (city.trim()) params.set("city", city.trim());
       if (postalCode.trim()) params.set("postal", postalCode.trim());
@@ -44,7 +53,7 @@ export function InpostLockerPicker({
     if (coords) {
       params.set("lat", String(coords.lat));
       params.set("lng", String(coords.lng));
-      setFocus(mode === "search" ? coords : null);
+      setFocus(mode === "near" ? coords : null);
     } else if (nextQuery.trim()) {
       params.set("q", nextQuery.trim());
       setFocus(null);
@@ -59,12 +68,12 @@ export function InpostLockerPicker({
       .then(async (response) => {
         const payload = (await response.json()) as { items?: InpostPoint[] };
         const items = payload.items ?? [];
-        setPoints(items);
-        if (items.length === 0 && (coords || nextQuery.trim() || city.trim() || postalCode.trim())) {
+        setPoints((current) => (mode === "explore" ? mergeLockers(current, items) : items));
+        if (mode !== "explore" && items.length === 0 && (coords || nextQuery.trim() || city.trim() || postalCode.trim())) {
           setError(
             coords
-              ? "W tym fragmencie mapy nie ma paczkomatu. Przybliż albo wpisz inne miasto."
-              : "Nie znaleziono paczkomatu. Wpisz miasto (np. Warszawa), ulicę albo kod.",
+              ? "W pobliżu nie ma paczkomatu. Przybliż mapę albo wpisz ulicę."
+              : "Nie znaleziono paczkomatu. Wpisz ulicę, miasto albo kod.",
           );
         }
       })
@@ -90,7 +99,12 @@ export function InpostLockerPicker({
     setLocating(true);
     setError("");
     navigator.geolocation.getCurrentPosition(
-      (position) => search(query, { lat: position.coords.latitude, lng: position.coords.longitude }),
+      (position) =>
+        search(
+          query,
+          { lat: position.coords.latitude, lng: position.coords.longitude },
+          "near",
+        ),
       () => {
         setLocating(false);
         setError("Nie udało się pobrać lokalizacji. Wpisz ulicę, miasto albo kod pocztowy.");
@@ -115,7 +129,7 @@ export function InpostLockerPicker({
           Paczkomat InPost <span className="text-czerwony">*</span>
         </Label>
         <p className="mt-1 text-xs text-szary">
-          Mapa obejmuje całą Polskę — przesuń i przybliż, albo wpisz miasto (Warszawa, Kraków, Gdańsk…).
+          Z daleka widać grupki z liczbą paczkomatów w całym kraju. Przybliż albo kliknij kółko — wtedy wychodzą pojedyncze punkty.
         </p>
       </div>
 
@@ -129,7 +143,7 @@ export function InpostLockerPicker({
               search(query);
             }
           }}
-          placeholder="Miasto lub ulica, np. Gdańsk, Targ Sienny, Warszawa"
+          placeholder="Miasto lub ulica, np. Gdańsk, Targ Sienny"
           className="min-w-0"
         />
         <Button type="button" variant="secondary" onClick={() => search(query)}>
@@ -173,7 +187,7 @@ export function InpostLockerPicker({
               ) : null}
               {!loading && points.length === 0 && !error ? (
                 <li className="px-1 py-3 text-sm text-szary">
-                  Przybliż mapę albo wpisz miasto — paczkomaty są w całej Polsce.
+                  Kliknij Najbliższe albo wpisz miasto. Oddalona mapa pokazuje grupki, przybliżona — konkretne paczkomaty.
                 </li>
               ) : null}
               {error ? <li className="px-1 py-3 text-sm text-czerwony">{error}</li> : null}
@@ -214,12 +228,16 @@ export function InpostLockerPicker({
             focus={focus}
             fit={fit}
             onSelect={selectPoint}
+            onCity={(cityName, center) => {
+              setQuery(cityName);
+              search(cityName, center, "search");
+            }}
             onIdle={(center, zoom) => {
-              if (zoom < 8) return;
+              if (zoom < 15) return;
               window.clearTimeout(exploreTimer.current);
               exploreTimer.current = window.setTimeout(() => {
-                search(query, center, "explore");
-              }, 500);
+                search(query, center, "explore", zoom);
+              }, 400);
             }}
           />
         </div>
