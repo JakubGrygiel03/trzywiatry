@@ -61,17 +61,20 @@ export type PaymentMethodBucket =
 
 /** Method 136 — money can sit in the bank until the studio marks the order paid. */
 export const P24_TRADITIONAL_TRANSFER = 136;
+/** Sandbox/live “Przekaz tradycyjny” from GET /payment/methods. */
+const P24_TRADITIONAL_TRANSFER_ALT = 178;
 
 export function isTraditionalTransfer(methodId: number | undefined | null) {
-  return methodId === P24_TRADITIONAL_TRANSFER;
+  return methodId === P24_TRADITIONAL_TRANSFER || methodId === P24_TRADITIONAL_TRANSFER_ALT;
 }
 
-/** Bank transfer / PayPo / instalments — money can arrive later. */
+/**
+ * Only methods that actually wait for a bank credit.
+ * Do not sniff the fallback label `Przelewy24 (#id)` — “przelewy24” contains “przelew”,
+ * so sandbox “Błąd płatności” (method 280, status 0) was mapped as awaiting.
+ */
 export function isDelayedPaymentMethod(methodId: number | undefined | null) {
-  if (methodId == null || methodId === 0) return false;
-  if (isTraditionalTransfer(methodId)) return true;
-  const label = p24MethodLabel(methodId).toLowerCase();
-  return label.includes("przelew") || label.includes("paypo") || label.includes("rat");
+  return isTraditionalTransfer(methodId);
 }
 
 export function p24MethodLabel(methodId: number | undefined | null): string {
@@ -86,7 +89,8 @@ export function paymentMethodBucket(
 ): PaymentMethodBucket {
   if (status === "pending") return "Oczekuje";
   if (status === "cancelled") return "Bez płatności online";
-  const t = (label ?? "").toLowerCase();
+  const raw = (label ?? "").toLowerCase();
+  const t = raw.replace(/przelewy24/g, "").trim();
   if (t.includes("blik")) return "BLIK";
   if (t.includes("apple")) return "Apple Pay";
   if (t.includes("google")) return "Google Pay";
@@ -97,7 +101,7 @@ export function paymentMethodBucket(
   if (t.includes("przelew") || t.includes("transfer") || t.includes("paypo") || t.includes("rat")) {
     return "Przelew online";
   }
-  if (provider === "p24" || t.includes("przelewy24")) return "Inne";
+  if (provider === "p24" || raw.includes("przelewy24")) return "Inne";
   return "Bez płatności online";
 }
 

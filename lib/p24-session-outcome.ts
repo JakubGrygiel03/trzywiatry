@@ -20,10 +20,10 @@ export function outcomeFromUnpaidSnapshot(
   tx: P24OutcomeSnapshot,
   attemptCount: number,
 ): PaymentOutcomeKey {
-  // Sandbox “Błąd płatności” + refunds.
+  // Refunds. Sandbox “Błąd płatności” is not this — it is status 0 + method 280.
   if (tx.status === 3) return "error";
 
-  // Sandbox “Oczekiwanie na wpłatę”: funds not captured, delayed channel.
+  // Status 1 = P24 advance / pending merchant verify. 136/178 = traditional transfer.
   if (tx.status === 1 || isDelayedPaymentMethod(tx.paymentMethod)) return "awaiting";
 
   const hasMethod = Boolean(tx.paymentMethod);

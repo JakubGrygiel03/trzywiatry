@@ -90,7 +90,7 @@ async function settleCapturedPayment(
     amount: order.totalAmountInCents,
   });
   if (!verified) {
-    // Status 1 + delayed / no method = sandbox “Oczekiwanie”. Instant method = “Błąd płatności”.
+    // Status 1 + traditional / no method = “Oczekiwanie”. Unknown/instant method (280) = “Błąd”.
     if (tx.status === 2) return stampUnpaid(order, tx, "error");
     if (!tx.paymentMethod || isDelayedPaymentMethod(tx.paymentMethod)) {
       return stampUnpaid(order, tx, "awaiting");
