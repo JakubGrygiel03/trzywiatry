@@ -128,9 +128,44 @@ export function mergeNewsletterSnapshot(incoming: { newsletter?: string[]; newsl
 }
 
 /**
- * Recreate a coupon row only when the code carries a valid HMAC.
- * Random TW-XXXXXX guesses fail the checksum and never get −15%.
+ * Pre-HMAC welcome mails (TW-XXXXXX without checksum) never hit the store if
+ * the isolate died before save. Bind the typed code to the checkout e-mail.
  */
+export function adoptLegacyMailedCoupon(rawCode: string, email?: string) {
+  const code = normalizeCouponCode(rawCode);
+  const emailKey = email ? normalizeCouponEmail(email) : "";
+  if (!emailKey || !isMintedNewsletterCode(code)) return null;
+  if (isSignedNewsletterCode(code)) return null;
+
+  const existing = findCouponByCode(code);
+  if (existing) {
+    if (existing.email && existing.email !== emailKey) return null;
+    if (!existing.email) existing.email = emailKey;
+    rememberNewsletterEmail(emailKey);
+    return existing;
+  }
+
+  const owned = findCouponByEmail(emailKey);
+  if (owned) {
+    if (owned.isUsed) return owned;
+    owned.code = code;
+    rememberNewsletterEmail(emailKey);
+    return owned;
+  }
+
+  const coupon: NewsletterCoupon = {
+    id: crypto.randomUUID(),
+    code,
+    email: emailKey,
+    createdAt: new Date().toISOString(),
+    isUsed: false,
+  };
+  coupons().push(coupon);
+  rememberNewsletterEmail(emailKey);
+  return coupon;
+}
+
+/** Recreate a coupon row only when the code carries a valid HMAC. */
 export function materializeSignedCoupon(rawCode: string, email?: string) {
   const code = normalizeCouponCode(rawCode);
   if (!isMintedNewsletterCode(code) || !isSignedNewsletterCode(code)) return null;
@@ -210,7 +245,10 @@ export function resolveCheckoutDiscount(
   if (!typed) return { ok: true, amountCents: 0, unique: false };
 
   const code = normalizeCouponCode(typed);
-  const unique = findCouponByCode(code) ?? materializeSignedCoupon(code, customerEmail);
+  const unique =
+    findCouponByCode(code) ??
+    materializeSignedCoupon(code, customerEmail) ??
+    adoptLegacyMailedCoupon(code, customerEmail);
   if (unique) {
     unlockIfStale(unique, customerEmail);
     if (unique.isUsed) {
@@ -225,6 +263,13 @@ export function resolveCheckoutDiscount(
   const campaign = (campaignPromo ?? "").trim().toUpperCase();
   if (campaign && code === campaign) {
     return { ok: true, amountCents: discountAmountFromGoods(goodsCents), code: campaign, unique: false };
+  }
+
+  if (isMintedNewsletterCode(code) && !customerEmail?.trim()) {
+    return {
+      ok: false,
+      message: "Wpisz najpierw e-mail z newslettera, potem ten kod z maila — wtedy go przypiszemy.",
+    };
   }
 
   const owned = customerEmail ? findCouponByEmail(customerEmail) : undefined;
