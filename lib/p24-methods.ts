@@ -66,6 +66,14 @@ export function isTraditionalTransfer(methodId: number | undefined | null) {
   return methodId === P24_TRADITIONAL_TRANSFER;
 }
 
+/** Bank transfer / PayPo / instalments — money can arrive later. */
+export function isDelayedPaymentMethod(methodId: number | undefined | null) {
+  if (methodId == null || methodId === 0) return false;
+  if (isTraditionalTransfer(methodId)) return true;
+  const label = p24MethodLabel(methodId).toLowerCase();
+  return label.includes("przelew") || label.includes("paypo") || label.includes("rat");
+}
+
 export function p24MethodLabel(methodId: number | undefined | null): string {
   if (methodId == null || methodId === 0) return "Przelewy24";
   return KNOWN_METHODS[methodId] ?? `Przelewy24 (#${methodId})`;

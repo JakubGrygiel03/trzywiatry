@@ -16,6 +16,7 @@ export function PaymentOutcomePanel({
   orderStatus,
   orderNumber,
   orderId,
+  attemptCount = 1,
   canPay,
   mailFailed,
   customerEmail,
@@ -24,6 +25,7 @@ export function PaymentOutcomePanel({
   orderStatus: OrderStatus;
   orderNumber: string;
   orderId: string;
+  attemptCount?: number;
   canPay: boolean;
   mailFailed: boolean;
   customerEmail: string;
@@ -43,6 +45,7 @@ export function PaymentOutcomePanel({
 
       {payEnabled ? (
         <PayP24Button
+          key={`${orderId}-${attemptCount}-${outcome}`}
           orderNumber={orderNumber}
           orderId={orderId}
           label={copy.payLabel ?? "Zapłać teraz"}
@@ -69,6 +72,8 @@ export function PaymentOutcomePanel({
           <>Potwierdzenie płatności wysłaliśmy na {customerEmail}. Status zamówienia zobaczysz też w </>
         ) : outcome === "awaiting" ? (
           <>Zapis zamówienia jest na {customerEmail}. Jak zobaczymy wpłatę, status zmieni się w </>
+        ) : outcome === "retry" ? (
+          <>Zapis zamówienia jest na {customerEmail}. Nowa płatność zaktualizuje status w </>
         ) : outcome === "none" ? (
           <>Zapis zamówienia wysłaliśmy na {customerEmail}. Wpłaty jeszcze nie było — status w </>
         ) : (

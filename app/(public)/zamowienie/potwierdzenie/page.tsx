@@ -8,6 +8,7 @@ import { ensureOrdersHydrated } from "@/lib/data/order-persist";
 import { getOrderByNumber } from "@/lib/data/runtime-store";
 import { formatPLN } from "@/lib/format";
 import { reconcilePendingOrderPayment } from "@/lib/p24-reconcile";
+import { outcomeFromP24ReturnQuery } from "@/lib/p24-session-outcome";
 import {
   alignOutcomeWithOrderStatus,
   PAYMENT_OUTCOMES,
@@ -30,21 +31,25 @@ function tileAccent(outcome: PaymentOutcomeKey) {
   if (outcome === "paid") return "border-l-[3px] border-l-czerwony";
   if (outcome === "awaiting") return "border-l-[3px] border-l-ceglany";
   if (outcome === "error" || outcome === "amount") return "border-l-[3px] border-l-czerwony";
+  if (outcome === "retry") return "border-l-[3px] border-l-ceglany";
   return "border-l-[3px] border-l-szary";
 }
 
-function outcomeFromPayParam(pay: string | undefined): PaymentOutcomeKey | null {
-  if (!pay) return null;
-  if (pay === "auth" || pay === "net" || pay === "0") return "error";
-  return null;
+function firstQuery(value: string | string[] | undefined) {
+  if (Array.isArray(value)) return value[0];
+  return value;
 }
 
 export default async function OrderConfirmationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ order?: string; k?: string; mail?: string; pay?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { order: orderNumber, k, mail, pay } = await searchParams;
+  const raw = await searchParams;
+  const orderNumber = firstQuery(raw.order);
+  const k = firstQuery(raw.k);
+  const mail = firstQuery(raw.mail);
+  const pay = firstQuery(raw.pay);
   await ensureOrdersHydrated({ force: true });
   const record = orderNumber ? getOrderByNumber(orderNumber) : null;
   let order = record && k && record.id === k ? record : null;
@@ -63,10 +68,22 @@ export default async function OrderConfirmationPage({
     candidate = "paid";
   }
 
-  // `pay=` is only set when P24 register failed before the customer left our site.
-  const payOutcome = outcomeFromPayParam(pay);
-  if (payOutcome && order?.status === "pending" && candidate === "none") {
-    candidate = payOutcome;
+  const returnHint = outcomeFromP24ReturnQuery({
+    result: firstQuery(raw.result),
+    error: firstQuery(raw.error),
+    p24_error: firstQuery(raw.p24_error),
+    p24Error: firstQuery(raw.p24Error),
+    status: firstQuery(raw.status),
+    pay,
+  });
+  if (
+    returnHint &&
+    returnHint !== "paid" &&
+    order?.status === "pending" &&
+    candidate !== "paid" &&
+    candidate !== "amount"
+  ) {
+    candidate = returnHint;
   }
 
   const outcome = order
@@ -145,6 +162,7 @@ export default async function OrderConfirmationPage({
                   orderStatus={order.status}
                   orderNumber={order.orderNumber}
                   orderId={order.id}
+                  attemptCount={Number(order.payload.p24AttemptCount ?? 1)}
                   canPay={canPay}
                   mailFailed={mail === "0"}
                   customerEmail={order.customerEmail}

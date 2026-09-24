@@ -4,7 +4,11 @@ import { flushAtelierSave } from "@/lib/data/atelier-persist";
 import { flushOrdersSave } from "@/lib/data/order-persist";
 import { updateOrderStatusInStore } from "@/lib/data/runtime-store";
 import { getP24TransactionBySessionId, verifyP24Transaction, type P24TransactionLookup } from "@/lib/p24";
-import { p24MethodLabel, isTraditionalTransfer } from "@/lib/p24-methods";
+import { p24MethodLabel, isTraditionalTransfer, isDelayedPaymentMethod } from "@/lib/p24-methods";
+import {
+  outcomeFromUnpaidSnapshot,
+  p24AmountMatches,
+} from "@/lib/p24-session-outcome";
 import type { PaymentOutcomeKey } from "@/lib/payment-outcome";
 import { notifyCustomerOrderStatus } from "@/lib/resend";
 import { notifyStudioOrderPaid } from "@/lib/studio-notify";
@@ -16,19 +20,6 @@ export type ReconcileResult = {
   transaction: P24TransactionLookup | null;
 };
 
-/**
- * Unpaid P24 GET (status 0 / 3). Official codes:
- * 0 = no funds yet · 3 = rejected / returned.
- * Sandbox “Oczekiwanie na wpłatę” is 0 with a method — not a failed BLIK.
- */
-function outcomeFromUnpaid(tx: P24TransactionLookup): PaymentOutcomeKey {
-  if (isTraditionalTransfer(tx.paymentMethod)) return "awaiting";
-  if (tx.status === 3) return "error";
-  if (!tx.paymentMethod) return "none";
-  return "awaiting";
-}
-
-/** Only the session we registered. Never guess the order number — leftover P24 tests collide. */
 function latestSessionId(order: StoredOrder) {
   const fromField = order.p24SessionId?.trim();
   const fromPayload =
@@ -36,9 +27,10 @@ function latestSessionId(order: StoredOrder) {
   return fromField || fromPayload || "";
 }
 
-function p24AmountMatches(p24Amount: number, orderCents: number) {
-  if (p24Amount === orderCents) return true;
-  return p24Amount > 0 && p24Amount * 100 === orderCents;
+function attemptCount(order: StoredOrder) {
+  const raw = order.payload.p24AttemptCount;
+  const n = typeof raw === "number" ? raw : Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : 1;
 }
 
 async function lookupSession(sessionId: string) {
@@ -80,10 +72,7 @@ async function stampUnpaid(
   return { order: stamped ?? order, outcome, transaction: tx };
 }
 
-/**
- * Status 1 = funds at P24, merchant verify still pending (sandbox “Zapłać” before webhook).
- * Status 2 = already verified. Traditional transfer stays awaiting for the studio tick.
- */
+/** Status 1/2: Zapłać (verify) vs Oczekiwanie (verify refused) vs Nieprawidłowa kwota. */
 async function settleCapturedPayment(
   order: StoredOrder,
   tx: P24TransactionLookup,
@@ -91,11 +80,9 @@ async function settleCapturedPayment(
   if (isTraditionalTransfer(tx.paymentMethod)) {
     return stampUnpaid(order, tx, "awaiting");
   }
-  const match = p24AmountMatches(tx.amount, order.totalAmountInCents);
-  // Wrong sum is only a “kwota” screen after P24 actually captured funds (status 2).
-  if (!match) {
+  if (!p24AmountMatches(tx.amount, order.totalAmountInCents)) {
     if (tx.status === 2) return { order, outcome: "amount", transaction: tx };
-    return stampUnpaid(order, tx, outcomeFromUnpaid(tx));
+    return stampUnpaid(order, tx, "awaiting");
   }
   const verified = await verifyP24Transaction({
     sessionId: tx.sessionId,
@@ -103,7 +90,12 @@ async function settleCapturedPayment(
     amount: order.totalAmountInCents,
   });
   if (!verified) {
-    return stampUnpaid(order, tx, "awaiting");
+    // Status 1 + delayed / no method = sandbox “Oczekiwanie”. Instant method = “Błąd płatności”.
+    if (tx.status === 2) return stampUnpaid(order, tx, "error");
+    if (!tx.paymentMethod || isDelayedPaymentMethod(tx.paymentMethod)) {
+      return stampUnpaid(order, tx, "awaiting");
+    }
+    return stampUnpaid(order, tx, "error");
   }
   const paid = await markPaid(order, tx);
   if (paid.status !== "paid") {
@@ -113,8 +105,8 @@ async function settleCapturedPayment(
 }
 
 /**
- * After return from Przelewy24: map the latest session to a customer outcome.
- * “Nieprawidłowa kwota” only when P24 reports a captured payment with the wrong sum.
+ * Latest registered session only. Each sandbox button maps to its own screen.
+ * A later “Zapłać ponownie” must not reuse the previous outcome stamp.
  */
 export async function reconcilePendingOrderPayment(order: StoredOrder): Promise<ReconcileResult> {
   if (order.status !== "pending" && order.status !== "cancelled") {
@@ -126,19 +118,17 @@ export async function reconcilePendingOrderPayment(order: StoredOrder): Promise<
 
   const sessionId = latestSessionId(order);
   const tx = sessionId ? await lookupSession(sessionId) : null;
+  const attempts = attemptCount(order);
 
   if (tx) {
     if (tx.status === 1 || tx.status === 2) {
       return settleCapturedPayment(order, tx);
     }
-    return stampUnpaid(order, tx, outcomeFromUnpaid(tx));
+    return stampUnpaid(order, tx, outcomeFromUnpaidSnapshot(tx, attempts));
   }
 
   if (isTraditionalTransfer(order.paymentMethodId)) {
     return { order, outcome: "awaiting", transaction: null };
   }
-  if (order.payload.p24Outcome === "awaiting") {
-    return { order, outcome: "awaiting", transaction: null };
-  }
-  return { order, outcome: "none", transaction: null };
+  return { order, outcome: attempts > 1 ? "retry" : "none", transaction: null };
 }

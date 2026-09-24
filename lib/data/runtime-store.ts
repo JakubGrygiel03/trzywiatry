@@ -527,12 +527,13 @@ export function setOrderP24SessionInStore(id: string, p24SessionId: string): Sto
   if (index < 0) return null;
   const current = runtimeStore.orders[index]!;
   const { p24Outcome: _drop, ...payloadRest } = current.payload;
+  const attempts = Number(current.payload.p24AttemptCount ?? 0) + 1;
   const next: StoredOrder = {
     ...current,
     p24SessionId,
     paymentProvider: current.paymentProvider ?? "p24",
     updatedAt: new Date().toISOString(),
-    payload: { ...payloadRest, p24SessionId },
+    payload: { ...payloadRest, p24SessionId, p24AttemptCount: attempts },
   };
   runtimeStore.orders[index] = next;
   return next;

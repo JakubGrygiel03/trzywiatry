@@ -1,6 +1,6 @@
 /**
- * Customer screens after Przelewy24. Three unpaid stories must not share copy:
- * error = gateway rejected BLIK/card · none = closed the window · awaiting = bank transfer.
+ * Customer screens after Przelewy24. Each sandbox button is its own story.
+ * Zapłać · Oczekiwanie na wpłatę · Błąd płatności · Brak wpłaty · Nieprawidłowa kwota · Zapłać ponownie
  */
 export const PAYMENT_OUTCOME_KEYS = [
   "paid",
@@ -57,8 +57,8 @@ export const PAYMENT_OUTCOMES: Record<PaymentOutcomeKey, PaymentOutcomeCopy> = {
     eyebrow: "Nie przeszło",
     title: "Nie udało się zapłacić",
     pageTitle: "Nie udało się zapłacić",
-    lead: "BLIK albo karta nie zadziałała. Zamówienie jest zapisane.",
-    body: "Nic nie powinno zejść z konta. Możesz spróbować inną metodą albo napisać, jeśli widzisz obciążenie.",
+    lead: "BLIK albo karta nie zadziałała. Zamówienie jest zapisane — nic nie powinno zejść z konta.",
+    body: "Otworzymy nową formatkę Przelewy24. Tamta próba jest zamknięta, ta będzie na tę samą kwotę.",
     tone: "error",
     showPayButton: true,
     payLabel: "Spróbuj inną metodą",
@@ -90,14 +90,14 @@ export const PAYMENT_OUTCOMES: Record<PaymentOutcomeKey, PaymentOutcomeCopy> = {
   retry: {
     key: "retry",
     sandboxLabel: "Zapłać ponownie",
-    eyebrow: "Nie dokończono",
-    title: "Nie dokończono płatności",
-    pageTitle: "Nie dokończono płatności",
-    lead: "Zamknąłeś okno Przelewy24 zanim cokolwiek pobraliśmy.",
-    body: "Zamówienie czeka w pracowni. Możesz zapłacić teraz.",
+    eyebrow: "Nowa formatka",
+    title: "Zapłać ponownie",
+    pageTitle: "Zapłać ponownie",
+    lead: "Poprzednia płatność jest zamknięta. Otworzymy nową formatkę Przelewy24.",
+    body: "Nic nie schodzi z konta za tamten krok. Nowa sesja jest na kwotę tego zamówienia — BLIK, karta albo przelew.",
     tone: "neutral",
     showPayButton: true,
-    payLabel: "Zapłać teraz",
+    payLabel: "Zapłać ponownie",
   },
 };
 
@@ -114,8 +114,8 @@ export function parsePaymentOutcomeParam(raw: string | undefined): PaymentOutcom
     none: "none",
     kwota: "amount",
     amount: "amount",
-    ponownie: "none",
-    retry: "none",
+    ponownie: "retry",
+    retry: "retry",
   };
   return map[raw.trim().toLowerCase()] ?? null;
 }
@@ -129,7 +129,6 @@ export function alignOutcomeWithOrderStatus(
   if (PAID_STATUSES.has(orderStatus)) return "paid";
   if (orderStatus === "cancelled") return "none";
   if (candidate === "paid") return "awaiting";
-  if (candidate === "retry") return "none";
   return candidate;
 }
 
