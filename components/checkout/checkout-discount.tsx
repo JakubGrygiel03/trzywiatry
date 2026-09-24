@@ -107,7 +107,7 @@ export function CheckoutDiscount({
         <p className="text-xs text-czerwony">{error}</p>
       ) : (
         <p className="text-xs text-czarny/45">
-          Wpisz kod z maila i ten sam e-mail co przy zapisie, potem Zastosuj.
+          Wpisz kod z maila (TW-XXXXXX) i kliknij Zastosuj — od razu zobaczysz −15%.
         </p>
       )}
     </div>

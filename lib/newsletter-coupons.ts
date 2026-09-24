@@ -123,29 +123,27 @@ export function mergeNewsletterSnapshot(incoming: { newsletter?: string[]; newsl
   runtimeStore.newsletter = [...emails];
 }
 
-function isSubscribed(email: string) {
-  const key = normalizeCouponEmail(email);
-  return runtimeStore.newsletter.some((item) => normalizeCouponEmail(item) === key);
-}
-
 /**
- * If the welcome e-mail went out but the coupon row was overwritten, bind the
- * typed TW-XXXXXX back to that subscriber. Does not invent codes for strangers.
+ * A mailed TW-XXXXXX is the secret. If the row was lost on Vercel, recreate it
+ * so checkout can apply −15% without requiring the subscriber list.
  */
-export function restoreNewsletterCodeForSubscriber(email: string, rawCode: string) {
+export function ensureMintedCoupon(rawCode: string, email?: string) {
   const code = normalizeCouponCode(rawCode);
-  if (!isMintedNewsletterCode(code) || !isSubscribed(email)) return null;
+  if (!isMintedNewsletterCode(code)) return null;
   const existing = findCouponByCode(code);
-  if (existing) return existing;
-  if (findCouponByEmail(email)) return null;
+  if (existing) {
+    if (email && !existing.email) existing.email = normalizeCouponEmail(email);
+    return existing;
+  }
   const coupon: NewsletterCoupon = {
     id: crypto.randomUUID(),
     code,
-    email: normalizeCouponEmail(email),
+    email: email ? normalizeCouponEmail(email) : "",
     createdAt: new Date().toISOString(),
     isUsed: false,
   };
   coupons().push(coupon);
+  if (email) rememberNewsletterEmail(email);
   return coupon;
 }
 
@@ -184,11 +182,7 @@ export function resolveCheckoutDiscount(
   if (!typed) return { ok: true, amountCents: 0, unique: false };
 
   const code = normalizeCouponCode(typed);
-  if (customerEmail) {
-    restoreNewsletterCodeForSubscriber(customerEmail, code);
-  }
-
-  const unique = findCouponByCode(code);
+  const unique = findCouponByCode(code) ?? ensureMintedCoupon(code, customerEmail);
   if (unique) {
     if (unique.isUsed) {
       return { ok: false, message: "Ten kod rabatowy został już wykorzystany." };
@@ -202,13 +196,6 @@ export function resolveCheckoutDiscount(
   const campaign = (campaignPromo ?? "").trim().toUpperCase();
   if (campaign && code === campaign) {
     return { ok: true, amountCents: discountAmountFromGoods(goodsCents), code: campaign, unique: false };
-  }
-
-  if (customerEmail && findCouponByEmail(customerEmail)) {
-    return {
-      ok: false,
-      message: "Ten kod nie pasuje do kodu wysłanego na ten e-mail. Sprawdź pierwszego maila z pracowni.",
-    };
   }
 
   return { ok: false, message: "Nieprawidłowy kod rabatowy. Sprawdź, czy wpisujesz go tak, jak w mailu." };
