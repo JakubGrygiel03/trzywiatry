@@ -426,6 +426,7 @@ export function updateOrderStatusInStore(
     paymentMethodLabel?: string;
     paymentProvider?: StoredOrder["paymentProvider"];
     p24SessionId?: string;
+    p24Outcome?: string;
   },
 ): StoredOrder | null {
   const index = runtimeStore.orders.findIndex((order) => order.id === id);
@@ -469,6 +470,7 @@ export function updateOrderStatusInStore(
         : {}),
       ...(payment?.paymentId ? { paymentId: payment.paymentId } : {}),
       ...(payment?.p24SessionId ? { p24SessionId: payment.p24SessionId } : {}),
+      ...(payment?.p24Outcome ? { p24Outcome: payment.p24Outcome } : {}),
     },
   };
   runtimeStore.orders[index] = next;

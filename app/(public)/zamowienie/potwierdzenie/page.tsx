@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ClearCartOnMount } from "@/components/checkout/clear-cart-on-mount";
 import { PaymentOutcomePanel } from "@/components/checkout/payment-outcome-panel";
-import { Container, SectionHeading } from "@/components/ui/badge";
+import { Badge, Container, SectionHeading } from "@/components/ui/badge";
 import { ORDER_STATUS_HINTS, ORDER_STATUS_LABELS } from "@/lib/constants";
 import { ensureOrdersHydrated } from "@/lib/data/order-persist";
 import { getOrderByNumber } from "@/lib/data/runtime-store";
@@ -26,14 +26,17 @@ function orderLead(orderNumber: string, sentence: string) {
   return `Numer ${orderNumber} · ${sentence.trim()}`;
 }
 
+function summaryChipTone(outcome: PaymentOutcomeKey): "stone" | "clay" | "sold" | "low" {
+  if (outcome === "paid") return "clay";
+  if (outcome === "awaiting") return "low";
+  if (outcome === "error" || outcome === "amount") return "sold";
+  return "stone";
+}
+
 function outcomeFromPayParam(pay: string | undefined): PaymentOutcomeKey | null {
   if (!pay) return null;
   if (pay === "auth" || pay === "net" || pay === "0") return "error";
   return null;
-}
-
-function pendingLead(outcome: PaymentOutcomeKey) {
-  return PAYMENT_OUTCOMES[outcome].lead;
 }
 
 function pendingSummaryLabel(outcome: PaymentOutcomeKey) {
@@ -88,10 +91,9 @@ export default async function OrderConfirmationPage({
     ? orderNumber
       ? `Szukaliśmy zamówienia ${orderNumber}, ale nie udało się go odczytać. Sprawdź maila albo konto.`
       : "Po płatności wróć linkiem z maila albo zaloguj się na konto."
-    : orderLead(
-        order.orderNumber,
-        order.status === "pending" ? pendingLead(outcome) : ORDER_STATUS_HINTS[order.status],
-      );
+    : order.status === "pending"
+      ? `Numer ${order.orderNumber}`
+      : orderLead(order.orderNumber, ORDER_STATUS_HINTS[order.status]);
 
   return (
     <div className="py-14 md:py-20">
@@ -107,11 +109,13 @@ export default async function OrderConfirmationPage({
           <>
             <ClearCartOnMount />
             <div className="space-y-4 rounded-[28px] bg-krem p-6">
-              <p className="font-heading text-sm uppercase tracking-[0.14em] text-czerwony">
-                {order.status === "pending"
-                  ? pendingSummaryLabel(outcome)
-                  : ORDER_STATUS_LABELS[order.status]}
-              </p>
+              {order.status === "pending" ? (
+                <Badge tone={summaryChipTone(outcome)}>{pendingSummaryLabel(outcome)}</Badge>
+              ) : (
+                <p className="font-heading text-sm uppercase tracking-[0.14em] text-czerwony">
+                  {ORDER_STATUS_LABELS[order.status]}
+                </p>
+              )}
               <ul className="space-y-2 text-sm">
                 {order.items.map((item) => (
                   <li key={`${item.variantId}-${item.quantity}`} className="flex justify-between gap-3">

@@ -1,6 +1,6 @@
 /**
- * Three unpaid stories after Przelewy24, plus paid / wrong amount:
- * error = failed BLIK/card · none = closed the window · awaiting = bank transfer.
+ * Customer screens after Przelewy24. Three unpaid stories must not share copy:
+ * error = gateway rejected BLIK/card · none = closed the window · awaiting = bank transfer.
  */
 export const PAYMENT_OUTCOME_KEYS = [
   "paid",
@@ -24,6 +24,7 @@ export type PaymentOutcomeCopy = {
   tone: "ok" | "wait" | "warn" | "error" | "neutral";
   showPayButton: boolean;
   payLabel?: string;
+  showBankAccount?: boolean;
 };
 
 export const PAYMENT_OUTCOMES: Record<PaymentOutcomeKey, PaymentOutcomeCopy> = {
@@ -41,34 +42,35 @@ export const PAYMENT_OUTCOMES: Record<PaymentOutcomeKey, PaymentOutcomeCopy> = {
   awaiting: {
     key: "awaiting",
     sandboxLabel: "Oczekiwanie na wpłatę",
-    eyebrow: "Oczekiwanie na przelew",
-    title: "Czekamy, aż pieniądze dojdą",
+    eyebrow: "Przelew",
+    title: "Nie płać drugi raz",
     pageTitle: "Czekamy na przelew",
-    lead: "Wybrałeś przelew. Pracownia oznaczy zamówienie jako opłacone, gdy wpłata będzie na koncie.",
-    body: "Nie płać drugi raz i nie odświeżaj tej strony w kółko. Status sprawdzisz na koncie — jak oznaczymy wpłatę, przyjdzie mail.",
+    lead: "Wybrałeś przelew tradycyjny — to nie jest błąd płatności.",
+    body: "Pieniądze idą z banku na konto pracowni. Jak je zobaczymy, odhaczymy „Opłacone”. Status sprawdzisz na koncie i w mailu. Nie odświeżaj tej strony i nie płać ponownie.",
     tone: "wait",
     showPayButton: false,
+    showBankAccount: true,
   },
   error: {
     key: "error",
     sandboxLabel: "Błąd płatności",
-    eyebrow: "Błąd płatności",
-    title: "Płatność nie przeszła",
-    pageTitle: "Płatność nie przeszła",
-    lead: "BLIK, karta albo przelew online nie doszły do skutku. Zamówienie jest zapisane.",
-    body: "Nic nie powinno zejść z konta. Zapłać ponownie poniżej — albo napisz do pracowni, jeśli widzisz obciążenie.",
+    eyebrow: "Błąd",
+    title: "BLIK albo karta nie przeszły",
+    pageTitle: "Błąd płatności",
+    lead: "Bramka odrzuciła tę próbę. Zamówienie jest zapisane.",
+    body: "To nie jest przelew w drodze i nie brak kliknięcia „zapłać”. Metoda nie zadziałała. Nic nie powinno zejść z konta — spróbuj inną metodą albo napisz, jeśli widzisz obciążenie.",
     tone: "error",
     showPayButton: true,
-    payLabel: "Zapłać ponownie",
+    payLabel: "Spróbuj inną metodą",
   },
   none: {
     key: "none",
     sandboxLabel: "Brak wpłaty",
     eyebrow: "Brak wpłaty",
-    title: "Nie dokończyłeś płatności",
+    title: "Okno płatności zostało zamknięte",
     pageTitle: "Brak wpłaty",
-    lead: "Okno Przelewy24 zamknęło się, zanim pieniądze zeszły. Zamówienie czeka w pracowni.",
-    body: "Nic nie pobraliśmy. Możesz zapłacić teraz — BLIK, karta albo przelew.",
+    lead: "Nie wybrano zapłaty. Zamówienie czeka w pracowni.",
+    body: "Zamknąłeś Przelewy24 zanim cokolwiek pobraliśmy. To nie błąd BLIK-a i nie przelew w banku — po prostu nie było wpłaty. Możesz zapłacić teraz.",
     tone: "neutral",
     showPayButton: true,
     payLabel: "Zapłać teraz",
@@ -77,29 +79,28 @@ export const PAYMENT_OUTCOMES: Record<PaymentOutcomeKey, PaymentOutcomeCopy> = {
     key: "amount",
     sandboxLabel: "Nieprawidłowa kwota",
     eyebrow: "Inna kwota",
-    title: "Wpłata nie zgadza się z zamówieniem",
+    title: "Wpłata nie zgadza się z koszykiem",
     pageTitle: "Kwota się nie zgadza",
-    lead: "Na płatności jest inna suma niż w koszyku, więc nie oznaczamy zamówienia jako opłaconego.",
-    body: "Paczki nie wysyłamy. Zapłać ponownie poprawną kwotą albo napisz do pracowni — sprawdzimy przelew.",
+    lead: "Na płatności jest inna suma niż w zamówieniu.",
+    body: "Nie oznaczamy tego jako opłacone. Zapłać ponownie poprawną kwotą albo napisz do pracowni.",
     tone: "warn",
     showPayButton: true,
-    payLabel: "Zapłać ponownie",
+    payLabel: "Zapłać poprawną kwotą",
   },
   retry: {
     key: "retry",
     sandboxLabel: "Zapłać ponownie",
-    eyebrow: "Dokończ płatność",
-    title: "Poprzednia próba się nie skończyła",
-    pageTitle: "Dokończ płatność",
-    lead: "Zamówienie czeka. Możesz otworzyć Przelewy24 jeszcze raz.",
-    body: "Wejdź ponownie do płatności i wybierz BLIK, kartę albo przelew.",
+    eyebrow: "Brak wpłaty",
+    title: "Okno płatności zostało zamknięte",
+    pageTitle: "Brak wpłaty",
+    lead: "Nie wybrano zapłaty. Zamówienie czeka w pracowni.",
+    body: "Zamknąłeś Przelewy24 zanim cokolwiek pobraliśmy. Możesz zapłacić teraz.",
     tone: "neutral",
     showPayButton: true,
-    payLabel: "Zapłać ponownie",
+    payLabel: "Zapłać teraz",
   },
 };
 
-/** Dev preview: ?wynik=zaplac|oczekiwanie|blad|brak|kwota */
 export function parsePaymentOutcomeParam(raw: string | undefined): PaymentOutcomeKey | null {
   if (!raw) return null;
   const map: Record<string, PaymentOutcomeKey> = {
@@ -113,18 +114,14 @@ export function parsePaymentOutcomeParam(raw: string | undefined): PaymentOutcom
     none: "none",
     kwota: "amount",
     amount: "amount",
-    ponownie: "retry",
-    retry: "retry",
+    ponownie: "none",
+    retry: "none",
   };
   return map[raw.trim().toLowerCase()] ?? null;
 }
 
 const PAID_STATUSES = new Set(["paid", "processing", "shipped", "completed"]);
 
-/**
- * Paid orders stay paid. Cancelled stays closed. Pending keeps the P24 story
- * (error / brak wpłaty / przelew) — do not collapse them into one card.
- */
 export function alignOutcomeWithOrderStatus(
   orderStatus: string,
   candidate: PaymentOutcomeKey,
@@ -132,6 +129,7 @@ export function alignOutcomeWithOrderStatus(
   if (PAID_STATUSES.has(orderStatus)) return "paid";
   if (orderStatus === "cancelled") return "none";
   if (candidate === "paid") return "awaiting";
+  if (candidate === "retry") return "none";
   return candidate;
 }
 

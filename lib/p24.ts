@@ -257,6 +257,6 @@ export async function getP24TransactionBySessionId(
 }
 
 export function isP24TransactionPaid(status: number) {
-  // P24: 0 = no payment yet; 1 / 2 = paid (settled or awaiting merchant verify).
-  return status === 1 || status === 2;
+  // P24: 0 = unpaid / abandoned, 1 = waiting for funds, 2 = settled, 3 = refunded.
+  return status === 2;
 }

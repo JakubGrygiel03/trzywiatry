@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { PayP24Button } from "@/components/checkout/pay-p24-button";
 import { SITE } from "@/lib/constants";
@@ -10,22 +12,22 @@ import {
 import type { OrderStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-type PaymentOutcomeCopyTone = (typeof PAYMENT_OUTCOMES)[PaymentOutcomeKey]["tone"];
+type Tone = (typeof PAYMENT_OUTCOMES)[PaymentOutcomeKey]["tone"];
 
-const TONE_CLASS: Record<PaymentOutcomeCopyTone, string> = {
-  ok: "border-emerald-700/25 bg-emerald-50",
-  wait: "border-ceglany/35 bg-ceglany/10",
-  warn: "border-ceglany/40 bg-krem",
-  error: "border-czerwony/35 bg-czerwony/10",
-  neutral: "border-czarny/12 bg-krem",
+const TONE_CLASS: Record<Tone, string> = {
+  ok: "border-emerald-700/30 bg-emerald-50",
+  wait: "border-ceglany bg-ceglany/15",
+  warn: "border-ceglany/50 bg-krem",
+  error: "border-czerwony bg-czerwony/12",
+  neutral: "border-czarny/20 bg-bialy",
 };
 
-const EYEBROW_CLASS: Record<PaymentOutcomeCopyTone, string> = {
+const EYEBROW_CLASS: Record<Tone, string> = {
   ok: "text-emerald-800",
   wait: "text-czerwony",
   warn: "text-czerwony",
   error: "text-czerwony",
-  neutral: "text-czarny/55",
+  neutral: "text-czarny/50",
 };
 
 export function PaymentOutcomePanel({
@@ -46,22 +48,22 @@ export function PaymentOutcomePanel({
   customerEmail: string;
 }) {
   const copy = orderStatus === "cancelled" ? CANCELLED_ORDER_COPY : PAYMENT_OUTCOMES[outcome];
-  // Hard gate: pay CTA only while order is still pending in our store.
   const payEnabled = orderAllowsPayButton(orderStatus, outcome) && canPay;
 
   return (
     <div className="space-y-4">
-      <div className={cn("space-y-3 rounded-[28px] border p-6", TONE_CLASS[copy.tone])}>
-        <p
-          className={cn(
-            "font-heading text-[11px] uppercase tracking-[0.16em]",
-            EYEBROW_CLASS[copy.tone],
-          )}
-        >
+      <div className={cn("space-y-3 rounded-[28px] border-2 p-6", TONE_CLASS[copy.tone])}>
+        <p className={cn("font-heading text-[11px] uppercase tracking-[0.16em]", EYEBROW_CLASS[copy.tone])}>
           {copy.eyebrow}
         </p>
         <h2 className="font-heading text-xl uppercase tracking-[0.06em] text-czarny">{copy.title}</h2>
-        <p className="text-sm leading-relaxed text-czarny/75">{copy.body}</p>
+        <p className="text-sm leading-relaxed text-czarny/80">{copy.body}</p>
+
+        {copy.showBankAccount ? (
+          <p className="rounded-2xl bg-bialy/80 px-4 py-3 font-heading text-sm tracking-[0.04em] text-czarny">
+            {SITE.bankAccount}
+          </p>
+        ) : null}
 
         {payEnabled ? (
           <PayP24Button
@@ -92,17 +94,12 @@ export function PaymentOutcomePanel({
           <>Potwierdzenie płatności wysłaliśmy na {customerEmail}. Status zamówienia zobaczysz też w </>
         ) : outcome === "awaiting" ? (
           <>
-            Zapis zamówienia wysłaliśmy na {customerEmail}. Jak pracownia oznaczy przelew, status zmieni się w{" "}
+            Zapis zamówienia jest na {customerEmail}. Jak oznaczymy przelew, status zmieni się w{" "}
           </>
         ) : outcome === "none" ? (
-          <>
-            Zapis zamówienia wysłaliśmy na {customerEmail}. Płatności jeszcze nie było — status zobaczysz też w{" "}
-          </>
+          <>Zapis zamówienia wysłaliśmy na {customerEmail}. Wpłaty jeszcze nie było — status w </>
         ) : (
-          <>
-            Zapis zamówienia wysłaliśmy na {customerEmail}. To jeszcze nie jest potwierdzenie płatności — status
-            zobaczysz też w{" "}
-          </>
+          <>Zapis zamówienia wysłaliśmy na {customerEmail}. To nie jest potwierdzenie wpłaty — status w </>
         )}
         <Link href="/konto" className="text-czerwony underline-offset-2 hover:underline">
           koncie

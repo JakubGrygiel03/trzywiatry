@@ -16,12 +16,22 @@ export type ReconcileResult = {
   transaction: P24TransactionLookup | null;
 };
 
-/** Map an unpaid P24 session to a distinct customer screen. */
+/** Map an unpaid P24 session to a distinct customer screen — never collapse these. */
 function outcomeFromUnpaid(tx: P24TransactionLookup): PaymentOutcomeKey {
-  if (tx.status === 3) return "error";
+  // 1 = advance / waiting for funds (sandbox “Oczekiwanie na wpłatę”).
   if (tx.status === 1 || isTraditionalTransfer(tx.paymentMethod)) return "awaiting";
+  // 3 = refunded.
+  if (tx.status === 3) return "error";
+  // 0 and no method chosen = closed the window (sandbox “Brak wpłaty”).
   if (!tx.paymentMethod) return "none";
+  // 0 with a method = BLIK/card attempted and rejected (sandbox “Błąd płatności”).
   return "error";
+}
+
+function storedUnpaidOutcome(order: StoredOrder): PaymentOutcomeKey | null {
+  const raw = order.payload.p24Outcome;
+  if (raw === "awaiting" || raw === "error" || raw === "none" || raw === "amount") return raw;
+  return null;
 }
 
 function sessionCandidates(order: StoredOrder) {
@@ -106,20 +116,17 @@ export async function reconcilePendingOrderPayment(order: StoredOrder): Promise<
 
   if (latestUnpaid) {
     const outcome = outcomeFromUnpaid(latestUnpaid);
-    let next = order;
-    if (outcome === "awaiting" && latestUnpaid.paymentMethod) {
-      const stamped = updateOrderStatusInStore(order.id, "pending", undefined, {
-        paymentProvider: "p24",
-        paymentMethodId: latestUnpaid.paymentMethod,
-        paymentMethodLabel: p24MethodLabel(latestUnpaid.paymentMethod),
-        p24SessionId: latestUnpaid.sessionId,
-      });
-      if (stamped) {
-        next = stamped;
-        await flushOrdersSave();
-      }
-    }
-    return { order: next, outcome, transaction: latestUnpaid };
+    const stamped = updateOrderStatusInStore(order.id, "pending", undefined, {
+      paymentProvider: "p24",
+      paymentMethodId: latestUnpaid.paymentMethod || undefined,
+      paymentMethodLabel: latestUnpaid.paymentMethod
+        ? p24MethodLabel(latestUnpaid.paymentMethod)
+        : undefined,
+      p24SessionId: latestUnpaid.sessionId,
+      p24Outcome: outcome,
+    });
+    if (stamped) await flushOrdersSave();
+    return { order: stamped ?? order, outcome, transaction: latestUnpaid };
   }
   if (settledMismatch) {
     return { order, outcome: "amount", transaction: settledMismatch };
@@ -130,5 +137,7 @@ export async function reconcilePendingOrderPayment(order: StoredOrder): Promise<
   if (isTraditionalTransfer(order.paymentMethodId)) {
     return { order, outcome: "awaiting", transaction: null };
   }
+  const remembered = storedUnpaidOutcome(order);
+  if (remembered) return { order, outcome: remembered, transaction: null };
   return { order, outcome: "none", transaction: null };
 }
