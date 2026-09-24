@@ -113,6 +113,7 @@ export default async function ShopSettingsPage({
             />
           </AdminField>
           <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-czarny/8 bg-krem/40 p-4">
+            <input type="hidden" name="giftWrapEnabled" value="false" />
             <input
               type="checkbox"
               name="giftWrapEnabled"
@@ -123,7 +124,7 @@ export default async function ShopSettingsPage({
             <span className="text-sm">
               <span className="font-medium text-czarny">Pakowanie na prezent w koszyku</span>
               <span className="mt-1 block text-xs text-czarny/45">
-                Po zapisie checkbox znika z koszyka i kasy — nie doliczamy 20 zł. Włącz z powrotem, gdy wrócą pudełka.
+                Po zapisie znika z koszyka i kasy (odśwież sklep). Włącz z powrotem, gdy wrócą pudełka.
               </span>
             </span>
           </label>

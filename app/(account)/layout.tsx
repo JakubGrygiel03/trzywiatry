@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 
 export default async function AccountLayout({ children }: { children: ReactNode }) {
   await connection();
-  await ensureAtelierHydrated();
+  await ensureAtelierHydrated({ force: true });
   const settings = getSettings();
   const announcementHidden = settings.announcementType === "hidden";
 

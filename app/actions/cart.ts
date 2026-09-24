@@ -4,7 +4,7 @@ import { getAllProducts } from "@/lib/data/queries";
 import { ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 
 export async function verifyCartStock(lines: { variantId: string; quantity: number }[]) {
-  await ensureAtelierHydrated();
+  await ensureAtelierHydrated({ force: true });
   const catalog = getAllProducts();
   for (const line of lines) {
     const product = catalog.find((item) => item.variants.some((variant) => variant.id === line.variantId));

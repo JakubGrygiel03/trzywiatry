@@ -13,6 +13,6 @@ export const metadata: Metadata = {
 
 /** Shell is client-side — only page content refetches on navigation. */
 export default async function AdminLayout({ children }: { children: ReactNode }) {
-  await ensureAtelierHydrated();
+  await ensureAtelierHydrated({ force: true });
   return <AdminShell maintenanceMode={getSettings().maintenanceMode}>{children}</AdminShell>;
 }

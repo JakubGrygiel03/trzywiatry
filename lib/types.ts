@@ -72,6 +72,8 @@ export type StudioSettings = {
   giftWrapPriceCents: number;
   /** When false, hide gift wrap in cart and never charge it at checkout. */
   giftWrapEnabled: boolean;
+  /** ISO time of the last admin shop-settings save — used to merge isolates. */
+  settingsUpdatedAt?: string;
   /** When false, hide workshops from nav, home and public /warsztaty. */
   workshopsEnabled: boolean;
   /** Ordered photos for the home hero. Empty = automatic bestsellers. */

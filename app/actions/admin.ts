@@ -13,7 +13,7 @@ import { ADMIN_COOKIE } from "@/lib/admin-session";
 import { assertAdminSession } from "@/lib/admin-guard";
 import { getRuntimeSettings, updateRuntimeSettings, updateOrderStatusInStore } from "@/lib/data/runtime-store";
 import { ensureOrdersHydrated, flushOrdersSave } from "@/lib/data/order-persist";
-import { flushAtelierSave } from "@/lib/data/atelier-persist";
+import { ensureAtelierHydrated, flushAtelierSave } from "@/lib/data/atelier-persist";
 import { defaultStudioSettings } from "@/lib/data/settings";
 import { isAllowedImageSrc } from "@/lib/validations/image-src";
 import type { OrderStatus } from "@/lib/types";
@@ -198,6 +198,7 @@ function parseShopHubImage(raw: unknown, fallback: string) {
 
 export async function saveStudioSettings(formData: FormData) {
   await assertAdminSession();
+  await ensureAtelierHydrated({ force: true });
   const parsed = studioSettingsFormSchema.safeParse({
     announcementType: String(formData.get("announcementType") ?? "promo"),
     announcementText: String(formData.get("announcementText") ?? ""),
@@ -206,8 +207,8 @@ export async function saveStudioSettings(formData: FormData) {
     vacationEnd: String(formData.get("vacationEnd") ?? ""),
     vacationDispatch: String(formData.get("vacationDispatch") ?? ""),
     freeShipping: formData.get("freeShipping"),
-    workshopsEnabled: formData.get("workshopsEnabled") === "true",
-    giftWrapEnabled: formData.get("giftWrapEnabled") === "true",
+    workshopsEnabled: formData.getAll("workshopsEnabled").includes("true"),
+    giftWrapEnabled: formData.getAll("giftWrapEnabled").includes("true"),
     maintenanceMode: formData.get("maintenanceMode") === "true",
   });
   if (!parsed.success) {
@@ -236,6 +237,7 @@ export async function saveStudioSettings(formData: FormData) {
     freeShippingThresholdCents: data.freeShipping > 0 ? data.freeShipping : 30000,
     workshopsEnabled: data.workshopsEnabled,
     giftWrapEnabled: data.giftWrapEnabled,
+    settingsUpdatedAt: new Date().toISOString(),
     maintenanceMode: data.maintenanceMode,
     maintenancePreviewToken: nextToken,
     shopHubUzytkowaImage: parseShopHubImage(

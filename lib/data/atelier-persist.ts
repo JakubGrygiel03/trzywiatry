@@ -5,7 +5,9 @@ import path from "node:path";
 import type { ContentOverlayMap } from "@/lib/cms/content-pages";
 import type { HomeSection } from "@/lib/cms/home-layout";
 import {
+  consumeDirtySettingsKeys,
   getCatalogSeedSignature,
+  getRuntimeSettings,
   runtimeStore,
   setAtelierPersister,
   setCatalogSeedSignature,
@@ -37,7 +39,9 @@ export type AtelierSnapshot = {
 };
 
 let hydratePromise: Promise<void> | null = null;
+let hydratedAt = 0;
 let pendingSave: Promise<boolean> | null = null;
+const HYDRATE_TTL_MS = 5_000;
 
 function loadSnapshot(): AtelierSnapshot | null {
   if (!existsSync(STATE_FILE)) return null;
@@ -50,7 +54,9 @@ function loadSnapshot(): AtelierSnapshot | null {
 }
 
 function applySnapshot(snap: AtelierSnapshot) {
-  if (snap.settings) runtimeStore.settings = { ...runtimeStore.settings, ...snap.settings };
+  if (snap.settings) {
+    runtimeStore.settings = { ...runtimeStore.settings, ...snap.settings };
+  }
   if (Array.isArray(snap.catalog) && snap.catalog.length > 0) runtimeStore.catalog = snap.catalog;
   if (Array.isArray(snap.blogPosts) && snap.blogPosts.length > 0) runtimeStore.blogPosts = snap.blogPosts;
   if (Array.isArray(snap.workshops) && snap.workshops.length > 0) runtimeStore.workshops = snap.workshops;
@@ -72,10 +78,26 @@ function applySnapshot(snap: AtelierSnapshot) {
   if (snap.seedSignature) setCatalogSeedSignature(snap.seedSignature);
 }
 
-function captureSnapshot(): AtelierSnapshot {
+/** Shop flags live only in admin settings — a stale isolate must not turn them back on. */
+function mergeSettingsForSave(local: StudioSettings, remote?: StudioSettings): StudioSettings {
+  const dirty = consumeDirtySettingsKeys();
+  if (!remote) return local;
+  const merged: StudioSettings = { ...remote, ...local };
+  const flags = ["giftWrapEnabled", "workshopsEnabled", "maintenanceMode"] as const;
+  const localAt = local.settingsUpdatedAt ?? "";
+  const remoteAt = remote.settingsUpdatedAt ?? "";
+  for (const key of flags) {
+    if (dirty.has(key)) continue;
+    if (typeof remote[key] !== "boolean") continue;
+    if (!localAt || remoteAt >= localAt) merged[key] = remote[key];
+  }
+  return merged;
+}
+
+function captureSnapshot(remote?: AtelierSnapshot): AtelierSnapshot {
   return {
     seedSignature: getCatalogSeedSignature(),
-    settings: runtimeStore.settings,
+    settings: mergeSettingsForSave(getRuntimeSettings(), remote?.settings),
     catalog: runtimeStore.catalog,
     blogPosts: runtimeStore.blogPosts,
     workshops: runtimeStore.workshops,
@@ -113,9 +135,19 @@ async function hydrate() {
 
 /** Restore catalog after restart — Supabase on Vercel, `.data` locally. */
 export async function ensureAtelierHydrated(options?: { force?: boolean }) {
-  // Warm serverless isolates cache the first hydrate — force before coupons / checkout.
-  if (options?.force || !hydratePromise) {
-    hydratePromise = hydrate();
+  // Warm isolates keep the first snapshot forever — gift wrap / coupons look “stuck”.
+  const stale = Date.now() - hydratedAt > HYDRATE_TTL_MS;
+  if (options?.force || !hydratePromise || stale) {
+    hydratePromise = hydrate().then(
+      () => {
+        hydratedAt = Date.now();
+      },
+      (error) => {
+        hydratePromise = null;
+        hydratedAt = 0;
+        throw error;
+      },
+    );
   }
   await hydratePromise;
 }
@@ -128,7 +160,7 @@ export async function saveAtelierSnapshot() {
       newsletterCoupons: remote.newsletterCoupons,
     });
   }
-  const snap = captureSnapshot();
+  const snap = captureSnapshot(remote ?? undefined);
   const disk = writeDisk(snap);
   const wroteRemote = await writeAtelierState(ATELIER_STATE_KEYS.shop, snap);
   return wroteRemote || (disk && process.env.VERCEL !== "1");

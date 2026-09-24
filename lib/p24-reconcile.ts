@@ -18,33 +18,34 @@ export type ReconcileResult = {
 
 /** Map an unpaid P24 session to a distinct customer screen — never collapse these. */
 function outcomeFromUnpaid(tx: P24TransactionLookup): PaymentOutcomeKey {
-  // 1 = advance / waiting for funds (sandbox “Oczekiwanie na wpłatę”).
+  // 1 = advance / sandbox “Oczekiwanie na wpłatę”.
   if (tx.status === 1 || isTraditionalTransfer(tx.paymentMethod)) return "awaiting";
-  // 3 = refunded.
   if (tx.status === 3) return "error";
-  // 0 and no method chosen = closed the window (sandbox “Brak wpłaty”).
+  // 0 and no method = closed the window (sandbox “Brak wpłaty”).
   if (!tx.paymentMethod) return "none";
-  // 0 with a method = BLIK/card attempted and rejected (sandbox “Błąd płatności”).
+  // 0 with a method = BLIK/card rejected (sandbox “Błąd płatności”).
   return "error";
 }
 
-function storedUnpaidOutcome(order: StoredOrder): PaymentOutcomeKey | null {
-  const raw = order.payload.p24Outcome;
-  if (raw === "awaiting" || raw === "error" || raw === "none" || raw === "amount") return raw;
-  return null;
-}
-
-function sessionCandidates(order: StoredOrder) {
-  return [
-    order.p24SessionId,
-    order.orderNumber,
-    typeof order.payload.p24SessionId === "string" ? order.payload.p24SessionId : undefined,
-  ].filter((value, index, all): value is string => Boolean(value) && all.indexOf(value) === index);
+/** Only the latest register() session. Falling back to orderNumber re-reads the first failed try. */
+function latestSessionId(order: StoredOrder) {
+  const fromField = order.p24SessionId?.trim();
+  const fromPayload =
+    typeof order.payload.p24SessionId === "string" ? order.payload.p24SessionId.trim() : "";
+  return fromField || fromPayload || order.orderNumber;
 }
 
 function p24AmountMatches(p24Amount: number, orderCents: number) {
   if (p24Amount === orderCents) return true;
   return p24Amount > 0 && p24Amount * 100 === orderCents;
+}
+
+async function lookupSession(sessionId: string) {
+  const first = await getP24TransactionBySessionId(sessionId);
+  if (first) return first;
+  // Return from sandbox can beat P24’s GET by a beat.
+  await new Promise((resolve) => setTimeout(resolve, 400));
+  return getP24TransactionBySessionId(sessionId);
 }
 
 async function markPaid(order: StoredOrder, tx: P24TransactionLookup): Promise<StoredOrder> {
@@ -63,6 +64,22 @@ async function markPaid(order: StoredOrder, tx: P24TransactionLookup): Promise<S
   return updated;
 }
 
+async function stampUnpaid(
+  order: StoredOrder,
+  tx: P24TransactionLookup,
+  outcome: PaymentOutcomeKey,
+): Promise<ReconcileResult> {
+  const stamped = updateOrderStatusInStore(order.id, "pending", undefined, {
+    paymentProvider: "p24",
+    paymentMethodId: tx.paymentMethod || undefined,
+    paymentMethodLabel: tx.paymentMethod ? p24MethodLabel(tx.paymentMethod) : undefined,
+    p24SessionId: tx.sessionId,
+    p24Outcome: outcome,
+  });
+  if (stamped) await flushOrdersSave();
+  return { order: stamped ?? order, outcome, transaction: tx };
+}
+
 /**
  * After return from Przelewy24: map the latest session to a customer outcome.
  * “Nieprawidłowa kwota” only when P24 reports a settled payment with the wrong sum.
@@ -75,25 +92,18 @@ export async function reconcilePendingOrderPayment(order: StoredOrder): Promise<
     return { order, outcome: "none", transaction: null };
   }
 
-  let latestUnpaid: P24TransactionLookup | null = null;
-  let settledMismatch: P24TransactionLookup | null = null;
-  let verifyFailed: P24TransactionLookup | null = null;
+  const sessionId = latestSessionId(order);
+  const tx = sessionId ? await lookupSession(sessionId) : null;
 
-  for (const sessionId of sessionCandidates(order)) {
-    const tx = await getP24TransactionBySessionId(sessionId);
-    if (!tx) continue;
-
+  if (tx) {
     const match = p24AmountMatches(tx.amount, order.totalAmountInCents);
 
-    // Status 2 = settled. Traditional transfer still waits for admin to tick “Opłacone”.
     if (tx.status === 2) {
       if (isTraditionalTransfer(tx.paymentMethod)) {
-        latestUnpaid = latestUnpaid ?? tx;
-        continue;
+        return stampUnpaid(order, tx, "awaiting");
       }
       if (!match) {
-        settledMismatch = settledMismatch ?? tx;
-        continue;
+        return { order, outcome: "amount", transaction: tx };
       }
       const verified = await verifyP24Transaction({
         sessionId: tx.sessionId,
@@ -101,8 +111,7 @@ export async function reconcilePendingOrderPayment(order: StoredOrder): Promise<
         amount: order.totalAmountInCents,
       });
       if (!verified) {
-        verifyFailed = verifyFailed ?? tx;
-        continue;
+        return { order, outcome: "error", transaction: tx };
       }
       const paid = await markPaid(order, tx);
       if (paid.status !== "paid") {
@@ -111,33 +120,12 @@ export async function reconcilePendingOrderPayment(order: StoredOrder): Promise<
       return { order: paid, outcome: "paid", transaction: tx };
     }
 
-    latestUnpaid = latestUnpaid ?? tx;
+    return stampUnpaid(order, tx, outcomeFromUnpaid(tx));
   }
 
-  if (latestUnpaid) {
-    const outcome = outcomeFromUnpaid(latestUnpaid);
-    const stamped = updateOrderStatusInStore(order.id, "pending", undefined, {
-      paymentProvider: "p24",
-      paymentMethodId: latestUnpaid.paymentMethod || undefined,
-      paymentMethodLabel: latestUnpaid.paymentMethod
-        ? p24MethodLabel(latestUnpaid.paymentMethod)
-        : undefined,
-      p24SessionId: latestUnpaid.sessionId,
-      p24Outcome: outcome,
-    });
-    if (stamped) await flushOrdersSave();
-    return { order: stamped ?? order, outcome, transaction: latestUnpaid };
-  }
-  if (settledMismatch) {
-    return { order, outcome: "amount", transaction: settledMismatch };
-  }
-  if (verifyFailed) {
-    return { order, outcome: "error", transaction: verifyFailed };
-  }
   if (isTraditionalTransfer(order.paymentMethodId)) {
     return { order, outcome: "awaiting", transaction: null };
   }
-  const remembered = storedUnpaidOutcome(order);
-  if (remembered) return { order, outcome: remembered, transaction: null };
+  // Missing tx after a retry must not show the previous session’s “error” stamp.
   return { order, outcome: "none", transaction: null };
 }

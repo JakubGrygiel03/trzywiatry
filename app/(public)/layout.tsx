@@ -12,9 +12,11 @@ import { ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 import { getSettings } from "@/lib/data/queries";
 import { resolvePaymentAccess } from "@/lib/payment-access";
 
+export const dynamic = "force-dynamic";
+
 export default async function PublicLayout({ children }: { children: ReactNode }) {
   await connection();
-  await ensureAtelierHydrated();
+  await ensureAtelierHydrated({ force: true });
   const settings = getSettings();
   const announcementHidden = settings.announcementType === "hidden";
   const paymentAccess = await resolvePaymentAccess();

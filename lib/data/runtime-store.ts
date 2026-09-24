@@ -266,7 +266,19 @@ export function getRuntimeSettings(): StudioSettings {
   return { ...defaultStudioSettings, ...(runtimeStore.settings ?? {}) };
 }
 
+/** Keys patched in this isolate since the last atelier snapshot write. */
+let dirtySettingsKeys = new Set<keyof StudioSettings>();
+
+export function consumeDirtySettingsKeys() {
+  const keys = dirtySettingsKeys;
+  dirtySettingsKeys = new Set();
+  return keys;
+}
+
 export function updateRuntimeSettings(patch: Partial<StudioSettings>) {
+  for (const key of Object.keys(patch) as (keyof StudioSettings)[]) {
+    dirtySettingsKeys.add(key);
+  }
   runtimeStore.settings = { ...getRuntimeSettings(), ...patch };
   persist();
   return runtimeStore.settings;
@@ -514,12 +526,13 @@ export function setOrderP24SessionInStore(id: string, p24SessionId: string): Sto
   const index = runtimeStore.orders.findIndex((order) => order.id === id);
   if (index < 0) return null;
   const current = runtimeStore.orders[index]!;
+  const { p24Outcome: _drop, ...payloadRest } = current.payload;
   const next: StoredOrder = {
     ...current,
     p24SessionId,
     paymentProvider: current.paymentProvider ?? "p24",
     updatedAt: new Date().toISOString(),
-    payload: { ...current.payload, p24SessionId },
+    payload: { ...payloadRest, p24SessionId },
   };
   runtimeStore.orders[index] = next;
   return next;

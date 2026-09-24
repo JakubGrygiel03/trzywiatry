@@ -208,7 +208,7 @@ export type P24TransactionLookup = {
   orderId: number;
   amount: number;
   currency: string;
-  /** 0 = unpaid, 1/2 = paid (P24 API). */
+  /** 0 unpaid, 1 waiting/advance, 2 settled, 3 refunded. */
   status: number;
   paymentMethod?: number;
 };

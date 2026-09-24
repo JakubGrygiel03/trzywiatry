@@ -44,7 +44,7 @@ export function GiftWrappingCard() {
     if (!giftWrapEnabled && hasGiftWrapping) setGiftWrapping(false);
   }, [giftWrapEnabled, hasGiftWrapping, setGiftWrapping]);
 
-  if (!giftWrapEnabled) return null;
+  if (giftWrapEnabled !== true) return null;
 
   return (
     <div className="space-y-3 rounded-2xl border border-czarny/10 p-4">
