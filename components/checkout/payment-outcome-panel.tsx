@@ -68,7 +68,7 @@ export function PaymentOutcomePanel({
         ) : outcome === "paid" ? (
           <>Potwierdzenie płatności wysłaliśmy na {customerEmail}. Status zamówienia zobaczysz też w </>
         ) : outcome === "awaiting" ? (
-          <>Zapis zamówienia jest na {customerEmail}. Jak oznaczymy przelew, status zmieni się w </>
+          <>Zapis zamówienia jest na {customerEmail}. Jak zobaczymy wpłatę, status zmieni się w </>
         ) : outcome === "none" ? (
           <>Zapis zamówienia wysłaliśmy na {customerEmail}. Wpłaty jeszcze nie było — status w </>
         ) : (

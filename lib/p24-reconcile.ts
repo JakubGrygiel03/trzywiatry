@@ -16,15 +16,16 @@ export type ReconcileResult = {
   transaction: P24TransactionLookup | null;
 };
 
-/** Map an unpaid P24 session to a distinct customer screen — never collapse these. */
+/**
+ * Unpaid P24 GET (status 0 / 3). Official codes:
+ * 0 = no funds yet · 3 = rejected / returned.
+ * Sandbox “Oczekiwanie na wpłatę” is 0 with a method — not a failed BLIK.
+ */
 function outcomeFromUnpaid(tx: P24TransactionLookup): PaymentOutcomeKey {
-  // 1 = advance / sandbox “Oczekiwanie na wpłatę”.
-  if (tx.status === 1 || isTraditionalTransfer(tx.paymentMethod)) return "awaiting";
+  if (isTraditionalTransfer(tx.paymentMethod)) return "awaiting";
   if (tx.status === 3) return "error";
-  // 0 and no method = closed the window (sandbox “Brak wpłaty”).
   if (!tx.paymentMethod) return "none";
-  // 0 with a method = BLIK/card rejected (sandbox “Błąd płatności”).
-  return "error";
+  return "awaiting";
 }
 
 /** Only the latest register() session. Falling back to orderNumber re-reads the first failed try. */
@@ -43,7 +44,6 @@ function p24AmountMatches(p24Amount: number, orderCents: number) {
 async function lookupSession(sessionId: string) {
   const first = await getP24TransactionBySessionId(sessionId);
   if (first) return first;
-  // Return from sandbox can beat P24’s GET by a beat.
   await new Promise((resolve) => setTimeout(resolve, 400));
   return getP24TransactionBySessionId(sessionId);
 }
@@ -81,8 +81,37 @@ async function stampUnpaid(
 }
 
 /**
+ * Status 1 = funds at P24, merchant verify still pending (sandbox “Zapłać” before webhook).
+ * Status 2 = already verified. Traditional transfer stays awaiting for the studio tick.
+ */
+async function settleCapturedPayment(
+  order: StoredOrder,
+  tx: P24TransactionLookup,
+): Promise<ReconcileResult> {
+  if (isTraditionalTransfer(tx.paymentMethod)) {
+    return stampUnpaid(order, tx, "awaiting");
+  }
+  if (!p24AmountMatches(tx.amount, order.totalAmountInCents)) {
+    return { order, outcome: "amount", transaction: tx };
+  }
+  const verified = await verifyP24Transaction({
+    sessionId: tx.sessionId,
+    orderId: tx.orderId,
+    amount: order.totalAmountInCents,
+  });
+  if (!verified) {
+    return stampUnpaid(order, tx, "awaiting");
+  }
+  const paid = await markPaid(order, tx);
+  if (paid.status !== "paid") {
+    return stampUnpaid(order, tx, "awaiting");
+  }
+  return { order: paid, outcome: "paid", transaction: tx };
+}
+
+/**
  * After return from Przelewy24: map the latest session to a customer outcome.
- * “Nieprawidłowa kwota” only when P24 reports a settled payment with the wrong sum.
+ * “Nieprawidłowa kwota” only when P24 reports a captured payment with the wrong sum.
  */
 export async function reconcilePendingOrderPayment(order: StoredOrder): Promise<ReconcileResult> {
   if (order.status !== "pending" && order.status !== "cancelled") {
@@ -96,36 +125,17 @@ export async function reconcilePendingOrderPayment(order: StoredOrder): Promise<
   const tx = sessionId ? await lookupSession(sessionId) : null;
 
   if (tx) {
-    const match = p24AmountMatches(tx.amount, order.totalAmountInCents);
-
-    if (tx.status === 2) {
-      if (isTraditionalTransfer(tx.paymentMethod)) {
-        return stampUnpaid(order, tx, "awaiting");
-      }
-      if (!match) {
-        return { order, outcome: "amount", transaction: tx };
-      }
-      const verified = await verifyP24Transaction({
-        sessionId: tx.sessionId,
-        orderId: tx.orderId,
-        amount: order.totalAmountInCents,
-      });
-      if (!verified) {
-        return { order, outcome: "error", transaction: tx };
-      }
-      const paid = await markPaid(order, tx);
-      if (paid.status !== "paid") {
-        return { order: paid, outcome: "error", transaction: tx };
-      }
-      return { order: paid, outcome: "paid", transaction: tx };
+    if (tx.status === 1 || tx.status === 2) {
+      return settleCapturedPayment(order, tx);
     }
-
     return stampUnpaid(order, tx, outcomeFromUnpaid(tx));
   }
 
   if (isTraditionalTransfer(order.paymentMethodId)) {
     return { order, outcome: "awaiting", transaction: null };
   }
-  // Missing tx after a retry must not show the previous session’s “error” stamp.
+  if (order.payload.p24Outcome === "awaiting") {
+    return { order, outcome: "awaiting", transaction: null };
+  }
   return { order, outcome: "none", transaction: null };
 }

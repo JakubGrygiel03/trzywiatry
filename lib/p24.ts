@@ -208,7 +208,7 @@ export type P24TransactionLookup = {
   orderId: number;
   amount: number;
   currency: string;
-  /** 0 unpaid, 1 waiting/advance, 2 settled, 3 refunded. */
+  /** 0 no payment, 1 funds received (verify pending), 2 settled, 3 returned. */
   status: number;
   paymentMethod?: number;
 };
@@ -257,6 +257,6 @@ export async function getP24TransactionBySessionId(
 }
 
 export function isP24TransactionPaid(status: number) {
-  // P24: 0 = unpaid / abandoned, 1 = waiting for funds, 2 = settled, 3 = refunded.
-  return status === 2;
+  // 1 = captured at P24 (verify still pending) · 2 = merchant already verified.
+  return status === 1 || status === 2;
 }
