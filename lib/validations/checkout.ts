@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { normalizeCouponCode } from "@/lib/coupon-code";
 import { emailSchema, phoneSchema, plainText } from "@/lib/validations/safe-input";
 
 export const checkoutSchema = z
@@ -12,12 +13,14 @@ export const checkoutSchema = z
     shippingMethod: z.enum(["inpost", "kurier"]),
     inpostLocker: z.string().trim().max(180).optional(),
     giftMessage: plainText("Dedykacja", 280).optional(),
-    discountCode: z
-      .string()
-      .trim()
-      .max(24)
-      .refine((value) => value === "" || /^[A-Za-z0-9-]+$/.test(value), "Kod rabatowy: litery, cyfry i myślnik.")
-      .optional(),
+    discountCode: z.preprocess(
+      (value) => (typeof value === "string" ? normalizeCouponCode(value) : value),
+      z
+        .string()
+        .max(24)
+        .refine((value) => value === "" || /^[A-Z0-9-]+$/.test(value), "Kod rabatowy: litery, cyfry i myślnik.")
+        .optional(),
+    ),
     notes: plainText("Uwagi", 500).optional(),
   })
   .superRefine((data, ctx) => {

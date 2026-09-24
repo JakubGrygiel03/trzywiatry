@@ -14,7 +14,7 @@ import { renderEmailTemplate, emailHighlightTile } from "@/lib/email/render";
 import { sendEmail } from "@/lib/resend";
 
 export async function subscribeNewsletter(_: { ok: boolean; message: string }, formData: FormData) {
-  await ensureAtelierHydrated();
+  await ensureAtelierHydrated({ force: true });
   const parsed = newsletterSchema.safeParse({ email: formData.get("email") });
   if (!parsed.success) {
     return { ok: false, message: parsed.error.issues[0]?.message ?? "Sprawdź e-mail. / Check the email address." };

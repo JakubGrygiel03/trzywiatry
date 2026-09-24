@@ -1,20 +1,19 @@
 import "server-only";
 
+import { isMintedNewsletterCode, normalizeCouponCode } from "@/lib/coupon-code";
+import { discountAmountFromGoods } from "@/lib/discount";
 import { runtimeStore } from "@/lib/data/runtime-store";
 import type { NewsletterCoupon } from "@/lib/types";
+
+export { normalizeCouponCode };
 
 const PREFIX = "TW-";
 /** Crockford-ish alphabet — skip I/O/0/1 so codes stay readable in email. */
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const CODE_BODY_LEN = 6;
-const DISCOUNT_RATE = 0.15;
 
 export function normalizeCouponEmail(email: string) {
   return email.trim().toLowerCase();
-}
-
-export function normalizeCouponCode(code: string) {
-  return code.trim().toUpperCase();
 }
 
 export function parseNewsletterCoupons(raw: unknown): NewsletterCoupon[] {
@@ -95,6 +94,61 @@ export function rememberNewsletterEmail(email: string) {
   return true;
 }
 
+/** Union remote + memory so a warm serverless instance cannot wipe minted codes. */
+export function mergeNewsletterSnapshot(incoming: { newsletter?: string[]; newsletterCoupons?: unknown }) {
+  const byCode = new Map(coupons().map((coupon) => [coupon.code, coupon]));
+  for (const next of parseNewsletterCoupons(incoming.newsletterCoupons)) {
+    const prev = byCode.get(next.code);
+    if (!prev) {
+      coupons().push(next);
+      byCode.set(next.code, next);
+      continue;
+    }
+    if (next.isUsed) {
+      prev.isUsed = true;
+      prev.usedAt = next.usedAt ?? prev.usedAt;
+      prev.usedOrderId = next.usedOrderId ?? prev.usedOrderId;
+      prev.reservedOrderId = undefined;
+    } else if (next.reservedOrderId && !prev.isUsed && !prev.reservedOrderId) {
+      prev.reservedOrderId = next.reservedOrderId;
+    }
+    if (next.welcomeSentAt && !prev.welcomeSentAt) prev.welcomeSentAt = next.welcomeSentAt;
+  }
+
+  const emails = new Set(runtimeStore.newsletter.map(normalizeCouponEmail));
+  for (const email of incoming.newsletter ?? []) {
+    const key = normalizeCouponEmail(email);
+    if (key) emails.add(key);
+  }
+  runtimeStore.newsletter = [...emails];
+}
+
+function isSubscribed(email: string) {
+  const key = normalizeCouponEmail(email);
+  return runtimeStore.newsletter.some((item) => normalizeCouponEmail(item) === key);
+}
+
+/**
+ * If the welcome e-mail went out but the coupon row was overwritten, bind the
+ * typed TW-XXXXXX back to that subscriber. Does not invent codes for strangers.
+ */
+export function restoreNewsletterCodeForSubscriber(email: string, rawCode: string) {
+  const code = normalizeCouponCode(rawCode);
+  if (!isMintedNewsletterCode(code) || !isSubscribed(email)) return null;
+  const existing = findCouponByCode(code);
+  if (existing) return existing;
+  if (findCouponByEmail(email)) return null;
+  const coupon: NewsletterCoupon = {
+    id: crypto.randomUUID(),
+    code,
+    email: normalizeCouponEmail(email),
+    createdAt: new Date().toISOString(),
+    isUsed: false,
+  };
+  coupons().push(coupon);
+  return coupon;
+}
+
 /** One welcome e-mail per address. Retry only when the previous send failed. */
 export function shouldSendNewsletterWelcome(coupon: NewsletterCoupon, minted: boolean) {
   if (coupon.welcomeSentAt) return false;
@@ -124,11 +178,16 @@ export function resolveCheckoutDiscount(
   rawCode: string | undefined,
   goodsCents: number,
   campaignPromo?: string,
+  customerEmail?: string,
 ): CheckoutDiscount {
   const typed = (rawCode ?? "").trim();
   if (!typed) return { ok: true, amountCents: 0, unique: false };
 
   const code = normalizeCouponCode(typed);
+  if (customerEmail) {
+    restoreNewsletterCodeForSubscriber(customerEmail, code);
+  }
+
   const unique = findCouponByCode(code);
   if (unique) {
     if (unique.isUsed) {
@@ -137,15 +196,22 @@ export function resolveCheckoutDiscount(
     if (unique.reservedOrderId) {
       return { ok: false, message: "Ten kod rabatowy jest już używany przy innym zamówieniu." };
     }
-    return { ok: true, amountCents: Math.round(goodsCents * DISCOUNT_RATE), code: unique.code, unique: true };
+    return { ok: true, amountCents: discountAmountFromGoods(goodsCents), code: unique.code, unique: true };
   }
 
   const campaign = (campaignPromo ?? "").trim().toUpperCase();
   if (campaign && code === campaign) {
-    return { ok: true, amountCents: Math.round(goodsCents * DISCOUNT_RATE), code: campaign, unique: false };
+    return { ok: true, amountCents: discountAmountFromGoods(goodsCents), code: campaign, unique: false };
   }
 
-  return { ok: false, message: "Nieprawidłowy kod rabatowy." };
+  if (customerEmail && findCouponByEmail(customerEmail)) {
+    return {
+      ok: false,
+      message: "Ten kod nie pasuje do kodu wysłanego na ten e-mail. Sprawdź pierwszego maila z pracowni.",
+    };
+  }
+
+  return { ok: false, message: "Nieprawidłowy kod rabatowy. Sprawdź, czy wpisujesz go tak, jak w mailu." };
 }
 
 export function reserveCouponForOrder(code: string, orderId: string) {

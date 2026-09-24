@@ -77,7 +77,7 @@ export async function createCheckoutSession(
     return { ok: false, message: "Koszyk jest pusty." };
   }
 
-  await ensureAtelierHydrated();
+  await ensureAtelierHydrated({ force: true });
   const closed = await storefrontClosedMessage();
   if (closed) {
     return { ok: false, message: closed };
@@ -119,6 +119,7 @@ export async function createCheckoutSession(
     parsed.data.discountCode,
     goods,
     settings.promoCode,
+    parsed.data.customerEmail,
   );
   if (!discountResult.ok) {
     return { ok: false, message: discountResult.message };

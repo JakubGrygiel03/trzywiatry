@@ -17,6 +17,7 @@ type EmailFieldProps = {
   labelClassName?: string;
   hint?: string;
   hideLabel?: boolean;
+  onValueChange?: (value: string) => void;
 };
 
 export function EmailField({
@@ -31,6 +32,7 @@ export function EmailField({
   labelClassName,
   hint,
   hideLabel = false,
+  onValueChange,
 }: EmailFieldProps) {
   const [value, setValue] = useState(defaultValue);
   const [touched, setTouched] = useState(false);
@@ -56,6 +58,7 @@ export function EmailField({
         aria-describedby={error ? `${name}-error` : hint ? `${name}-hint` : undefined}
         onChange={(event) => {
           setValue(event.target.value);
+          onValueChange?.(event.target.value);
           if (!touched && event.target.value.length > 2) setTouched(true);
         }}
         onBlur={() => setTouched(true)}

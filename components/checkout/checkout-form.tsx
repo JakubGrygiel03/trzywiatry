@@ -1,5 +1,6 @@
 "use client";
 
+import { CheckoutDiscount, type AppliedDiscount } from "@/components/checkout/checkout-discount";
 import { CheckoutField } from "@/components/checkout/checkout-field";
 import { CheckoutPayBox } from "@/components/checkout/checkout-pay-box";
 import { CheckoutShipping } from "@/components/checkout/checkout-shipping";
@@ -52,6 +53,8 @@ export function CheckoutForm({
   const [postalCode, setPostalCode] = useState("");
   const [city, setCity] = useState("");
   const [locker, setLocker] = useState("");
+  const [discount, setDiscount] = useState<AppliedDiscount | null>(null);
+  const [email, setEmail] = useState(defaultEmail);
   const settings = useSiteSettings();
   const subtotal = cartSubtotal(items);
   const gift = cartGiftWrapCost(hasGiftWrapping, settings.giftWrapPriceCents, settings.giftWrapEnabled);
@@ -151,6 +154,7 @@ export function CheckoutForm({
               placeholder="jan@example.pl"
               inputClassName={creamField}
               labelClassName="text-czerwony/80"
+              onValueChange={setEmail}
               hint={
                 defaultEmail
                   ? "Na ten adres wyślemy potwierdzenie zamówienia."
@@ -209,11 +213,11 @@ export function CheckoutForm({
                 className="min-h-28 rounded-2xl border-czarny/8 bg-krem placeholder:text-czarny/35 focus:border-czerwony focus:bg-bialy"
               />
             </div>
-            <CheckoutField
-              name="discountCode"
-              label="Kod rabatowy (opcjonalnie)"
-              hint="Kod z maila newslettera, np. TW-XXXXXX — jednorazowy, nie jest wymagany."
-              required={false}
+            <CheckoutDiscount
+              goodsCents={subtotal}
+              customerEmail={email}
+              applied={discount}
+              onApplied={setDiscount}
             />
           </SurfaceTileBody>
         </SurfaceTile>
@@ -222,6 +226,8 @@ export function CheckoutForm({
       <CheckoutPayBox
         items={items}
         giftCents={gift}
+        discountCode={discount?.code}
+        discountCents={discount?.amountCents ?? 0}
         pending={pending}
         paymentsLive={paymentsLive}
         message={state.message}

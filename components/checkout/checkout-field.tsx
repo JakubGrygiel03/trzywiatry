@@ -17,6 +17,7 @@ export function CheckoutField({
   required = true,
   autoComplete,
   hint,
+  onKeyDown,
 }: {
   name: string;
   label: string;
@@ -28,6 +29,7 @@ export function CheckoutField({
   required?: boolean;
   autoComplete?: string;
   hint?: string;
+  onKeyDown?: (event: React.KeyboardEvent<HTMLInputElement>) => void;
 }) {
   const controlled = onChange !== undefined;
 
@@ -45,6 +47,7 @@ export function CheckoutField({
         required={required}
         autoComplete={autoComplete}
         className={cn(creamField)}
+        onKeyDown={onKeyDown}
         {...(controlled
           ? { value: value ?? "", onChange: (event) => onChange(event.target.value) }
           : { defaultValue })}

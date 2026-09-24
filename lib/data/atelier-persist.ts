@@ -11,7 +11,7 @@ import {
   setCatalogSeedSignature,
 } from "@/lib/data/runtime-store";
 import { ATELIER_STATE_KEYS, hasSupabaseService, readAtelierState, writeAtelierState } from "@/lib/data/supabase-state";
-import { parseNewsletterCoupons } from "@/lib/newsletter-coupons";
+import { mergeNewsletterSnapshot } from "@/lib/newsletter-coupons";
 import type { BlogPost, Collection, Product, StudioSettings, Workshop } from "@/lib/types";
 
 const DATA_DIR = path.join(process.cwd(), ".data");
@@ -60,10 +60,10 @@ function applySnapshot(snap: AtelierSnapshot) {
   }
   if (Array.isArray(snap.b2b)) runtimeStore.b2b = snap.b2b;
   if (Array.isArray(snap.contacts)) runtimeStore.contacts = snap.contacts;
-  if (Array.isArray(snap.newsletter)) runtimeStore.newsletter = snap.newsletter;
-  if (snap.newsletterCoupons !== undefined) {
-    runtimeStore.newsletterCoupons = parseNewsletterCoupons(snap.newsletterCoupons);
-  }
+  mergeNewsletterSnapshot({
+    newsletter: snap.newsletter,
+    newsletterCoupons: snap.newsletterCoupons,
+  });
   if (Array.isArray(snap.bookings)) runtimeStore.bookings = snap.bookings;
   if (Array.isArray(snap.homeLayout) && snap.homeLayout.length > 0) {
     runtimeStore.homeLayout = snap.homeLayout;
@@ -112,16 +112,26 @@ async function hydrate() {
 }
 
 /** Restore catalog after restart — Supabase on Vercel, `.data` locally. */
-export async function ensureAtelierHydrated() {
-  if (!hydratePromise) hydratePromise = hydrate();
+export async function ensureAtelierHydrated(options?: { force?: boolean }) {
+  // Warm serverless isolates cache the first hydrate — force before coupons / checkout.
+  if (options?.force || !hydratePromise) {
+    hydratePromise = hydrate();
+  }
   await hydratePromise;
 }
 
 export async function saveAtelierSnapshot() {
+  const remote = await readAtelierState<AtelierSnapshot>(ATELIER_STATE_KEYS.shop);
+  if (remote) {
+    mergeNewsletterSnapshot({
+      newsletter: remote.newsletter,
+      newsletterCoupons: remote.newsletterCoupons,
+    });
+  }
   const snap = captureSnapshot();
   const disk = writeDisk(snap);
-  const remote = await writeAtelierState(ATELIER_STATE_KEYS.shop, snap);
-  return remote || (disk && process.env.VERCEL !== "1");
+  const wroteRemote = await writeAtelierState(ATELIER_STATE_KEYS.shop, snap);
+  return wroteRemote || (disk && process.env.VERCEL !== "1");
 }
 
 export async function flushAtelierSave() {

@@ -11,6 +11,8 @@ export function CheckoutPayBox({
   items,
   giftLabel,
   giftCents,
+  discountCode,
+  discountCents,
   pending,
   paymentsLive,
   message,
@@ -18,6 +20,8 @@ export function CheckoutPayBox({
   items: CartItem[];
   giftLabel?: string;
   giftCents: number;
+  discountCode?: string;
+  discountCents?: number;
   pending: boolean;
   paymentsLive: boolean;
   message: string;
@@ -38,6 +42,12 @@ export function CheckoutPayBox({
           <div className="flex justify-between text-sm">
             <span>{giftLabel ?? "Pakowanie prezentowe"}</span>
             <span className="font-heading">{formatPLN(giftCents)}</span>
+          </div>
+        ) : null}
+        {discountCents && discountCents > 0 ? (
+          <div className="flex justify-between text-sm text-czerwony">
+            <span>Rabat{discountCode ? ` ${discountCode}` : ""}</span>
+            <span className="font-heading">−{formatPLN(discountCents)}</span>
           </div>
         ) : null}
         {paymentsLive ? (
