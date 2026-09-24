@@ -38,9 +38,12 @@ export function PaymentOutcomePanel({
       <p className="text-sm leading-relaxed text-czarny/75">{copy.body}</p>
 
       {copy.showBankAccount ? (
-        <p className="rounded-2xl bg-krem px-4 py-3 font-heading text-sm tracking-[0.04em] text-czarny">
-          {SITE.bankAccount}
-        </p>
+        <div className="space-y-1.5">
+          <p className="text-xs text-czarny/55">Numer konta do przelewu</p>
+          <p className="rounded-2xl bg-krem px-4 py-3 font-heading text-sm tracking-[0.04em] text-czarny">
+            {SITE.bankAccount}
+          </p>
+        </div>
       ) : null}
 
       {payEnabled ? (
@@ -65,19 +68,15 @@ export function PaymentOutcomePanel({
       <p className="text-sm leading-relaxed text-czarny/50">
         {mailFailed ? (
           <>
-            Mail ze złożeniem zamówienia nie doszedł na {customerEmail}. Zamówienie i tak jest zapisane — status
-            zobaczysz w{" "}
+            Nie udało się wysłać wiadomości na {customerEmail}. Zamówienie i tak jest zapisane — status znajdziesz
+            w{" "}
           </>
         ) : outcome === "paid" ? (
-          <>Potwierdzenie płatności wysłaliśmy na {customerEmail}. Status zamówienia zobaczysz też w </>
+          <>Potwierdzenie płatności wysłaliśmy na {customerEmail}. Status zamówienia znajdziesz w </>
         ) : outcome === "awaiting" ? (
-          <>Zapis zamówienia jest na {customerEmail}. Jak zobaczymy wpłatę, status zmieni się w </>
-        ) : outcome === "retry" ? (
-          <>Zapis zamówienia jest na {customerEmail}. Nowa płatność zaktualizuje status w </>
-        ) : outcome === "none" ? (
-          <>Zapis zamówienia wysłaliśmy na {customerEmail}. Wpłaty jeszcze nie było — status w </>
+          <>Potwierdzenie zamówienia wysłaliśmy na {customerEmail}. Gdy wpłata dotrze, status zmieni się w </>
         ) : (
-          <>Zapis zamówienia wysłaliśmy na {customerEmail}. To nie jest potwierdzenie wpłaty — status w </>
+          <>Potwierdzenie złożenia zamówienia wysłaliśmy na {customerEmail}. Status płatności znajdziesz w </>
         )}
         <Link href="/konto" className="text-czerwony underline-offset-2 hover:underline">
           koncie

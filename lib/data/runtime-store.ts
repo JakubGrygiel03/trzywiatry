@@ -334,10 +334,29 @@ export function setCatalogSeedSignature(signature: string) {
   lastSeedIdSignature = signature;
 }
 
+function liveStockByVariantId() {
+  const stock = new Map<string, { qty: number; available: boolean }>();
+  for (const product of runtimeStore.catalog) {
+    for (const variant of product.variants) {
+      stock.set(variant.id, { qty: variant.stockQuantity, available: variant.isAvailable });
+    }
+  }
+  return stock;
+}
+
+function liveProductFlagsById() {
+  return new Map(
+    runtimeStore.catalog.map((product) => [
+      product.id,
+      { isBestseller: product.isBestseller, isPublished: product.isPublished },
+    ]),
+  );
+}
+
 /**
- * Keep admin edits only while the seed fingerprint is unchanged.
- * When products.ts changes (Woo re-import), replace the whole catalog so
- * removed products disappear and variants/images match the CSV.
+ * Keep live stock when products.ts changes. An empty in-memory signature after
+ * hydrate used to clone the seed catalog and persist it — that put “2 szt.” back
+ * on the PDP after a real order had already reserved 1.
  */
 function mergeNewSeedProducts() {
   const signature = seedIdSignature();
@@ -350,7 +369,29 @@ function mergeNewSeedProducts() {
   runtimeStore.catalog = runtimeStore.catalog.filter((product) => !DROP_PRODUCT_IDS.has(product.id));
   if (signature === lastSeedIdSignature) return;
 
-  runtimeStore.catalog = structuredClone(seedProducts);
+  // Hydrated isolate: catalog is already the shop — do not reset quantities.
+  if (!lastSeedIdSignature) {
+    lastSeedIdSignature = signature;
+    return;
+  }
+
+  const live = liveStockByVariantId();
+  const flags = liveProductFlagsById();
+  const next = structuredClone(seedProducts).filter((product) => !DROP_PRODUCT_IDS.has(product.id));
+  for (const product of next) {
+    const keptFlags = flags.get(product.id);
+    if (keptFlags) {
+      product.isBestseller = keptFlags.isBestseller;
+      product.isPublished = keptFlags.isPublished;
+    }
+    for (const variant of product.variants) {
+      const kept = live.get(variant.id);
+      if (!kept) continue;
+      variant.stockQuantity = kept.qty;
+      variant.isAvailable = kept.qty > 0 && kept.available;
+    }
+  }
+  runtimeStore.catalog = next;
   lastSeedIdSignature = signature;
   persist();
 }

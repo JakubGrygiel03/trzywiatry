@@ -186,7 +186,11 @@ export async function createCheckoutSession(
   await flushAtelierSave();
   revalidatePath("/konto");
   revalidatePath("/admin/zamowienia");
-  revalidatePath("/sklep");
+  revalidatePath("/sklep", "layout");
+  for (const item of items) {
+    const product = catalog.find((row) => row.id === item.productId);
+    if (product) revalidatePath(`/sklep/${product.slug}`);
+  }
 
   const vacationNote = getVacationCheckoutNote(settings) ?? undefined;
   const placed = orderPlacedEmail(order, vacationNote);

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Plus, Package } from "lucide-react";
+import { AdminBestsellerToggle } from "@/components/admin/admin-bestseller-toggle";
 import { AdminStockEditor } from "@/components/admin/admin-stock-editor";
 import { AdminEmptyState } from "@/components/admin/ui/admin-empty-state";
 import { AdminPageHeader } from "@/components/admin/ui/admin-page-header";
@@ -116,9 +117,6 @@ export default async function AdminProductsPage({
                       >
                         {product.name}
                       </Link>
-                      {product.isBestseller ? (
-                        <span className="text-[10px] font-medium uppercase text-ceglany">Bestseller</span>
-                      ) : null}
                       <PublishBadge published={product.isPublished} />
                     </div>
                     <p className="mt-0.5 text-xs text-czarny/45">
@@ -129,6 +127,7 @@ export default async function AdminProductsPage({
                   </div>
 
                   <div className="flex flex-wrap items-center gap-4 text-sm">
+                    <AdminBestsellerToggle productId={product.id} isBestseller={product.isBestseller} />
                     <div className="text-right">
                       <p className="font-medium tabular-nums text-czarny">{formatPLN(product.priceInCents)}</p>
                       <p

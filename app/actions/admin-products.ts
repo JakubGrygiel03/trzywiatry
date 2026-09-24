@@ -7,7 +7,7 @@ import { mergeProductImages, saveProductImageUploads } from "@/lib/admin-product
 import { CATEGORIES_BY_DOMAIN } from "@/lib/constants";
 import { getAllProducts, getProductById } from "@/lib/data/queries";
 import { deleteRuntimeProduct, upsertRuntimeProduct } from "@/lib/data/runtime-store";
-import { flushAtelierSave } from "@/lib/data/atelier-persist";
+import { ensureAtelierHydrated, flushAtelierSave } from "@/lib/data/atelier-persist";
 import { assertAdminSession } from "@/lib/admin-guard";
 import type { Product, ProductDomain, ProductVariant } from "@/lib/types";
 
@@ -370,6 +370,21 @@ export async function updateVariantStock(formData: FormData) {
   revalidateShop(existing.slug);
   await flushAtelierSave();
   return { ok: true as const, stockQuantity, outOfStock };
+}
+
+/** Quick bestseller flag from the products list. */
+export async function updateProductBestseller(formData: FormData) {
+  await assertAdminSession();
+  await ensureAtelierHydrated({ force: true });
+  const productId = String(formData.get("productId") ?? "").trim();
+  const isBestseller = formData.get("isBestseller") === "true";
+  const existing = getProductById(productId);
+  if (!existing) return { ok: false as const };
+
+  upsertRuntimeProduct({ ...existing, isBestseller });
+  revalidateShop(existing.slug);
+  await flushAtelierSave();
+  return { ok: true as const, isBestseller };
 }
 
 /** @deprecated use createProduct */

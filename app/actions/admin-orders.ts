@@ -22,6 +22,7 @@ export async function deleteOrder(formData: FormData) {
   revalidatePath("/admin/zamowienia");
   revalidatePath("/admin/analityka");
   revalidatePath("/konto");
+  revalidatePath("/sklep", "layout");
   redirect(`/admin/zamowienia?usunieto=${encodeURIComponent(removed.orderNumber)}`);
 }
 

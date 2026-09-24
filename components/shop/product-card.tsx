@@ -57,7 +57,7 @@ export function ProductCard({
               decoding="async"
             />
           ) : null}
-          {framed ? (
+          {framed || product.isBestseller ? (
             <span className="absolute left-2 top-2 z-10 rounded-full bg-czerwony px-2.5 py-1 font-heading text-[9px] uppercase tracking-[0.16em] text-bialy">
               Bestseller
             </span>
