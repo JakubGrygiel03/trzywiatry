@@ -18,7 +18,14 @@ export function NewsletterForm({
   const [state, action, pending] = useActionState(subscribeNewsletter, initial);
 
   return (
-    <form action={action} className="flex w-full flex-col gap-2" noValidate>
+    <form
+      action={action}
+      className="flex w-full flex-col gap-2"
+      noValidate
+      onSubmit={(event) => {
+        if (pending) event.preventDefault();
+      }}
+    >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
         <EmailField
           name="email"

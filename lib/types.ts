@@ -178,6 +178,10 @@ export type NewsletterCoupon = {
   usedOrderId?: string;
   /** Holds the code on a pending checkout until paid or cancelled. */
   reservedOrderId?: string;
+  /** Set after the welcome/code email actually went out — never send twice. */
+  welcomeSentAt?: string;
+  /** Last welcome send failed; next signup click may retry once. */
+  welcomeSendFailed?: boolean;
 };
 
 /** In-memory / file-backed order until Supabase `orders` table is wired. */

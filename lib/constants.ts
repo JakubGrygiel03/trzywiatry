@@ -137,7 +137,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 
 /** Customer-facing copy — what is happening right now. */
 export const ORDER_STATUS_HINTS: Record<OrderStatus, string> = {
-  pending: "Zamówienie jest zapisane i czeka na płatność. Jak tylko pieniądze dotrą, zaczynamy pakować.",
+  pending: "Zamówienie jest zapisane. Pracownia oznaczy je jako opłacone, gdy wpłata będzie na koncie — status sprawdzasz tutaj.",
   paid: "Płatność potwierdzona. Pracownia przygotowuje naczynia.",
   processing: "Pakujemy w pracowni — wkładki i karton, zero stłuczek.",
   shipped: "Paczka wyszła z pracowni. Numer śledzenia pojawi się poniżej, gdy kurier go nada.",

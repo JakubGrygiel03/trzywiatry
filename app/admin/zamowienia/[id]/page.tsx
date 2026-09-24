@@ -133,8 +133,9 @@ export default async function AdminOrderDetailPage({
       <form action={updateOrderStatus} className="space-y-4 rounded-[24px] border border-czarny/8 p-5">
         <input type="hidden" name="id" value={order.id} />
         <p className="text-xs leading-relaxed text-czarny/45">
-          Klient widzi ten status i historię zmian po zalogowaniu w /konto. Przy „Wysłane” dopisz numer
-          śledzenia — pojawi się w profilu i w mailu.
+          Klient widzi ten status w /konto. Przy przelewie: sprawdź, czy wpłata jest na koncie pracowni, i zmień
+          status na „Opłacone” — wtedy klient dostanie maila (jeśli zostawisz powiadomienie). Przy „Wysłane”
+          dopisz numer śledzenia.
         </p>
         <div className="space-y-2">
           <Label htmlFor="status">Status zamówienia</Label>

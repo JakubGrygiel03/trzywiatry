@@ -59,6 +59,13 @@ export type PaymentMethodBucket =
   | "Oczekuje"
   | "Bez płatności online";
 
+/** Method 136 — money can sit in the bank until the studio marks the order paid. */
+export const P24_TRADITIONAL_TRANSFER = 136;
+
+export function isTraditionalTransfer(methodId: number | undefined | null) {
+  return methodId === P24_TRADITIONAL_TRANSFER;
+}
+
 export function p24MethodLabel(methodId: number | undefined | null): string {
   if (methodId == null || methodId === 0) return "Przelewy24";
   return KNOWN_METHODS[methodId] ?? `Przelewy24 (#${methodId})`;

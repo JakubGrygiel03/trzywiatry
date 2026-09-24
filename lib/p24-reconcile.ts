@@ -4,7 +4,7 @@ import { flushAtelierSave } from "@/lib/data/atelier-persist";
 import { flushOrdersSave } from "@/lib/data/order-persist";
 import { updateOrderStatusInStore } from "@/lib/data/runtime-store";
 import { getP24TransactionBySessionId, verifyP24Transaction, type P24TransactionLookup } from "@/lib/p24";
-import { p24MethodLabel } from "@/lib/p24-methods";
+import { p24MethodLabel, isTraditionalTransfer } from "@/lib/p24-methods";
 import type { PaymentOutcomeKey } from "@/lib/payment-outcome";
 import { notifyCustomerOrderStatus } from "@/lib/resend";
 import { notifyStudioOrderPaid } from "@/lib/studio-notify";
@@ -16,8 +16,11 @@ export type ReconcileResult = {
   transaction: P24TransactionLookup | null;
 };
 
-/** P24 method 136 = traditional transfer (money can lag). */
-const P24_TRADITIONAL_TRANSFER = 136;
+/** P24 method 136 = traditional transfer — studio marks paid, we do not auto-flip. */
+function outcomeFromUnpaid(tx: P24TransactionLookup): PaymentOutcomeKey {
+  if (tx.status === 1 || isTraditionalTransfer(tx.paymentMethod)) return "awaiting";
+  return "error";
+}
 
 function sessionCandidates(order: StoredOrder) {
   return [
@@ -29,20 +32,7 @@ function sessionCandidates(order: StoredOrder) {
 
 function p24AmountMatches(p24Amount: number, orderCents: number) {
   if (p24Amount === orderCents) return true;
-  // Rare P24 payloads use zł instead of grosze.
   return p24Amount > 0 && p24Amount * 100 === orderCents;
-}
-
-function outcomeFromUnpaid(tx: P24TransactionLookup): PaymentOutcomeKey {
-  // 1 = payment advanced (not settled) — classic “czekamy na wpływ”.
-  if (tx.status === 1) return "awaiting";
-  // 3 = returned / refunded.
-  if (tx.status === 3) return "error";
-  if (tx.status !== 0) return "retry";
-  if (!tx.paymentMethod) return "none";
-  if (tx.paymentMethod === P24_TRADITIONAL_TRANSFER) return "awaiting";
-  // Method chosen but status still 0: rejected BLIK/card or sandbox “Błąd płatności”.
-  return "error";
 }
 
 async function markPaid(order: StoredOrder, tx: P24TransactionLookup): Promise<StoredOrder> {
@@ -83,8 +73,12 @@ export async function reconcilePendingOrderPayment(order: StoredOrder): Promise<
 
     const match = p24AmountMatches(tx.amount, order.totalAmountInCents);
 
-    // Status 2 = payment made. Only then can we mark paid or flag a wrong amount.
+    // Status 2 = settled. Traditional transfer still waits for admin to tick “Opłacone”.
     if (tx.status === 2) {
+      if (isTraditionalTransfer(tx.paymentMethod)) {
+        latestUnpaid = latestUnpaid ?? tx;
+        continue;
+      }
       if (!match) {
         settledMismatch = settledMismatch ?? tx;
         continue;
@@ -117,5 +111,5 @@ export async function reconcilePendingOrderPayment(order: StoredOrder): Promise<
   if (verifyFailed) {
     return { order, outcome: "error", transaction: verifyFailed };
   }
-  return { order, outcome: "awaiting", transaction: null };
+  return { order, outcome: "error", transaction: null };
 }

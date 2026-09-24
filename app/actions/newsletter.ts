@@ -5,7 +5,10 @@ import { addSubscriber } from "@/lib/mailerlite";
 import { saveAtelierSnapshot, ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 import {
   issueOrReuseNewsletterCoupon,
+  markNewsletterWelcomeFailed,
+  markNewsletterWelcomeSent,
   rememberNewsletterEmail,
+  shouldSendNewsletterWelcome,
 } from "@/lib/newsletter-coupons";
 import { renderEmailTemplate, emailHighlightTile } from "@/lib/email/render";
 import { sendEmail } from "@/lib/resend";
@@ -19,17 +22,30 @@ export async function subscribeNewsletter(_: { ok: boolean; message: string }, f
 
   const email = parsed.data.email;
   const { coupon, minted } = issueOrReuseNewsletterCoupon(email);
-  rememberNewsletterEmail(email);
+  const isNewOnList = rememberNewsletterEmail(email);
   await saveAtelierSnapshot();
-  await addSubscriber(email, "footer_discount_15");
+  if (isNewOnList) {
+    await addSubscriber(email, "footer_discount_15");
+  }
 
   if (!minted && coupon.isUsed) {
     return {
       ok: true,
-      message:
-        "Ten adres jest już na liście. Kod rabatowy został wcześniej wykorzystany. / This address is already subscribed — the discount code was already used.",
+      message: "Ten adres jest już na liście. Kod rabatowy został wcześniej wykorzystany.",
     };
   }
+
+  if (!shouldSendNewsletterWelcome(coupon, minted)) {
+    return {
+      ok: true,
+      message:
+        "Ten adres jest już na liście. Kod rabatowy poszedł wcześniej mailem — sprawdź skrzynkę i folder spam.",
+    };
+  }
+
+  // Stamp before Resend so a second click cannot queue the same mail.
+  markNewsletterWelcomeSent(email);
+  await saveAtelierSnapshot();
 
   const welcome = renderEmailTemplate("newsletter_welcome", {
     code: coupon.code,
@@ -42,17 +58,17 @@ export async function subscribeNewsletter(_: { ok: boolean; message: string }, f
   });
 
   if (!mailed.ok) {
+    markNewsletterWelcomeFailed(email);
+    await saveAtelierSnapshot();
     return {
       ok: false,
       message:
-        "Zapisaliśmy adres, ale kod rabatowy nie wyszedł mailem. Napisz do pracowni albo spróbuj za chwilę. / We saved your address, but the discount email did not send — try again shortly.",
+        "Zapisaliśmy adres, ale kod rabatowy nie wyszedł mailem. Napisz do pracowni albo spróbuj za chwilę.",
     };
   }
 
   return {
     ok: true,
-    message: minted
-      ? "Kod rabatowy jest w drodze mailem. Sprawdź skrzynkę. / Your discount code is on its way — check your inbox."
-      : "Ten adres jest już na liście — ponownie wysłaliśmy ten sam kod. / Already subscribed — we re-sent the same code.",
+    message: "Kod rabatowy jest w drodze mailem. Sprawdź skrzynkę.",
   };
 }

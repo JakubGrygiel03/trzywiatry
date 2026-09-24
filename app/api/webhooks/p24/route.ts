@@ -3,7 +3,7 @@ import { ensureOrdersHydrated, flushOrdersSave } from "@/lib/data/order-persist"
 import { flushAtelierSave } from "@/lib/data/atelier-persist";
 import { getOrderByNumber, updateOrderStatusInStore } from "@/lib/data/runtime-store";
 import { p24NotificationValid, verifyP24Transaction, type P24Notification } from "@/lib/p24";
-import { p24MethodLabel } from "@/lib/p24-methods";
+import { p24MethodLabel, isTraditionalTransfer } from "@/lib/p24-methods";
 import { notifyCustomerOrderStatus } from "@/lib/resend";
 import { notifyStudioOrderPaid } from "@/lib/studio-notify";
 
@@ -75,6 +75,18 @@ export async function POST(request: NextRequest) {
 
   if (order.status === "pending") {
     const methodId = Number(body.methodId ?? 0) || undefined;
+    // Traditional transfer: verify with P24, but the studio ticks “Opłacone” in admin.
+    if (isTraditionalTransfer(methodId)) {
+      updateOrderStatusInStore(order.id, "pending", undefined, {
+        paymentProvider: "p24",
+        paymentId: String(body.orderId),
+        paymentMethodId: methodId,
+        paymentMethodLabel: p24MethodLabel(methodId),
+        p24SessionId: sessionId,
+      });
+      await flushOrdersSave();
+      return NextResponse.json({ ok: true, received: true, awaitingStudio: true });
+    }
     const updated = updateOrderStatusInStore(order.id, "paid", undefined, {
       paymentProvider: "p24",
       paymentId: String(body.orderId),

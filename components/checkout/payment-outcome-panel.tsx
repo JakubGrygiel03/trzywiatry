@@ -33,7 +33,6 @@ export function PaymentOutcomePanel({
   orderNumber,
   orderId,
   canPay,
-  isTester = false,
   mailFailed,
   customerEmail,
 }: {
@@ -42,7 +41,6 @@ export function PaymentOutcomePanel({
   orderNumber: string;
   orderId: string;
   canPay: boolean;
-  isTester?: boolean;
   mailFailed: boolean;
   customerEmail: string;
 }) {
@@ -60,11 +58,6 @@ export function PaymentOutcomePanel({
           )}
         >
           {copy.eyebrow}
-          {isTester ? (
-            <span className="ml-2 normal-case tracking-normal text-czarny/40">
-              · test: „{copy.sandboxLabel}”
-            </span>
-          ) : null}
         </p>
         <h2 className="font-heading text-xl uppercase tracking-[0.06em] text-czarny">{copy.title}</h2>
         <p className="text-sm leading-relaxed text-czarny/75">{copy.body}</p>
@@ -96,6 +89,10 @@ export function PaymentOutcomePanel({
           </>
         ) : outcome === "paid" ? (
           <>Potwierdzenie płatności wysłaliśmy na {customerEmail}. Status zamówienia zobaczysz też w </>
+        ) : outcome === "awaiting" ? (
+          <>
+            Zapis zamówienia wysłaliśmy na {customerEmail}. Jak pracownia oznaczy wpłatę, status zmieni się w{" "}
+          </>
         ) : (
           <>
             Zapis zamówienia wysłaliśmy na {customerEmail}. To jeszcze nie jest potwierdzenie płatności — status

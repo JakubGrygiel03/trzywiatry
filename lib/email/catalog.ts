@@ -50,8 +50,7 @@ export const EMAIL_TEMPLATES: Record<EmailTemplateKey, EmailTemplateMeta> = {
 {vacationBlock}
 {detailsBlock}
 {itemsBlock}
-<p>Jak tylko płatność wejdzie, ruszamy z pakowaniem (wkładki, karton — zero stłuczek). Dam znać mailem, gdy paczka wyjdzie z pracowni.</p>
-<p>Status śledzisz też po zalogowaniu na konto w sklepie.</p>`,
+<p>Przy BLIK-u i karcie potwierdzenie bywa od razu. Przy przelewie pracownia oznaczy zamówienie jako opłacone, gdy wpłata będzie na koncie — damy znać mailem. Status sprawdzasz też po zalogowaniu na konto.</p>`,
   },
   order_pending: {
     key: "order_pending",
@@ -59,9 +58,9 @@ export const EMAIL_TEMPLATES: Record<EmailTemplateKey, EmailTemplateMeta> = {
     trigger: "Admin ustawia status „oczekuje na płatność”.",
     tokens: ["customerName", "orderNumber", "highlightBlock", "detailsBlock"],
     subject: "Zamówienie {orderNumber} · oczekuje na płatność",
-    body: `<h1>Czekamy na płatność</h1>
+    body: `<h1>Zamówienie zapisane</h1>
 <p>Dzień dobry {customerName},</p>
-<p>zamówienie jest u nas, ale jeszcze nie widzimy płatności. Jak tylko przelew / BLIK przejdzie, od razu ruszamy z pakowaniem.</p>
+<p>zamówienie jest u nas. Pracownia oznaczy je jako opłacone, gdy wpłata będzie na koncie — wtedy wyślemy kolejnego maila. Status sprawdzasz po zalogowaniu na konto.</p>
 {highlightBlock}
 {detailsBlock}`,
   },

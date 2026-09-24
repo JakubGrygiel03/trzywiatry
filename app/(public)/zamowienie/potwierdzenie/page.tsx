@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ClearCartOnMount } from "@/components/checkout/clear-cart-on-mount";
 import { PaymentOutcomePanel } from "@/components/checkout/payment-outcome-panel";
-import { PendingPaymentRefresh } from "@/components/checkout/pending-payment-refresh";
 import { Container, SectionHeading } from "@/components/ui/badge";
 import { ORDER_STATUS_HINTS, ORDER_STATUS_LABELS } from "@/lib/constants";
 import { ensureOrdersHydrated } from "@/lib/data/order-persist";
@@ -10,7 +9,6 @@ import { formatPLN } from "@/lib/format";
 import { reconcilePendingOrderPayment } from "@/lib/p24-reconcile";
 import {
   alignOutcomeWithOrderStatus,
-  parsePaymentOutcomeParam,
   PAYMENT_OUTCOMES,
   type PaymentOutcomeKey,
 } from "@/lib/payment-outcome";
@@ -30,8 +28,7 @@ function orderLead(orderNumber: string, sentence: string) {
 
 function outcomeFromPayParam(pay: string | undefined): PaymentOutcomeKey | null {
   if (!pay) return null;
-  if (pay === "auth" || pay === "net") return "error";
-  if (pay === "0") return "retry";
+  if (pay === "auth" || pay === "net" || pay === "0") return "error";
   return null;
 }
 
@@ -46,22 +43,18 @@ function pendingSummaryLabel(outcome: PaymentOutcomeKey) {
 export default async function OrderConfirmationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ order?: string; k?: string; mail?: string; pay?: string; wynik?: string }>;
+  searchParams: Promise<{ order?: string; k?: string; mail?: string; pay?: string }>;
 }) {
-  const { order: orderNumber, k, mail, pay, wynik } = await searchParams;
+  const { order: orderNumber, k, mail, pay } = await searchParams;
   await ensureOrdersHydrated({ force: true });
   const record = orderNumber ? getOrderByNumber(orderNumber) : null;
   let order = record && k && record.id === k ? record : null;
 
-  const { canPay, isTester } = await resolvePaymentAccess();
+  const { canPay } = await resolvePaymentAccess();
 
-  let candidate: PaymentOutcomeKey = "awaiting";
+  let candidate: PaymentOutcomeKey = "error";
 
-  // Preview of UI branches — admin tester only (never fake “paid” for real customers).
-  const forced = isTester ? parsePaymentOutcomeParam(wynik) : null;
-  if (forced) {
-    candidate = forced;
-  } else if (order?.status === "pending") {
+  if (order?.status === "pending") {
     const reconciled = await reconcilePendingOrderPayment(order);
     order = reconciled.order;
     candidate = reconciled.outcome;
@@ -72,7 +65,7 @@ export default async function OrderConfirmationPage({
   }
 
   const payOutcome = outcomeFromPayParam(pay);
-  if (!forced && payOutcome && order?.status === "pending") {
+  if (payOutcome && order?.status === "pending") {
     candidate = payOutcome;
   }
 
@@ -81,12 +74,15 @@ export default async function OrderConfirmationPage({
     ? alignOutcomeWithOrderStatus(order.status, candidate)
     : candidate;
 
+  const copy = order ? PAYMENT_OUTCOMES[outcome] : null;
   const firstName = order?.customerName.split(" ")[0] ?? "";
   const headingTitle = !order
     ? "Nie znaleziono zamówienia"
     : outcome === "paid"
       ? `Dziękujemy, ${firstName}`
-      : "Zamówienie zapisane";
+      : order.status === "cancelled"
+        ? "Zamówienie anulowane"
+        : copy?.pageTitle ?? "Zamówienie zapisane";
   const headingDescription = !order
     ? orderNumber
       ? `Szukaliśmy zamówienia ${orderNumber}, ale nie udało się go odczytać. Sprawdź maila albo konto.`
@@ -109,7 +105,6 @@ export default async function OrderConfirmationPage({
         {order ? (
           <>
             <ClearCartOnMount />
-            <PendingPaymentRefresh active={order.status === "pending" && outcome === "awaiting"} />
             <div className="space-y-4 rounded-[28px] bg-krem p-6">
               <p className="font-heading text-sm uppercase tracking-[0.14em] text-czerwony">
                 {order.status === "pending"
@@ -137,7 +132,6 @@ export default async function OrderConfirmationPage({
               orderNumber={order.orderNumber}
               orderId={order.id}
               canPay={canPay}
-              isTester={isTester}
               mailFailed={mail === "0"}
               customerEmail={order.customerEmail}
             />

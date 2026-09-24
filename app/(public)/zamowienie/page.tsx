@@ -51,16 +51,6 @@ export default async function CheckoutPage() {
             </SurfaceTileBody>
           </SurfaceTile>
         ) : null}
-        {isTester ? (
-          <SurfaceTile>
-            <SurfaceTileBody>
-              <p className="text-[14px] leading-relaxed text-czerwony">
-                Tryb testowy (sesja admina) — klienci nadal widzą „płatności niedostępne”, Ty możesz przejść przez
-                Przelewy24 sandbox.
-              </p>
-            </SurfaceTileBody>
-          </SurfaceTile>
-        ) : null}
         <CheckoutGate
           defaultEmail={customer?.email ?? ""}
           defaultName={customer?.name ?? ""}

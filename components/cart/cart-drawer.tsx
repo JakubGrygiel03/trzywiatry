@@ -122,11 +122,6 @@ export function CartDrawer() {
                       Płatności online chwilowo niedostępne — zamówienie zapisujemy bez opłaty online.
                     </p>
                   ) : null}
-                  {isTester ? (
-                    <p className="text-xs leading-relaxed text-czerwony">
-                      Tryb testowy (admin) — sandbox P24 włączony tylko dla Ciebie.
-                    </p>
-                  ) : null}
                   <Button asChild className="w-full" onClick={closeCart}>
                     <Link href="/zamowienie" prefetch>
                       Do kasy

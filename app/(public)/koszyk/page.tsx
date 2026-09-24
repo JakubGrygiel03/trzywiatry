@@ -76,11 +76,6 @@ export default function CartPage() {
                     damy znać mailem.
                   </p>
                 ) : null}
-                {isTester ? (
-                  <p className="rounded-2xl border border-czerwony/20 bg-krem px-4 py-3 text-xs leading-relaxed text-czerwony">
-                    Tryb testowy (admin) — możesz zapłacić w sandboxie. Klienci bez sesji admina widzą blokadę.
-                  </p>
-                ) : null}
                 <Button asChild className="w-full">
                   <Link href="/zamowienie" prefetch>
                     Przejdź do kasy

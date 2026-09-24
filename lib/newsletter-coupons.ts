@@ -35,6 +35,8 @@ export function parseNewsletterCoupons(raw: unknown): NewsletterCoupon[] {
       usedAt: typeof rec.usedAt === "string" ? rec.usedAt : undefined,
       usedOrderId: typeof rec.usedOrderId === "string" ? rec.usedOrderId : undefined,
       reservedOrderId: typeof rec.reservedOrderId === "string" ? rec.reservedOrderId : undefined,
+      welcomeSentAt: typeof rec.welcomeSentAt === "string" ? rec.welcomeSentAt : undefined,
+      welcomeSendFailed: rec.welcomeSendFailed === true ? true : undefined,
     });
   }
   return out;
@@ -91,6 +93,27 @@ export function rememberNewsletterEmail(email: string) {
   }
   runtimeStore.newsletter.push(key);
   return true;
+}
+
+/** One welcome e-mail per address. Retry only when the previous send failed. */
+export function shouldSendNewsletterWelcome(coupon: NewsletterCoupon, minted: boolean) {
+  if (coupon.welcomeSentAt) return false;
+  if (minted) return true;
+  return Boolean(coupon.welcomeSendFailed);
+}
+
+export function markNewsletterWelcomeSent(email: string) {
+  const coupon = findCouponByEmail(email);
+  if (!coupon) return;
+  coupon.welcomeSentAt = new Date().toISOString();
+  coupon.welcomeSendFailed = undefined;
+}
+
+export function markNewsletterWelcomeFailed(email: string) {
+  const coupon = findCouponByEmail(email);
+  if (!coupon) return;
+  coupon.welcomeSentAt = undefined;
+  coupon.welcomeSendFailed = true;
 }
 
 export type CheckoutDiscount =
