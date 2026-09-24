@@ -2,6 +2,7 @@ import "server-only";
 
 import { isMintedNewsletterCode, normalizeCouponCode } from "@/lib/coupon-code";
 import { discountAmountFromGoods } from "@/lib/discount";
+import { isSignedNewsletterCode, mintSignedNewsletterCode } from "@/lib/newsletter-code-sign";
 import { runtimeStore } from "@/lib/data/runtime-store";
 import type { NewsletterCoupon } from "@/lib/types";
 
@@ -49,12 +50,14 @@ function coupons() {
 }
 
 function mintCode() {
-  const existing = coupons();
+  const taken = (code: string) => coupons().some((coupon) => coupon.code === code);
+  const signed = mintSignedNewsletterCode(taken);
+  if (signed) return signed;
   for (let attempt = 0; attempt < 16; attempt += 1) {
     const bytes = crypto.getRandomValues(new Uint8Array(CODE_BODY_LEN));
     const body = Array.from(bytes, (byte) => ALPHABET[byte % ALPHABET.length]).join("");
     const code = `${PREFIX}${body}`;
-    if (!existing.some((coupon) => coupon.code === code)) return code;
+    if (!taken(code)) return code;
   }
   throw new Error("Could not mint a unique newsletter coupon");
 }
@@ -124,12 +127,12 @@ export function mergeNewsletterSnapshot(incoming: { newsletter?: string[]; newsl
 }
 
 /**
- * A mailed TW-XXXXXX is the secret. If the row was lost on Vercel, recreate it
- * so checkout can apply −15% without requiring the subscriber list.
+ * Recreate a coupon row only when the code carries a valid HMAC.
+ * Random TW-XXXXXX guesses fail the checksum and never get −15%.
  */
-export function ensureMintedCoupon(rawCode: string, email?: string) {
+export function materializeSignedCoupon(rawCode: string, email?: string) {
   const code = normalizeCouponCode(rawCode);
-  if (!isMintedNewsletterCode(code)) return null;
+  if (!isMintedNewsletterCode(code) || !isSignedNewsletterCode(code)) return null;
   const existing = findCouponByCode(code);
   if (existing) {
     if (email && !existing.email) existing.email = normalizeCouponEmail(email);
@@ -182,7 +185,7 @@ export function resolveCheckoutDiscount(
   if (!typed) return { ok: true, amountCents: 0, unique: false };
 
   const code = normalizeCouponCode(typed);
-  const unique = findCouponByCode(code) ?? ensureMintedCoupon(code, customerEmail);
+  const unique = findCouponByCode(code) ?? materializeSignedCoupon(code, customerEmail);
   if (unique) {
     if (unique.isUsed) {
       return { ok: false, message: "Ten kod rabatowy został już wykorzystany." };
