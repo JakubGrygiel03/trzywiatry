@@ -69,7 +69,8 @@ export function findCouponByEmail(email: string) {
 
 export function findCouponByCode(code: string) {
   const key = normalizeCouponCode(code);
-  return coupons().find((coupon) => coupon.code === key);
+  const compact = key.replace(/-/g, "");
+  return coupons().find((coupon) => coupon.code === key || coupon.code.replace(/-/g, "") === compact);
 }
 
 /** One coupon per e-mail: reuse the existing row, never mint a second. */
@@ -171,6 +172,30 @@ export function markNewsletterWelcomeFailed(email: string) {
   coupon.welcomeSendFailed = true;
 }
 
+function orderById(id: string) {
+  return runtimeStore.orders.find((order) => order.id === id);
+}
+
+/** Test checkouts and purged orders must not keep a mailed code locked forever. */
+function unlockIfStale(coupon: NewsletterCoupon, customerEmail?: string) {
+  if (coupon.isUsed && coupon.usedOrderId && !orderById(coupon.usedOrderId)) {
+    coupon.isUsed = false;
+    coupon.usedAt = undefined;
+    coupon.usedOrderId = undefined;
+  }
+  if (!coupon.reservedOrderId) return;
+  const reserved = orderById(coupon.reservedOrderId);
+  if (!reserved || reserved.status === "cancelled") {
+    coupon.reservedOrderId = undefined;
+    return;
+  }
+  if (reserved.status !== "pending") return;
+  const samePerson =
+    Boolean(customerEmail) &&
+    normalizeCouponEmail(reserved.customerEmail) === normalizeCouponEmail(customerEmail ?? "");
+  if (samePerson) coupon.reservedOrderId = undefined;
+}
+
 export type CheckoutDiscount =
   | { ok: true; amountCents: number; code?: string; unique: boolean }
   | { ok: false; message: string };
@@ -187,6 +212,7 @@ export function resolveCheckoutDiscount(
   const code = normalizeCouponCode(typed);
   const unique = findCouponByCode(code) ?? materializeSignedCoupon(code, customerEmail);
   if (unique) {
+    unlockIfStale(unique, customerEmail);
     if (unique.isUsed) {
       return { ok: false, message: "Ten kod rabatowy został już wykorzystany." };
     }
@@ -201,12 +227,26 @@ export function resolveCheckoutDiscount(
     return { ok: true, amountCents: discountAmountFromGoods(goodsCents), code: campaign, unique: false };
   }
 
-  return { ok: false, message: "Nieprawidłowy kod rabatowy. Sprawdź, czy wpisujesz go tak, jak w mailu." };
+  const owned = customerEmail ? findCouponByEmail(customerEmail) : undefined;
+  if (owned) {
+    return {
+      ok: false,
+      message: "Ten e-mail ma już kod w skrzynce. Wpisz go dokładnie tak, jak w mailu z pracowni.",
+    };
+  }
+
+  return {
+    ok: false,
+    message:
+      "Nie rozpoznajemy tego kodu. Wielokrotne „Zastosuj” go nie zużywa — sprawdź pisownię z maila.",
+  };
 }
 
-export function reserveCouponForOrder(code: string, orderId: string) {
+export function reserveCouponForOrder(code: string, orderId: string, customerEmail?: string) {
   const coupon = findCouponByCode(code);
-  if (!coupon || coupon.isUsed || coupon.reservedOrderId) return false;
+  if (!coupon) return false;
+  unlockIfStale(coupon, customerEmail);
+  if (coupon.isUsed || coupon.reservedOrderId) return false;
   coupon.reservedOrderId = orderId;
   return true;
 }

@@ -86,6 +86,11 @@ export function buildP24Session(input: {
   };
 }
 
+/** Unique per register — P24 rejects reusing the order number after a sandbox attempt. */
+export function newP24SessionId(orderNumber: string) {
+  return `${orderNumber}-${Date.now().toString(36)}`;
+}
+
 export async function registerP24Transaction(session: ReturnType<typeof buildP24Session>) {
   if (!hasP24Credentials()) return { ok: false as const, reason: "missing-keys" as const };
 

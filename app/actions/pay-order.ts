@@ -1,6 +1,6 @@
 "use server";
 
-import { buildP24Session, registerP24Transaction } from "@/lib/p24";
+import { buildP24Session, newP24SessionId, registerP24Transaction } from "@/lib/p24";
 import { resolvePaymentAccess } from "@/lib/payment-access";
 import { ensureOrdersHydrated, flushOrdersSave } from "@/lib/data/order-persist";
 import { getOrderByNumber, setOrderP24SessionInStore } from "@/lib/data/runtime-store";
@@ -37,7 +37,7 @@ export async function startPendingOrderPayment(
   }
 
   // Unique session per retry — P24 rejects reusing the same sessionId after a failed attempt.
-  const sessionId = `${order.orderNumber}-${Date.now().toString(36)}`;
+  const sessionId = newP24SessionId(order.orderNumber);
 
   const registered = await registerP24Transaction(
     buildP24Session({

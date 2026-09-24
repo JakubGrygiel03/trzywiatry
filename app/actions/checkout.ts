@@ -16,7 +16,7 @@ import { getAllProducts } from "@/lib/data/queries";
 import { getCustomerSession } from "@/lib/customer-session";
 import { orderPlacedEmail, sendEmail } from "@/lib/resend";
 import { notifyStudioNewOrder } from "@/lib/studio-notify";
-import { buildP24Session, registerP24Transaction } from "@/lib/p24";
+import { buildP24Session, newP24SessionId, registerP24Transaction } from "@/lib/p24";
 import { resolvePaymentAccess } from "@/lib/payment-access";
 import { storefrontClosedMessage } from "@/lib/maintenance";
 import { getVacationCheckoutNote } from "@/lib/vacation-message";
@@ -173,7 +173,7 @@ export async function createCheckoutSession(
   };
 
   if (discountResult.unique && discountResult.code) {
-    if (!reserveCouponForOrder(discountResult.code, order.id)) {
+    if (!reserveCouponForOrder(discountResult.code, order.id, parsed.data.customerEmail)) {
       return { ok: false, message: "Ten kod rabatowy jest już używany przy innym zamówieniu." };
     }
   }
@@ -206,8 +206,9 @@ export async function createCheckoutSession(
   });
   if (!mailed.ok) confirmQuery.set("mail", "0");
   const confirmPath = `/zamowienie/potwierdzenie?${confirmQuery}`;
+  const p24SessionId = newP24SessionId(orderNumber);
   const p24 = buildP24Session({
-    sessionId: orderNumber,
+    sessionId: p24SessionId,
     amountInCents: total,
     email: order.customerEmail,
     description: `Trzy Wiatry ${orderNumber}`,
@@ -219,7 +220,7 @@ export async function createCheckoutSession(
   if ((await resolvePaymentAccess()).canPay) {
     const registered = await registerP24Transaction(p24);
     if (registered.ok) {
-      setOrderP24SessionInStore(order.id, orderNumber);
+      setOrderP24SessionInStore(order.id, p24SessionId);
       await flushOrdersSave();
       return {
         ok: true,

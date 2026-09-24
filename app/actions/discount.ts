@@ -1,6 +1,7 @@
 "use server";
 
 import { ensureAtelierHydrated, saveAtelierSnapshot } from "@/lib/data/atelier-persist";
+import { ensureOrdersHydrated } from "@/lib/data/order-persist";
 import { getRuntimeSettings } from "@/lib/data/runtime-store";
 import { resolveCheckoutDiscount } from "@/lib/newsletter-coupons";
 
@@ -20,6 +21,7 @@ export async function previewDiscountCode(
   }
 
   await ensureAtelierHydrated({ force: true });
+  await ensureOrdersHydrated({ force: true });
   const result = resolveCheckoutDiscount(typed, goodsCents, getRuntimeSettings().promoCode, customerEmail);
   if (!result.ok) return result;
   if (!result.code || result.amountCents <= 0) {

@@ -28,12 +28,12 @@ function outcomeFromUnpaid(tx: P24TransactionLookup): PaymentOutcomeKey {
   return "awaiting";
 }
 
-/** Only the latest register() session. Falling back to orderNumber re-reads the first failed try. */
+/** Only the session we registered. Never guess the order number — leftover P24 tests collide. */
 function latestSessionId(order: StoredOrder) {
   const fromField = order.p24SessionId?.trim();
   const fromPayload =
     typeof order.payload.p24SessionId === "string" ? order.payload.p24SessionId.trim() : "";
-  return fromField || fromPayload || order.orderNumber;
+  return fromField || fromPayload || "";
 }
 
 function p24AmountMatches(p24Amount: number, orderCents: number) {
@@ -91,8 +91,11 @@ async function settleCapturedPayment(
   if (isTraditionalTransfer(tx.paymentMethod)) {
     return stampUnpaid(order, tx, "awaiting");
   }
-  if (!p24AmountMatches(tx.amount, order.totalAmountInCents)) {
-    return { order, outcome: "amount", transaction: tx };
+  const match = p24AmountMatches(tx.amount, order.totalAmountInCents);
+  // Wrong sum is only a “kwota” screen after P24 actually captured funds (status 2).
+  if (!match) {
+    if (tx.status === 2) return { order, outcome: "amount", transaction: tx };
+    return stampUnpaid(order, tx, outcomeFromUnpaid(tx));
   }
   const verified = await verifyP24Transaction({
     sessionId: tx.sessionId,
