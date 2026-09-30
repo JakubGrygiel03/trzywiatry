@@ -16,6 +16,9 @@ export const SITE = {
   addressLines: ["Życzliwa 13/4,", "80-176 Gdańsk"] as const,
   bankAccount: "08 1090 1678 0000 0001 2000 7664",
   tagline: "Ceramika, drewno i warsztaty. Slow craft z lokalnych materiałów.",
+  /** SERP / Open Graph — one sentence, no leftover WP CTAs. */
+  seoDescription:
+    "Pracownia Trzy Wiatry w Gdańsku: ręcznie toczona ceramika, drewno i warsztaty przy kole. Slow craft z lokalnej gliny.",
 };
 
 export const CAPACITY_FILTERS = [

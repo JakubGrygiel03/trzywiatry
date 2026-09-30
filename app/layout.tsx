@@ -29,8 +29,7 @@ export const metadata: Metadata = {
     default: "Trzy Wiatry — ceramika, drewno, warsztaty",
     template: "%s · Trzy Wiatry",
   },
-  description:
-    "Pracownia Trzy Wiatry: ręcznie toczona ceramika, drewno i warsztaty ceramiczne w Gdańsku. Slow craft, lokalne materiały.",
+  description: SITE.seoDescription,
   authors: [{ name: SITE.owner, url: getPublicSiteUrl() }],
   creator: SITE.name,
   publisher: SITE.name,
@@ -43,7 +42,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Trzy Wiatry — ceramika, drewno, warsztaty",
-    description: "Ceramika, drewno i warsztaty. Slow craft z Gdańska.",
+    description: SITE.seoDescription,
     locale: "pl_PL",
     type: "website",
     siteName: SITE.name,
@@ -53,7 +52,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Trzy Wiatry — ceramika, drewno, warsztaty",
-    description: "Ceramika, drewno i warsztaty. Slow craft z Gdańska.",
+    description: SITE.seoDescription,
     images: ["/brand/logo-nav.png"],
   },
   robots: {

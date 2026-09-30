@@ -1,11 +1,20 @@
+import type { Metadata } from "next";
 import { JsonLd } from "@/components/seo/json-ld";
-import { localBusinessJsonLd, websiteJsonLd } from "@/lib/seo";
 import { HomeSectionStack } from "@/components/home/home-section-stack";
 import { MaintenanceNotice } from "@/components/home/maintenance-notice";
 import { SurfaceCanvas } from "@/components/layout/surface-canvas";
+import { SITE } from "@/lib/constants";
 import { findHomeSection } from "@/lib/cms/home-layout";
 import { getHomeLayout } from "@/lib/data/home-layout";
 import { getHeroGalleryProducts, getSettings, getWorkshops } from "@/lib/data/queries";
+import { localBusinessJsonLd, pageMetadata, websiteJsonLd } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: "Trzy Wiatry — ceramika, drewno, warsztaty",
+  description: SITE.seoDescription,
+  path: "/",
+  absoluteTitle: true,
+});
 
 export default async function HomePage() {
   const sections = await getHomeLayout();

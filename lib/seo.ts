@@ -16,12 +16,14 @@ export function pageMetadata(input: {
   path: string;
   image?: string;
   type?: "website" | "article";
+  /** Homepage: skip the "%s · Trzy Wiatry" template so the brand is not doubled. */
+  absoluteTitle?: boolean;
 }): Metadata {
   const url = absoluteUrl(input.path);
   const shareImage = input.image || "/brand/logo-nav.png";
   const image = [{ url: shareImage, alt: input.title }];
   return {
-    title: input.title,
+    title: input.absoluteTitle ? { absolute: input.title } : input.title,
     description: input.description,
     alternates: { canonical: url, languages: { "pl-PL": url } },
     openGraph: {
@@ -77,7 +79,7 @@ export function localBusinessJsonLd() {
     "@context": "https://schema.org",
     "@type": "HomeGoodsStore",
     name: SITE.name,
-    description: SITE.tagline,
+    description: SITE.seoDescription,
     url: absoluteUrl("/"),
     email: SITE.email,
     telephone: SITE.phone,
@@ -99,6 +101,7 @@ export function websiteJsonLd() {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: SITE.name,
+    description: SITE.seoDescription,
     url: absoluteUrl("/"),
     inLanguage: "pl-PL",
     publisher: { "@type": "Organization", name: SITE.name, url: absoluteUrl("/") },
