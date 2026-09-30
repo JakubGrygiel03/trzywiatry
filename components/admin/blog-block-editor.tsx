@@ -147,7 +147,7 @@ export function BlogBlockEditor({
           if (item.id !== id || item.block.type !== "image-row") return item;
           const images = [...item.block.images] as typeof item.block.images;
           images[slot] = { ...images[slot], src: url, alt: images[slot].alt || file.name.replace(/\.[^.]+$/, "") };
-          return { ...item, block: { type: "image-row", images } };
+          return { ...item, block: { type: "image-row" as const, images } };
         });
         onChange?.(next.map((item) => item.block));
         return next;
@@ -212,7 +212,10 @@ export function BlogBlockEditor({
             <div className="space-y-2">
               <AlignToolbar
                 align={item.block.align}
-                onAlign={(align) => updateBlock(item.id, { ...item.block, type: "paragraph", align })}
+                onAlign={(align) => {
+                  if (item.block.type !== "paragraph") return;
+                  updateBlock(item.id, { type: "paragraph", text: item.block.text, align });
+                }}
                 onBold={() =>
                   updateBlock(item.id, {
                     type: "paragraph",
@@ -240,7 +243,10 @@ export function BlogBlockEditor({
             <div className="space-y-2">
               <AlignToolbar
                 align={item.block.align}
-                onAlign={(align) => updateBlock(item.id, { ...item.block, type: "heading", align })}
+                onAlign={(align) => {
+                  if (item.block.type !== "heading") return;
+                  updateBlock(item.id, { type: "heading", text: item.block.text, align });
+                }}
               />
               <AdminInput
                 value={item.block.text}
