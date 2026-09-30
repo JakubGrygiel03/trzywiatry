@@ -22,7 +22,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/admin/", "/konto/", "/api/", "/zamowienie", "/koszyk"],
       },
     ],
-    sitemap: `${base}/sitemap.xml`,
-    host: base,
+    sitemap: [`${base}/sitemap.xml`, `${base}/mapa.xml`],
+    host: new URL(base).hostname,
   };
 }

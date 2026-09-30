@@ -11,6 +11,22 @@ import {
 import { getProductPhoto } from "@/lib/media";
 import { absoluteUrl } from "@/lib/site-url";
 
+/** Cached XML for Googlebot — cold Supabase must not 500 the sitemap. */
+export const revalidate = 3600;
+
+async function hydrateSitemapCatalog() {
+  try {
+    await Promise.race([
+      ensureAtelierHydrated(),
+      new Promise<void>((resolve) => {
+        setTimeout(resolve, 2000);
+      }),
+    ]);
+  } catch {
+    // Seed / last in-memory catalog is enough for GSC.
+  }
+}
+
 function entry(
   path: string,
   opts: {
@@ -37,7 +53,7 @@ function entry(
 
 /** Public URLs only — GSC: https://trzywiatry.pl/sitemap.xml */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  await ensureAtelierHydrated();
+  await hydrateSitemapCatalog();
   const settingsStamp = getSettings().settingsUpdatedAt;
   const workshopsOn = areWorkshopsEnabled();
 

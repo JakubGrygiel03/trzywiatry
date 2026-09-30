@@ -31,6 +31,9 @@ const nextConfig: NextConfig = {
       ...supabaseImageHosts(),
     ],
   },
+  async rewrites() {
+    return [{ source: "/mapa.xml", destination: "/sitemap.xml" }];
+  },
   async headers() {
     return [
       {
