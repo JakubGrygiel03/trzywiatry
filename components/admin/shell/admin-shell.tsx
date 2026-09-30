@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { Suspense, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
+import { AdminMutationRefresh } from "@/components/admin/admin-mutation-refresh";
 import { AdminSidebar } from "@/components/admin/shell/admin-sidebar";
 import { AdminTopbar } from "@/components/admin/shell/admin-topbar";
 import { useAdminBadges } from "@/components/admin/shell/use-admin-badges";
@@ -38,7 +39,12 @@ export function AdminShell({ children, maintenanceMode = false }: AdminShellProp
           maintenanceMode={maintenanceMode}
           onMenuOpen={() => setMenuOpen(true)}
         />
-        <main className="flex-1 px-4 py-5 text-[15px] leading-relaxed md:px-6 md:py-6">{children}</main>
+        <main className="flex-1 px-4 py-5 text-[15px] leading-relaxed md:px-6 md:py-6">
+          <Suspense fallback={null}>
+            <AdminMutationRefresh />
+          </Suspense>
+          {children}
+        </main>
       </div>
     </div>
   );

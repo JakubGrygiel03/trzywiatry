@@ -7,6 +7,7 @@ import { flushAtelierSave } from "@/lib/data/atelier-persist";
 import { ensureOrdersHydrated, flushOrdersSave } from "@/lib/data/order-persist";
 import { deleteRuntimeOrder } from "@/lib/data/runtime-store";
 import { sendMonthlyStudioReport } from "@/lib/reports/monthly-studio";
+import { withCmsTick } from "@/lib/cms-redirect";
 
 export async function deleteOrder(formData: FormData) {
   await assertAdminSession();
@@ -23,7 +24,7 @@ export async function deleteOrder(formData: FormData) {
   revalidatePath("/admin/analityka");
   revalidatePath("/konto");
   revalidatePath("/sklep", "layout");
-  redirect(`/admin/zamowienia?usunieto=${encodeURIComponent(removed.orderNumber)}`);
+  redirect(withCmsTick(`/admin/zamowienia?usunieto=${encodeURIComponent(removed.orderNumber)}`));
 }
 
 export async function sendStudioMonthlyReport(formData: FormData) {
@@ -33,5 +34,5 @@ export async function sendStudioMonthlyReport(formData: FormData) {
   const flag = result.ok ? "1" : "0";
   const params = new URLSearchParams({ raport: flag, okres: result.periodLabel });
   if (!result.ok && result.error) params.set("powod", result.error.slice(0, 220));
-  redirect(`/admin/zamowienia?${params}`);
+  redirect(withCmsTick(`/admin/zamowienia?${params}`));
 }

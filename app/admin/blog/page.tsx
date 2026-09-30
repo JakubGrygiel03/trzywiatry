@@ -5,6 +5,7 @@ import { AdminPageHeader } from "@/components/admin/ui/admin-page-header";
 import { PublishBadge } from "@/components/admin/ui/admin-status-badge";
 import { getAllPosts } from "@/lib/data/queries";
 import { formatDate } from "@/lib/format";
+import { AdminAlert } from "@/components/admin/ui/admin-alert";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Szkic",
@@ -12,7 +13,12 @@ const STATUS_LABEL: Record<string, string> = {
   archived: "Archiwum",
 };
 
-export default function AdminBlogPage() {
+export default async function AdminBlogPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ usunieto?: string; blad?: string }>;
+}) {
+  const query = await searchParams;
   const posts = [...getAllPosts()].sort(
     (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
   );
@@ -32,6 +38,9 @@ export default function AdminBlogPage() {
           </Link>
         }
       />
+
+      {query.usunieto ? <AdminAlert variant="success">Wpis usunięty z bloga.</AdminAlert> : null}
+      {query.blad ? <AdminAlert variant="error">Nie udało się wykonać tej operacji.</AdminAlert> : null}
 
       {posts.length === 0 ? (
         <div className="rounded-xl border border-czarny/8 bg-bialy">

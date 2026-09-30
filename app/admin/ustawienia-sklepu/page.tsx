@@ -131,6 +131,44 @@ export default async function ShopSettingsPage({
         </AdminFormSection>
 
         <AdminFormSection
+          title="Działy sklepu"
+          description="Wygaszenie zostawia kafelek na /sklep z napisem „W przygotowaniu” i zamyka katalog przed klientami."
+        >
+          <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-czarny/8 bg-krem/40 p-4">
+            <input type="hidden" name="shopLaneUzytkowaEnabled" value="false" />
+            <input
+              type="checkbox"
+              name="shopLaneUzytkowaEnabled"
+              value="true"
+              defaultChecked={settings.shopLaneUzytkowaEnabled !== false}
+              className="mt-0.5 accent-czerwony"
+            />
+            <span className="text-sm">
+              <span className="font-medium text-czarny">Ceramika użytkowa / Dla domu</span>
+              <span className="mt-1 block text-xs text-czarny/45">
+                Kubki, czarki, miski i drewno. Odznacz, gdy ta półka ma być tymczasowo niedostępna.
+              </span>
+            </span>
+          </label>
+          <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-czarny/8 bg-krem/40 p-4">
+            <input type="hidden" name="shopLanePracowniaEnabled" value="false" />
+            <input
+              type="checkbox"
+              name="shopLanePracowniaEnabled"
+              value="true"
+              defaultChecked={settings.shopLanePracowniaEnabled !== false}
+              className="mt-0.5 accent-czerwony"
+            />
+            <span className="text-sm">
+              <span className="font-medium text-czarny">Dla pracowni / Dla ceramików</span>
+              <span className="mt-1 block text-xs text-czarny/45">
+                Formy matki i narzędzia. Odznacz, gdy dział jest w przygotowaniu.
+              </span>
+            </span>
+          </label>
+        </AdminFormSection>
+
+        <AdminFormSection
           title="Zdjęcia na wejściu do sklepu"
           description="Kafelki „dwa sklepy” na /sklep. Wgraj własne zdjęcie albo wybierz kadr z katalogu półki."
         >

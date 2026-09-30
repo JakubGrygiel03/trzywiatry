@@ -7,6 +7,7 @@ import { atelierDiskPersistsAcrossDeploys } from "@/lib/data/atelier-persist";
 import { CONTENT_PAGE_META, isContentPageKey, type ContentPageKey } from "@/lib/cms/content-pages";
 import { explainContentOverlayIssue, parseContentOverlay } from "@/lib/validations/content-pages";
 import { assertAdminSession } from "@/lib/admin-guard";
+import { withCmsTick } from "@/lib/cms-redirect";
 
 export async function saveContentPage(formData: FormData) {
   await assertAdminSession();
@@ -39,5 +40,5 @@ export async function saveContentPage(formData: FormData) {
   revalidatePath(CONTENT_PAGE_META[key].href);
   revalidatePath(adminHref);
   revalidatePath("/admin/strony");
-  redirect(`${adminHref}?zapisano=1`);
+  redirect(withCmsTick(`${adminHref}?zapisano=1`));
 }

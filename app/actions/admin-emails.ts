@@ -7,6 +7,7 @@ import { isEmailTemplateKey } from "@/lib/email/catalog";
 import { emailDraftSchema, explainEmailDraft } from "@/lib/validations/email-template";
 import { firstZodMessage } from "@/lib/validations/safe-input";
 import { assertAdminSession } from "@/lib/admin-guard";
+import { withCmsTick } from "@/lib/cms-redirect";
 
 export async function saveEmailTemplate(formData: FormData) {
   await assertAdminSession();
@@ -32,7 +33,7 @@ export async function saveEmailTemplate(formData: FormData) {
   });
   revalidatePath("/admin/emaile");
   revalidatePath(`/admin/emaile/${parsed.data.key}`);
-  redirect(`/admin/emaile/${parsed.data.key}?zapisano=1`);
+  redirect(withCmsTick(`/admin/emaile/${parsed.data.key}?zapisano=1`));
 }
 
 export async function restoreEmailTemplate(formData: FormData) {
@@ -42,5 +43,5 @@ export async function restoreEmailTemplate(formData: FormData) {
   await resetEmailTemplate(key);
   revalidatePath("/admin/emaile");
   revalidatePath(`/admin/emaile/${key}`);
-  redirect(`/admin/emaile/${key}?przywrocono=1`);
+  redirect(withCmsTick(`/admin/emaile/${key}?przywrocono=1`));
 }

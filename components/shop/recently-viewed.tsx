@@ -47,6 +47,7 @@ export function RecentlyViewed({
                     src={item.image}
                     alt=""
                     fill
+                    quality={60}
                     className="object-cover transition-transform duration-400 group-hover:scale-105"
                     sizes="56px"
                   />

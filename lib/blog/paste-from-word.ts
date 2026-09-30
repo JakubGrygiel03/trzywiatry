@@ -28,7 +28,7 @@ export function blocksFromClipboardHtml(html: string): BlogBlockInput[] {
         const items = Array.from(child.querySelectorAll(":scope > li"))
           .map((li) => paragraphFromElement(li))
           .filter(Boolean);
-        if (items.length) blocks.push({ type: "list", items });
+        if (items.length) blocks.push({ type: "list", items, ordered: tag === "ol" });
         continue;
       }
 

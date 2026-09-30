@@ -1,5 +1,4 @@
 import { AdminForgotPasswordForm } from "@/components/admin/admin-forgot-password-form";
-import { getAdminEmail } from "@/lib/admin-auth";
 
 export default function AdminResetRequestPage() {
   return (
@@ -10,7 +9,7 @@ export default function AdminResetRequestPage() {
         <p className="mt-2 mb-6 text-sm leading-relaxed text-czarny/55">
           Wyślemy jednorazowy link na e-mail admina. Link ważny 1 godzinę.
         </p>
-        <AdminForgotPasswordForm defaultEmail={getAdminEmail()} />
+        <AdminForgotPasswordForm />
       </div>
     </div>
   );

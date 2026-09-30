@@ -4,12 +4,14 @@ import Image from "next/image";
 import { useState } from "react";
 import { BlogBlockEditor } from "@/components/admin/blog-block-editor";
 import { CoverBackdropField } from "@/components/admin/cover-backdrop-field";
+import { BlogBlocks } from "@/components/blog/blog-blocks";
 import { AdminField, AdminInput, AdminSelect, AdminTextarea } from "@/components/admin/ui/admin-field";
 import { AdminFormActions } from "@/components/admin/ui/admin-form-actions";
 import { AdminFormSection } from "@/components/admin/ui/admin-form-section";
 import { coverBackdropClass, DEFAULT_BLOG_COVER_BACKDROP, isBlogCoverBackdrop } from "@/lib/blog-cover";
 import type { BlogPost } from "@/lib/types";
 import type { BlogBlockInput } from "@/lib/validations/blog";
+import { cn } from "@/lib/utils";
 
 function slugify(value: string) {
   return value
@@ -33,23 +35,67 @@ export function BlogPostForm({
   const [title, setTitle] = useState(post?.title ?? "");
   const [slug, setSlug] = useState(post?.slug ?? "");
   const [slugTouched, setSlugTouched] = useState(Boolean(post));
+  const [subtitle, setSubtitle] = useState(post?.subtitle ?? "");
+  const [excerpt, setExcerpt] = useState(post?.excerpt ?? "");
   const [coverImage, setCoverImage] = useState(post?.coverImage ?? "");
   const [coverBackdrop, setCoverBackdrop] = useState(
     isBlogCoverBackdrop(post?.coverBackdrop) ? post.coverBackdrop : DEFAULT_BLOG_COVER_BACKDROP,
   );
-
   const initialBlocks = (post?.blocks ?? []) as BlogBlockInput[];
+  const [blocks, setBlocks] = useState<BlogBlockInput[]>(
+    initialBlocks.length ? initialBlocks : [{ type: "paragraph", text: "" }],
+  );
+  const [mode, setMode] = useState<"edit" | "preview">("edit");
 
   return (
     <form action={action} className="space-y-6">
       {post ? <input type="hidden" name="id" value={post.id} /> : null}
       <input type="hidden" name="coverImage" value={coverImage} />
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => setMode("edit")}
+          className={cn(
+            "rounded-lg px-3 py-1.5 text-xs font-medium",
+            mode === "edit" ? "bg-czarny text-bialy" : "border border-czarny/12 text-czarny/60",
+          )}
+        >
+          Edycja
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("preview")}
+          className={cn(
+            "rounded-lg px-3 py-1.5 text-xs font-medium",
+            mode === "preview" ? "bg-czarny text-bialy" : "border border-czarny/12 text-czarny/60",
+          )}
+        >
+          Podgląd jak na blogu
+        </button>
+      </div>
+
+      {mode === "preview" ? (
+        <article className="rounded-xl border border-czarny/8 bg-bialy px-5 py-8 md:px-10">
+          <p className="font-heading text-[11px] uppercase tracking-[0.16em] text-czerwony">
+            {new Date().toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" })}
+          </p>
+          <h1 className="mt-2 font-heading text-3xl uppercase leading-[1.15] tracking-[0.06em] text-czarny md:text-4xl">
+            {title || "Bez tytułu"}
+          </h1>
+          {subtitle ? <p className="mt-3 text-lg leading-relaxed text-czarny/65">{subtitle}</p> : null}
+          {excerpt ? <p className="mt-3 text-sm italic text-czarny/45">Zajawka na liście: {excerpt}</p> : null}
+          <div className="mt-8">
+            <BlogBlocks blocks={blocks} />
+          </div>
+        </article>
+      ) : null}
+
+      <div className={cn("grid gap-6 xl:grid-cols-[minmax(0,1fr)_300px]", mode === "preview" && "hidden")}>
         <div className="space-y-6">
           <AdminFormSection
             title="Treść wpisu"
-            description="Wklej z Worda albo układaj blokami. Zdjęcia z Worda nie wchodzą — dodaj je osobno."
+            description="Wklej z Worda albo układaj blokami. Zdjęcia z Worda nie wchodzą — dodaj je osobno. Kolejność zmieniasz uchwytem (6 kropek) albo strzałkami."
           >
             <AdminField label="Tytuł" htmlFor="title" required>
               <AdminInput
@@ -65,14 +111,17 @@ export function BlogPostForm({
             </AdminField>
 
             <AdminField label="Podtytuł (opcjonalnie)" htmlFor="subtitle">
-              <AdminInput id="subtitle" name="subtitle" defaultValue={post?.subtitle ?? ""} />
+              <AdminInput id="subtitle" name="subtitle" value={subtitle} onChange={(e) => setSubtitle(e.target.value)} />
             </AdminField>
 
-            <BlogBlockEditor initialBlocks={initialBlocks.length ? initialBlocks : undefined} />
+            <BlogBlockEditor
+              initialBlocks={initialBlocks.length ? initialBlocks : undefined}
+              onChange={setBlocks}
+            />
           </AdminFormSection>
         </div>
 
-        <aside className="space-y-6 xl:sticky xl:top-20 xl:self-start">
+        <aside className="space-y-6 xl:sticky xl:top-20 xl:max-h-[calc(100dvh-10rem)] xl:self-start xl:overflow-y-auto xl:overscroll-contain">
           <AdminFormSection title="Publikacja">
             <AdminField label="Status" htmlFor="status">
               <AdminSelect id="status" name="status" defaultValue={post?.status ?? "draft"}>
@@ -95,8 +144,20 @@ export function BlogPostForm({
               />
             </AdminField>
 
-            <AdminField label="Zajawka (lista wpisów)" htmlFor="excerpt" required>
-              <AdminTextarea id="excerpt" name="excerpt" required defaultValue={post?.excerpt ?? ""} className="min-h-20" />
+            <AdminField
+              label="Krótki opis (zajawka)"
+              htmlFor="excerpt"
+              required
+              hint="1–2 zdania streszczenia pod tytułem na kafelku listy /blog — zanim ktoś otworzy cały artykuł."
+            >
+              <AdminTextarea
+                id="excerpt"
+                name="excerpt"
+                required
+                value={excerpt}
+                onChange={(e) => setExcerpt(e.target.value)}
+                className="min-h-20"
+              />
             </AdminField>
           </AdminFormSection>
 

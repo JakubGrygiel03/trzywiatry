@@ -32,7 +32,7 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<{
       <Container className="grid gap-12 lg:grid-cols-[1.15fr_0.85fr]">
         <div className="space-y-6">
           <div className="relative aspect-[16/10] overflow-hidden rounded-[32px] bg-krem">
-            <Image src={workshop.imageUrl} alt={workshop.title} fill className="object-cover" sizes="60vw" priority />
+            <Image src={workshop.imageUrl} alt={workshop.title} fill className="object-cover" sizes="60vw" priority quality={75} />
           </div>
           <p className="font-heading text-[11px] uppercase tracking-[0.22em] text-czerwony">{workshop.location}</p>
           <h1 className="font-heading text-3xl uppercase tracking-[0.08em] md:text-5xl">{workshop.title}</h1>

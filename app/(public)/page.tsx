@@ -1,5 +1,5 @@
 import { JsonLd } from "@/components/seo/json-ld";
-import { localBusinessJsonLd } from "@/lib/seo";
+import { localBusinessJsonLd, websiteJsonLd } from "@/lib/seo";
 import { HomeSectionStack } from "@/components/home/home-section-stack";
 import { MaintenanceNotice } from "@/components/home/maintenance-notice";
 import { SurfaceCanvas } from "@/components/layout/surface-canvas";
@@ -16,7 +16,7 @@ export default async function HomePage() {
 
   return (
     <SurfaceCanvas>
-      <JsonLd data={localBusinessJsonLd()} />
+      <JsonLd data={[localBusinessJsonLd(), websiteJsonLd()]} />
       <MaintenanceNotice />
       <HomeSectionStack
         sections={sections}

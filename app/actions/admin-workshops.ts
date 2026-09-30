@@ -11,6 +11,7 @@ import {
 import { flushAtelierSave } from "@/lib/data/atelier-persist";
 import { assertAdminSession } from "@/lib/admin-guard";
 import type { Workshop } from "@/lib/types";
+import { withCmsTick } from "@/lib/cms-redirect";
 
 const workshopSchema = z.object({
   id: z.string().optional(),
@@ -107,7 +108,7 @@ export async function createWorkshop(formData: FormData) {
   upsertRuntimeWorkshop(workshop);
   revalidateWorkshops(workshop.slug);
   await flushAtelierSave();
-  redirect(`/admin/warsztaty/${workshop.id}?zapisano=1`);
+  redirect(withCmsTick(`/admin/warsztaty/${workshop.id}?zapisano=1`));
 }
 
 export async function updateWorkshop(formData: FormData) {
@@ -157,7 +158,7 @@ export async function updateWorkshop(formData: FormData) {
   upsertRuntimeWorkshop(workshop);
   revalidateWorkshops(workshop.slug);
   await flushAtelierSave();
-  redirect(`/admin/warsztaty/${workshop.id}?zapisano=1`);
+  redirect(withCmsTick(`/admin/warsztaty/${workshop.id}?zapisano=1`));
 }
 
 export async function deleteWorkshop(formData: FormData) {
@@ -167,7 +168,7 @@ export async function deleteWorkshop(formData: FormData) {
   if (!existing) redirect("/admin/warsztaty?blad=1");
 
   deleteRuntimeWorkshop(id);
-  revalidateWorkshops(existing.slug);
   await flushAtelierSave();
-  redirect("/admin/warsztaty?usunieto=1");
+  revalidateWorkshops(existing.slug);
+  redirect(withCmsTick("/admin/warsztaty?usunieto=1"));
 }

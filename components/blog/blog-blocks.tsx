@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { BlogBlock } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 /** Renders **bold** segments inside plain blog text. */
 function RichText({ text }: { text: string }) {
@@ -16,41 +17,56 @@ function RichText({ text }: { text: string }) {
   );
 }
 
+function alignClass(align?: "left" | "center") {
+  return align === "center" ? "text-center" : "text-left";
+}
+
 export function BlogBlocks({ blocks }: { blocks: BlogBlock[] }) {
   return (
-    <div className="space-y-5 text-base leading-[1.75] text-czarny/85 md:text-[1.05rem] md:leading-[1.8]">
+    <div className="mx-auto max-w-[42rem] space-y-6 text-[1.05rem] leading-[1.85] text-czarny/80 md:space-y-7 md:text-[1.1rem] md:leading-[1.9]">
       {blocks.map((block, index) => {
         switch (block.type) {
           case "heading":
             return (
               <h2
                 key={index}
-                className="pt-4 text-xl font-medium tracking-tight text-czarny md:text-2xl"
+                className={cn(
+                  "pt-2 font-heading text-2xl uppercase tracking-[0.06em] text-czarny md:text-[1.75rem]",
+                  alignClass(block.align),
+                )}
               >
                 {block.text}
               </h2>
             );
           case "paragraph":
             return (
-              <p key={index}>
+              <p key={index} className={alignClass(block.align)}>
                 <RichText text={block.text} />
               </p>
             );
-          case "list":
+          case "list": {
+            const ListTag = block.ordered ? "ol" : "ul";
             return (
-              <ul key={index} className="list-disc space-y-1 pl-5">
-                {block.items.map((item) => (
-                  <li key={item}>
+              <ListTag
+                key={index}
+                className={cn(
+                  "space-y-2 pl-6 marker:text-czerwony",
+                  block.ordered ? "list-decimal" : "list-disc",
+                )}
+              >
+                {block.items.map((item, itemIndex) => (
+                  <li key={`${index}-${itemIndex}`} className="pl-1">
                     <RichText text={item} />
                   </li>
                 ))}
-              </ul>
+              </ListTag>
             );
+          }
           case "formula":
             return (
               <p
                 key={index}
-                className="overflow-x-auto rounded-2xl bg-krem px-4 py-3 font-mono text-sm text-czarny"
+                className="overflow-x-auto rounded-2xl border border-czarny/8 bg-krem/70 px-4 py-3 font-mono text-[0.92rem] leading-relaxed text-czarny"
               >
                 {block.text}
               </p>
@@ -63,7 +79,7 @@ export function BlogBlocks({ blocks }: { blocks: BlogBlock[] }) {
                   href={block.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-ceglany underline-offset-4 hover:underline"
+                  className="font-medium text-czerwony underline decoration-czerwony/30 underline-offset-4 hover:decoration-czerwony"
                 >
                   {block.label}
                 </a>
@@ -71,44 +87,39 @@ export function BlogBlocks({ blocks }: { blocks: BlogBlock[] }) {
             );
           case "image":
             return (
-              <figure key={index} className="space-y-2 py-2">
-                <div className="relative mx-auto aspect-[4/3] w-full max-w-xl overflow-hidden bg-krem">
+              <figure key={index} className="space-y-2 py-1">
+                <div className="relative mx-auto aspect-[4/3] w-full overflow-hidden rounded-2xl bg-krem">
                   <Image
                     src={block.src}
                     alt={block.alt}
                     fill
+                    quality={75}
                     className="object-contain"
-                    sizes="(max-width: 768px) 100vw, 640px"
+                    sizes="(max-width: 768px) 100vw, 672px"
                   />
                 </div>
                 {block.caption ? (
-                  <figcaption className="text-center text-sm italic text-ceglany/90">
-                    {block.caption}
-                  </figcaption>
+                  <figcaption className="text-center text-sm italic text-czarny/50">{block.caption}</figcaption>
                 ) : null}
               </figure>
             );
           case "image-row":
             return (
-              <div
-                key={index}
-                className="grid gap-3 py-2 sm:grid-cols-2"
-              >
+              <div key={index} className="grid gap-3 py-1 sm:grid-cols-2">
                 {block.images.map((image) => (
                   <figure key={image.src} className="space-y-2">
-                    <div className="relative aspect-[4/3] w-full overflow-hidden bg-krem">
+                    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-krem">
                       <Image
                         src={image.src}
                         alt={image.alt}
                         fill
+                        quality={75}
                         className="object-contain"
                         sizes="(max-width: 640px) 100vw, 320px"
                       />
                     </div>
                     {image.caption ? (
-                      <figcaption className="text-center text-xs italic text-ceglany/90">
-                        {image.caption}
-                      </figcaption>
+                      <figcaption className="text-center text-xs italic text-czarny/50">{image.caption}</figcaption>
                     ) : null}
                   </figure>
                 ))}

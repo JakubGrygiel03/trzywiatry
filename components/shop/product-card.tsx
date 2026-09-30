@@ -50,8 +50,9 @@ export function ProductCard({
               src={photo}
               alt={product.name}
               fill
-              className="img-hover-soft object-cover will-change-transform"
-              sizes="(max-width: 768px) 50vw, 33vw"
+              className="img-hover-soft object-cover"
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 280px"
+              quality={75}
               priority={imagePriority}
               loading={imagePriority ? "eager" : "lazy"}
               decoding="async"

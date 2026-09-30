@@ -41,7 +41,7 @@ export default function BlogPage() {
         </SurfaceTile>
 
         <div className="grid grid-cols-1 gap-4 md:gap-5 lg:grid-cols-2">
-          {posts.map((post) => (
+          {posts.map((post, index) => (
             <Link key={post.id} href={`/blog/${post.slug}`} className="group block min-w-0">
               <SurfaceTile className="h-full transition-colors group-hover:border-czerwony/35">
                 <div className="relative h-44 w-full overflow-hidden border-b border-czarny/8 bg-bialy sm:h-52 lg:h-auto lg:aspect-[16/10]">
@@ -49,6 +49,8 @@ export default function BlogPage() {
                     src={post.coverImage}
                     alt={post.title}
                     fill
+                    quality={75}
+                    priority={index === 0}
                     className="object-contain p-3 transition-transform duration-700 group-hover:scale-[1.02] sm:p-4"
                     sizes="(max-width: 1024px) 100vw, 50vw"
                   />

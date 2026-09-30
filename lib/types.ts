@@ -39,6 +39,8 @@ export type Product = {
   shortDescription?: string;
   description: string;
   domain: ProductDomain;
+  /** Explicit shop hub — falls back to domain when missing (legacy seed). */
+  shopLane?: "uzytkowa" | "pracownia";
   category: string;
   subCategory?: string;
   capacityMl?: number;
@@ -81,6 +83,9 @@ export type StudioSettings = {
   /** Cover photos for the /sklep two-lane hub. */
   shopHubUzytkowaImage: string;
   shopHubPracowniaImage: string;
+  /** When false, the hub tile is dimmed and the catalog is closed to customers. */
+  shopLaneUzytkowaEnabled: boolean;
+  shopLanePracowniaEnabled: boolean;
   /** Homepage newsletter band — edited in admin shop settings. */
   newsletterEnabled: boolean;
   newsletterEyebrow: string;
@@ -112,9 +117,9 @@ export type Workshop = {
 export type BlogBlockImage = { src: string; alt: string; caption?: string };
 
 export type BlogBlock =
-  | { type: "paragraph"; text: string }
-  | { type: "heading"; text: string }
-  | { type: "list"; items: string[] }
+  | { type: "paragraph"; text: string; align?: "left" | "center" }
+  | { type: "heading"; text: string; align?: "left" | "center" }
+  | { type: "list"; items: string[]; ordered?: boolean }
   | { type: "formula"; text: string }
   | ({ type: "image" } & BlogBlockImage)
   | { type: "image-row"; images: [BlogBlockImage, BlogBlockImage] }

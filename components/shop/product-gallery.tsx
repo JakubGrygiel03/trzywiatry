@@ -135,9 +135,10 @@ function ZoomablePhoto({
         alt={alt}
         fill
         priority={priority}
+        quality={80}
         draggable={false}
         sizes="(max-width: 1024px) 100vw, 55vw"
-        className="object-cover will-change-transform select-none"
+        className={cn("object-cover select-none", zoomed && "will-change-transform")}
         style={{
           transformOrigin: origin,
           transform: zoomed ? "scale(1.55)" : "scale(1)",

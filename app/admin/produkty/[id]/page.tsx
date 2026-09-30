@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { ExternalLink } from "lucide-react";
 import { deleteProduct, updateProduct } from "@/app/actions/admin-products";
 import { ProductForm } from "@/components/admin/product-form";
@@ -9,8 +10,11 @@ import { AdminPageHeader } from "@/components/admin/ui/admin-page-header";
 import { PublishBadge } from "@/components/admin/ui/admin-status-badge";
 import { CATEGORY_LABELS, DOMAIN_LABELS } from "@/lib/constants";
 import { getAllProducts, getCollections, getProductById } from "@/lib/data/queries";
+import { ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 import { formatPLN } from "@/lib/format";
 import { getProductPhoto } from "@/lib/media";
+
+export const dynamic = "force-dynamic";
 
 export default async function EditProductPage({
   params,
@@ -19,6 +23,8 @@ export default async function EditProductPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ zapisano?: string; blad?: string }>;
 }) {
+  await connection();
+  await ensureAtelierHydrated({ force: true });
   const { id } = await params;
   const query = await searchParams;
   const product = getProductById(id);

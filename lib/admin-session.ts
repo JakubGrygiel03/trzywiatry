@@ -6,12 +6,7 @@ export const ADMIN_COOKIE = "tw-admin";
 export const ADMIN_COOKIE_MAX_AGE = 60 * 60 * 24 * 14;
 
 function adminSecret() {
-  return (
-    process.env.ADMIN_SESSION_SECRET ??
-    process.env.CUSTOMER_SESSION_SECRET ??
-    process.env.ADMIN_DEMO_PASSWORD ??
-    "trzywiatry-dev-admin"
-  );
+  return process.env.ADMIN_SESSION_SECRET?.trim() || process.env.CUSTOMER_SESSION_SECRET?.trim() || "";
 }
 
 export function adminCookieOptions(request?: Request) {
@@ -32,16 +27,20 @@ export function adminCookieOptions(request?: Request) {
 
 /** Signed value so `tw-admin=1` cannot open the CMS. */
 export function createAdminCookieValue() {
+  const secret = adminSecret();
+  if (!secret) throw new Error("Missing ADMIN_SESSION_SECRET");
   const exp = String(Date.now() + ADMIN_COOKIE_MAX_AGE * 1000);
   const payload = `1.${exp}`;
-  const sig = createHmac("sha256", adminSecret()).update(payload).digest("hex");
+  const sig = createHmac("sha256", secret).update(payload).digest("hex");
   return `${payload}.${sig}`;
 }
 
 export function isAdminCookieValue(value: string | undefined) {
   if (!value) return false;
-  // Legacy unsigned cookie — never honor it in production.
-  if (value === "1") return process.env.NODE_ENV !== "production";
+  const secret = adminSecret();
+  if (!secret) return false;
+  // Legacy unsigned cookie — never honor it.
+  if (value === "1") return false;
 
   const parts = value.split(".");
   if (parts.length !== 3) return false;
@@ -50,7 +49,7 @@ export function isAdminCookieValue(value: string | undefined) {
   if (Number(exp) < Date.now()) return false;
 
   const payload = `${flag}.${exp}`;
-  const expected = createHmac("sha256", adminSecret()).update(payload).digest("hex");
+  const expected = createHmac("sha256", secret).update(payload).digest("hex");
   try {
     const left = Buffer.from(sig);
     const right = Buffer.from(expected);

@@ -9,10 +9,8 @@ const ERRORS: Record<string, string> = {
 };
 
 export function AdminLoginForm({
-  defaultEmail,
   error,
 }: {
-  defaultEmail: string;
   error?: string;
 }) {
   return (
@@ -29,7 +27,6 @@ export function AdminLoginForm({
             name="email"
             type="email"
             autoComplete="username"
-            defaultValue={defaultEmail}
             placeholder="pracownia@trzywiatry.pl"
           />
         </div>

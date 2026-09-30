@@ -16,9 +16,13 @@ import { getProductPhoto } from "@/lib/media";
 import { splitProductCopy } from "@/lib/product-copy";
 import { breadcrumbJsonLd, noIndexRobots, pageMetadata, productJsonLd } from "@/lib/seo";
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { notFound, permanentRedirect } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  await connection();
   const { slug } = await params;
   const product = getProductBySlug(slug);
   if (!product) return { title: "Produkt", robots: noIndexRobots };
@@ -32,6 +36,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
+  await connection();
   const { slug } = await params;
   if (isAliasedProductSlug(slug)) permanentRedirect(`/sklep/${resolveProductSlug(slug)}`);
   const product = getProductBySlug(slug);

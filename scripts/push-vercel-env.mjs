@@ -15,16 +15,16 @@ function loadEnv() {
 }
 
 const local = loadEnv();
-let siteUrl = local.NEXT_PUBLIC_SITE_URL || "https://trzywiatry.vercel.app";
+let siteUrl = local.NEXT_PUBLIC_SITE_URL || "https://trzywiatry.pl";
 try {
   const host = new URL(siteUrl).hostname;
   console.log("SITE_HOST", host);
-  if (host === "localhost" || host === "127.0.0.1") {
-    siteUrl = "https://trzywiatry.vercel.app";
-    console.log("SITE_HOST_OVERRIDE", "trzywiatry.vercel.app");
+  if (host === "localhost" || host === "127.0.0.1" || host.endsWith(".vercel.app")) {
+    siteUrl = "https://trzywiatry.pl";
+    console.log("SITE_HOST_OVERRIDE", "trzywiatry.pl");
   }
 } catch {
-  siteUrl = "https://trzywiatry.vercel.app";
+  siteUrl = "https://trzywiatry.pl";
 }
 
 const values = {

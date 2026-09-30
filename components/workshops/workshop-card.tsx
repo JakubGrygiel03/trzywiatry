@@ -18,6 +18,7 @@ export function WorkshopCard({ workshop }: { workshop: Workshop }) {
           src={workshop.imageUrl}
           alt={workshop.title}
           fill
+          quality={75}
           className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
           sizes="(max-width: 768px) 100vw, 50vw"
         />

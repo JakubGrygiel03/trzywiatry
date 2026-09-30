@@ -67,7 +67,10 @@ const PRODUCT_SLUG_ALIASES: Record<string, string> = {
 };
 
 export function getProductBySlug(slug: string) {
-  return getPublishedProducts().find((product) => product.slug === resolveProductSlug(slug));
+  const resolved = resolveProductSlug(slug);
+  // Published slug is enough — photo gate on getPublishedProducts used to 404
+  // a listed product whose upload wasn't classified as a "usable" cover yet.
+  return getAllProducts().find((product) => product.isPublished && product.slug === resolved);
 }
 
 export function resolveProductSlug(slug: string) {
@@ -183,10 +186,12 @@ export function filterCatalog(filters: {
   domain?: ProductDomain;
   category?: string;
   domains?: readonly ProductDomain[];
+  lane?: ShopLaneId;
   minPriceCents?: number;
   maxPriceCents?: number;
 }) {
   return getPublishedProducts().filter((product) => {
+    if (filters.lane && !productInLane(product, filters.lane)) return false;
     if (filters.domains && !filters.domains.includes(product.domain)) return false;
     if (filters.domain && product.domain !== filters.domain) return false;
     if (filters.category && product.category !== filters.category) return false;
@@ -227,9 +232,9 @@ export function sortCatalog(products: Product[], sortId?: string | null) {
 }
 
 /** Catalog price bounds in grosze for the shop slider. */
-export function getCatalogPriceBounds(domains?: readonly ProductDomain[]) {
+export function getCatalogPriceBounds(lane?: ShopLaneId) {
   const products = getPublishedProducts().filter(
-    (product) => !domains || domains.includes(product.domain),
+    (product) => !lane || productInLane(product, lane),
   );
   if (products.length === 0) return { minCents: 0, maxCents: 10000 };
   const prices = products.map((product) => product.priceInCents);
@@ -240,9 +245,9 @@ export function getCatalogPriceBounds(domains?: readonly ProductDomain[]) {
 }
 
 /** Counts for hierarchical category sidebar. */
-export function getShopCategoryCounts(domains?: readonly ProductDomain[]) {
+export function getShopCategoryCounts(lane?: ShopLaneId) {
   const products = getPublishedProducts().filter(
-    (product) => !domains || domains.includes(product.domain),
+    (product) => !lane || productInLane(product, lane),
   );
   const byCategory = new Map<string, number>();
   const byDomain = new Map<string, number>();

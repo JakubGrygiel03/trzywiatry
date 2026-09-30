@@ -45,7 +45,8 @@ export function HeroTile({ product, priority }: { product: HeroGalleryItem; prio
         alt={shown.name}
         fill
         priority={priority}
-        sizes="(max-width: 768px) 33vw, 26vw"
+        quality={75}
+        sizes="(max-width: 768px) 50vw, 28vw"
         className="object-cover object-center"
       />
       {incoming ? (
@@ -53,7 +54,8 @@ export function HeroTile({ product, priority }: { product: HeroGalleryItem; prio
           src={incoming.image}
           alt={incoming.name}
           fill
-          sizes="(max-width: 768px) 33vw, 26vw"
+          quality={75}
+          sizes="(max-width: 768px) 50vw, 28vw"
           className={cn(
             "object-cover object-center transition-opacity ease-out motion-reduce:transition-none",
             visible ? "opacity-100" : "opacity-0",

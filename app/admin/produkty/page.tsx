@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { Plus, Package } from "lucide-react";
+import { connection } from "next/server";
 import { AdminBestsellerToggle } from "@/components/admin/admin-bestseller-toggle";
+import { AdminCacheBust } from "@/components/admin/admin-cache-bust";
 import { AdminStockEditor } from "@/components/admin/admin-stock-editor";
+import { AdminAlert } from "@/components/admin/ui/admin-alert";
 import { AdminEmptyState } from "@/components/admin/ui/admin-empty-state";
 import { AdminPageHeader } from "@/components/admin/ui/admin-page-header";
 import { PublishBadge } from "@/components/admin/ui/admin-status-badge";
@@ -11,13 +14,17 @@ import { filterAdminProducts } from "@/lib/data/admin-product-filter";
 import { getAllProducts } from "@/lib/data/queries";
 import { formatPLN } from "@/lib/format";
 import { getProductPhoto } from "@/lib/media";
+import { laneForDomain, SHOP_LANES } from "@/lib/shop-lanes";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; kategoria?: string }>;
+  searchParams: Promise<{ q?: string; kategoria?: string; usunieto?: string; t?: string; blad?: string }>;
 }) {
-  const { q, kategoria } = await searchParams;
+  await connection();
+  const { q, kategoria, usunieto, t, blad } = await searchParams;
   const catalog = getAllProducts();
   const products = filterAdminProducts(catalog, { q, category: kategoria });
   const variantCount = products.reduce((sum, product) => sum + product.variants.length, 0);
@@ -42,6 +49,10 @@ export default async function AdminProductsPage({
           </Link>
         }
       />
+
+      {usunieto ? <AdminAlert variant="success">Produkt usunięty z katalogu.</AdminAlert> : null}
+      {blad ? <AdminAlert variant="error">Nie udało się wykonać tej operacji.</AdminAlert> : null}
+      <AdminCacheBust nonce={usunieto ? t ?? "1" : undefined} />
 
       <ProductListFilters initialQ={q ?? ""} initialCategory={kategoria ?? ""} />
 
@@ -120,6 +131,8 @@ export default async function AdminProductsPage({
                       <PublishBadge published={product.isPublished} />
                     </div>
                     <p className="mt-0.5 text-xs text-czarny/45">
+                      {SHOP_LANES[product.shopLane ?? laneForDomain(product.domain)].shortLabel}
+                      {" · "}
                       {DOMAIN_LABELS[product.domain]} · {CATEGORY_LABELS[product.category] ?? product.category}
                       {product.capacityMl ? ` · ${product.capacityMl} ml` : ""}
                       {` · ${product.variants.length} ${product.variants.length === 1 ? "wariant" : "warianty"}`}

@@ -15,6 +15,8 @@ export const defaultStudioSettings: StudioSettings = {
   heroSlots: [],
   shopHubUzytkowaImage: "/brand/photos/products/woo/czajniczek-w-kropki-zestaw-03.jpg",
   shopHubPracowniaImage: "/brand/photos/products/woo/forma-gipsowa-c1-06.jpg",
+  shopLaneUzytkowaEnabled: true,
+  shopLanePracowniaEnabled: true,
   newsletterEnabled: true,
   newsletterEyebrow: "Newsletter",
   newsletterTitle: "−15% na pierwsze naczynie",

@@ -7,6 +7,7 @@ import { atelierDiskPersistsAcrossDeploys } from "@/lib/data/atelier-persist";
 import { getRuntimeSettings } from "@/lib/data/runtime-store";
 import { explainHomeLayoutIssues, homeLayoutSchema } from "@/lib/validations/home-layout";
 import { assertAdminSession } from "@/lib/admin-guard";
+import { withCmsTick } from "@/lib/cms-redirect";
 
 export async function saveHomeLayout(formData: FormData) {
   await assertAdminSession();
@@ -33,5 +34,5 @@ export async function saveHomeLayout(formData: FormData) {
   revalidatePath("/kolekcje", "layout");
   revalidatePath("/admin/strona-glowna");
   revalidatePath("/admin/ustawienia-sklepu");
-  redirect("/admin/strona-glowna?zapisano=1");
+  redirect(withCmsTick("/admin/strona-glowna?zapisano=1"));
 }

@@ -15,7 +15,14 @@ function supabaseImageHosts() {
 }
 
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
+  experimental: {
+    optimizePackageImports: ["lucide-react", "framer-motion"],
+  },
   images: {
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 60 * 60 * 24 * 30,
+    qualities: [60, 75, 80],
     remotePatterns: [
       {
         protocol: "https",
@@ -32,6 +39,10 @@ const nextConfig: NextConfig = {
           { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
           { key: "Service-Worker-Allowed", value: "/" },
         ],
+      },
+      {
+        source: "/brand/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
       },
     ];
   },

@@ -18,10 +18,15 @@ export function AddToCart({ product }: { product: Product }) {
   const capacities = useMemo(() => variantCapacities(product), [product]);
   const structured = colors.length > 0 || capacities.length > 1;
   const [error, setError] = useState<string | null>(null);
+  const inCart = useCartStore((state) =>
+    variant ? state.items.find((line) => line.variantId === variant.id)?.quantity ?? 0 : 0,
+  );
 
   const price = variant?.priceInCents ?? product.priceInCents;
-  const status = variantStockLabel(variant?.stockQuantity ?? 0, product.lowStockThreshold);
-  const soldOut = !variant || !variant.isAvailable || variant.stockQuantity <= 0;
+  const remaining = Math.max(0, (variant?.stockQuantity ?? 0) - inCart);
+  const status = variantStockLabel(remaining, product.lowStockThreshold);
+  const soldOut = !variant || !variant.isAvailable || remaining <= 0;
+  const cartHoldsStock = Boolean(variant && variant.stockQuantity > 0 && remaining <= 0);
 
   function handleAdd() {
     if (!variant || soldOut) return;
@@ -140,12 +145,16 @@ export function AddToCart({ product }: { product: Product }) {
       )}
       <p className="font-heading text-2xl">{formatPLN(price)}</p>
       {status === "low" && !soldOut ? (
-        <p className="text-sm text-ceglany">Niski stan — zostało {variant.stockQuantity} szt.</p>
+        <p className="text-sm text-ceglany">Niski stan — zostało {remaining} szt.</p>
       ) : null}
       <Button type="button" onClick={handleAdd} disabled={soldOut} className="w-full">
-        {soldOut ? "Wyprzedane" : "Dodaj do koszyka"}
+        {cartHoldsStock ? "W koszyku" : soldOut ? "Wyprzedane" : "Dodaj do koszyka"}
       </Button>
-      {error ? <p className="text-sm text-czerwony">{error}</p> : null}
+      {cartHoldsStock ? (
+        <p className="text-sm text-szary">Masz już w koszyku wszystkie dostępne sztuki.</p>
+      ) : error ? (
+        <p className="text-sm text-czerwony">{error}</p>
+      ) : null}
     </div>
   );
 }

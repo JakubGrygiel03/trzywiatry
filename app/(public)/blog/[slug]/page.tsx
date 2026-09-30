@@ -65,6 +65,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             description: post.excerpt,
             image: post.coverImage ? [absoluteUrl(post.coverImage)] : undefined,
             datePublished: post.publishedAt,
+            dateModified: post.publishedAt,
+            inLanguage: "pl-PL",
             author: { "@type": "Person", name: post.author || SITE.owner },
             publisher: { "@type": "Organization", name: SITE.name, url: absoluteUrl("/") },
             mainEntityOfPage: absoluteUrl(`/blog/${post.slug}`),

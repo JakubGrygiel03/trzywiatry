@@ -29,7 +29,18 @@ export function laneForDomain(domain: ProductDomain): ShopLaneId {
 }
 
 export function productInLane(product: Product, lane: ShopLaneId) {
+  if (product.shopLane === "uzytkowa" || product.shopLane === "pracownia") {
+    return product.shopLane === lane;
+  }
   return (SHOP_LANES[lane].domains as readonly string[]).includes(product.domain);
+}
+
+export function isShopLaneEnabled(
+  lane: ShopLaneId,
+  settings: { shopLaneUzytkowaEnabled?: boolean; shopLanePracowniaEnabled?: boolean },
+) {
+  if (lane === "uzytkowa") return settings.shopLaneUzytkowaEnabled !== false;
+  return settings.shopLanePracowniaEnabled !== false;
 }
 
 export function categoryTreeForLane(lane: ShopLaneId) {

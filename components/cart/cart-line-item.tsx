@@ -19,7 +19,7 @@ export function CartLineItem({ item }: { item: CartItem }) {
     <div className="flex items-start gap-3">
       <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-krem">
         {photo ? (
-          <Image src={photo} alt={item.name} fill className="object-cover" sizes="80px" />
+          <Image src={photo} alt={item.name} fill quality={60} className="object-cover" sizes="80px" />
         ) : product ? (
           <AtelierFrame product={product} className="h-20 min-h-20 w-20 rounded-2xl" />
         ) : (

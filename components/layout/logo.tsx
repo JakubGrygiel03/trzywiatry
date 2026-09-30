@@ -26,6 +26,7 @@ export function Logo({
         width={336}
         height={156}
         sizes={isFooter ? "(max-width: 768px) 160px, 280px" : "192px"}
+        quality={80}
         className={isFooter ? "footer-logo" : "h-8 w-auto md:h-12"}
         style={{ width: "auto" }}
         priority={priority}

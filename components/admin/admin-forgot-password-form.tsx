@@ -8,7 +8,7 @@ import { Input, Label } from "@/components/ui/field";
 
 const initial: AuthFormState = { ok: false, message: "" };
 
-export function AdminForgotPasswordForm({ defaultEmail }: { defaultEmail: string }) {
+export function AdminForgotPasswordForm() {
   const [state, action, pending] = useActionState(requestAdminPasswordReset, initial);
 
   return (
@@ -21,7 +21,6 @@ export function AdminForgotPasswordForm({ defaultEmail }: { defaultEmail: string
           type="email"
           autoComplete="email"
           required
-          defaultValue={defaultEmail}
         />
       </div>
       <Button type="submit" disabled={pending} className="w-full">

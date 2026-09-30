@@ -49,8 +49,9 @@ function sha256(value: string) {
   return createHash("sha256").update(value).digest("hex");
 }
 
-function defaultPassword() {
-  return process.env.ADMIN_DEMO_PASSWORD ?? "atelier";
+function bootstrapPassword() {
+  const fromEnv = process.env.ADMIN_DEMO_PASSWORD?.trim();
+  return fromEnv ? fromEnv : null;
 }
 
 function readAuthFile(): AdminAuthFile | null {
@@ -89,9 +90,18 @@ export function loadAdminAuth(): AdminAuthFile {
     return existing;
   }
 
+  const bootstrap = bootstrapPassword();
+  if (!bootstrap) {
+    return {
+      email,
+      passwordHash: "",
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
   const seeded: AdminAuthFile = {
     email,
-    passwordHash: hashPassword(defaultPassword()),
+    passwordHash: hashPassword(bootstrap),
     updatedAt: new Date().toISOString(),
   };
   writeAuthFile(seeded);
@@ -100,6 +110,7 @@ export function loadAdminAuth(): AdminAuthFile {
 
 export function verifyAdminCredentials(email: string, password: string) {
   const auth = loadAdminAuth();
+  if (!auth.passwordHash) return false;
   const normalized = email.trim().toLowerCase();
   if (normalized !== auth.email) return false;
   return verifyPassword(password, auth.passwordHash);

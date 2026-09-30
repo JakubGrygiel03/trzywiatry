@@ -7,11 +7,8 @@ import { RelatedProductsField } from "@/components/admin/related-products-field"
 import { AdminField, AdminInput, AdminSelect, AdminTextarea } from "@/components/admin/ui/admin-field";
 import { AdminFormActions } from "@/components/admin/ui/admin-form-actions";
 import { AdminFormSection } from "@/components/admin/ui/admin-form-section";
-import {
-  CATEGORIES_BY_DOMAIN,
-  CATEGORY_LABELS,
-  DOMAIN_LABELS,
-} from "@/lib/constants";
+import { CATEGORIES_BY_DOMAIN, CATEGORY_LABELS, DOMAIN_LABELS } from "@/lib/constants";
+import { laneForDomain, SHOP_LANES, type ShopLaneId } from "@/lib/shop-lanes";
 import type { Collection, Product, ProductDomain } from "@/lib/types";
 
 function slugify(value: string) {
@@ -38,10 +35,14 @@ export function ProductForm({
   submitLabel: string;
 }) {
   const [domain, setDomain] = useState<ProductDomain>(product?.domain ?? "ceramika");
+  const [shopLane, setShopLane] = useState<ShopLaneId>(
+    product?.shopLane ?? laneForDomain(product?.domain ?? "ceramika"),
+  );
   const [name, setName] = useState(product?.name ?? "");
   const [slug, setSlug] = useState(product?.slug ?? "");
   const [slugTouched, setSlugTouched] = useState(Boolean(product));
 
+  const laneDomains = SHOP_LANES[shopLane].domains;
   const categories = useMemo(() => CATEGORIES_BY_DOMAIN[domain] ?? [], [domain]);
   const defaultCategory =
     product?.category && categories.includes(product.category) ? product.category : categories[0];
@@ -161,6 +162,7 @@ export function ProductForm({
             <ProductVariantsField
               initialVariants={product?.variants}
               imageOptions={product?.images ?? []}
+              productSlug={slug}
             />
           </AdminFormSection>
 
@@ -191,7 +193,7 @@ export function ProductForm({
           </AdminFormSection>
         </div>
 
-        <aside className="space-y-6 xl:sticky xl:top-20 xl:self-start">
+        <aside className="space-y-6 xl:sticky xl:top-20 xl:max-h-[calc(100dvh-10rem)] xl:self-start xl:overflow-y-auto xl:overscroll-contain xl:pr-1">
           <AdminFormSection title="Publikacja">
             <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-czarny/8 bg-krem/40 p-3">
               <input
@@ -221,7 +223,56 @@ export function ProductForm({
             </label>
           </AdminFormSection>
 
-          <AdminFormSection title="Kategoria sklepu" description="Filtry na /sklep czytają te pola.">
+          <AdminFormSection
+            title="Kategoria sklepu"
+            description="Dział na /sklep i filtry katalogu. Wybór sklepu jest niezależny od reszty formularza."
+          >
+            <fieldset>
+              <legend className="mb-2 text-sm font-medium text-czarny">
+                Dział sklepu <span className="text-czerwony">*</span>
+              </legend>
+              <input type="hidden" name="shopLane" value={shopLane} />
+              <div className="grid gap-2">
+                {(Object.values(SHOP_LANES) as (typeof SHOP_LANES)[ShopLaneId][]).map((lane) => {
+                  const selected = shopLane === lane.id;
+                  return (
+                    <label
+                      key={lane.id}
+                      className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition ${
+                        selected
+                          ? "border-czerwony/40 bg-czerwony/5"
+                          : "border-czarny/8 bg-krem/40 hover:border-czarny/15"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="shopLaneChoice"
+                        value={lane.id}
+                        checked={selected}
+                        onChange={() => {
+                          setShopLane(lane.id);
+                          const nextDomains = lane.domains;
+                          if (!(nextDomains as readonly string[]).includes(domain)) {
+                            const nextDomain = nextDomains[0];
+                            setDomain(nextDomain);
+                            const nextCats = CATEGORIES_BY_DOMAIN[nextDomain] ?? [];
+                            setCategory(nextCats[0] ?? "kubki");
+                          }
+                        }}
+                        className="mt-0.5 accent-czerwony"
+                      />
+                      <span className="text-sm">
+                        <span className="font-medium text-czarny">
+                          {lane.label} / {lane.shortLabel}
+                        </span>
+                        <span className="mt-0.5 block text-xs text-czarny/45">{lane.description}</span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+
             <AdminField label="Domena" htmlFor="domain" required>
               <AdminSelect
                 id="domain"
@@ -230,12 +281,14 @@ export function ProductForm({
                 onChange={(event) => {
                   const next = event.target.value as ProductDomain;
                   setDomain(next);
+                  setShopLane(laneForDomain(next));
                   const nextCats = CATEGORIES_BY_DOMAIN[next] ?? [];
                   setCategory(nextCats[0] ?? "kubki");
                 }}
               >
                 {(Object.keys(DOMAIN_LABELS) as ProductDomain[])
                   .filter((key) => key !== "warsztaty")
+                  .filter((key) => (laneDomains as readonly string[]).includes(key) || key === domain)
                   .map((key) => (
                     <option key={key} value={key}>
                       {DOMAIN_LABELS[key]}

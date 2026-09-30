@@ -10,20 +10,48 @@ import { Container } from "@/components/ui/badge";
 import {
   filterCatalog,
   getCatalogPriceBounds,
+  getSettings,
   getShopCategoryCounts,
   sortCatalog,
 } from "@/lib/data/queries";
-import { isShopLane, laneForDomain, SHOP_LANES } from "@/lib/shop-lanes";
+import { isShopLane, isShopLaneEnabled, laneForDomain, SHOP_LANES } from "@/lib/shop-lanes";
 import type { ProductDomain } from "@/lib/types";
 import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Sklep",
-  description:
-    "Ręcznie toczona ceramika i półka dla pracowni: kubki, czarki, miski, formy matki. Katalog Trzy Wiatry z Gdańska.",
-  path: "/sklep",
-});
+const SHOP_DESCRIPTION =
+  "Ręcznie toczona ceramika i półka dla pracowni: kubki, czarki, miski, formy matki. Katalog Trzy Wiatry z Gdańska.";
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    pojemnosc?: string;
+    domena?: string;
+    kategoria?: string;
+    cena_od?: string;
+    cena_do?: string;
+    sortuj?: string;
+    strona?: string;
+    sklep?: string;
+  }>;
+}): Promise<Metadata> {
+  const params = await searchParams;
+  const lane = isShopLane(params.sklep) ? params.sklep : undefined;
+  const noisy =
+    Boolean(params.pojemnosc || params.domena || params.kategoria || params.cena_od || params.cena_do || params.sortuj) ||
+    Boolean(params.strona && params.strona !== "1");
+  const path = lane ? `/sklep?sklep=${lane}` : "/sklep";
+  const title = lane ? SHOP_LANES[lane].label : "Sklep";
+  return {
+    ...pageMetadata({
+      title,
+      description: SHOP_DESCRIPTION,
+      path,
+    }),
+    robots: noisy ? { index: false, follow: true } : undefined,
+  };
+}
 
 const PAGE_SIZE = 12;
 
@@ -54,6 +82,27 @@ export default async function ShopPage({
   if (!lane) return <ShopHub />;
 
   const laneMeta = SHOP_LANES[lane];
+  if (!isShopLaneEnabled(lane, getSettings())) {
+    return (
+      <div className="py-8 md:py-10">
+        <Container className="space-y-4">
+          <SurfacePageIntro
+            eyebrow={laneMeta.shortLabel}
+            title={laneMeta.label}
+            description="Ten dział sklepu jest teraz w przygotowaniu i chwilowo niedostępny."
+          />
+          <p>
+            <a
+              href="/sklep"
+              className="inline-flex font-heading text-[11px] uppercase tracking-[0.14em] text-czerwony underline decoration-czerwony/30 underline-offset-4"
+            >
+              Wróć do wyboru półki
+            </a>
+          </p>
+        </Container>
+      </div>
+    );
+  }
   const rawMinZl = params.cena_od ? Number(params.cena_od) : undefined;
   const rawMaxZl = params.cena_do ? Number(params.cena_do) : undefined;
   const minZl =
@@ -70,7 +119,7 @@ export default async function ShopPage({
     capacity,
     domain,
     category: params.kategoria,
-    domains: laneMeta.domains,
+    lane,
     minPriceCents: priceMin != null ? priceMin * 100 : undefined,
     maxPriceCents: priceMax != null ? priceMax * 100 : undefined,
   });
@@ -88,8 +137,8 @@ export default async function ShopPage({
   const from = total === 0 ? 0 : start + 1;
   const to = Math.min(start + PAGE_SIZE, total);
 
-  const priceBounds = getCatalogPriceBounds(laneMeta.domains);
-  const counts = getShopCategoryCounts(laneMeta.domains);
+  const priceBounds = getCatalogPriceBounds(lane);
+  const counts = getShopCategoryCounts(lane);
   const categoryCounts = {
     byCategory: Object.fromEntries(counts.byCategory),
     byDomain: Object.fromEntries(counts.byDomain),

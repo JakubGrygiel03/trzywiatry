@@ -26,6 +26,8 @@ export const studioSettingsFormSchema = z
       .max(1_000_000, "Próg dostawy jest za wysoki."),
     workshopsEnabled: z.boolean(),
     giftWrapEnabled: z.boolean(),
+    shopLaneUzytkowaEnabled: z.boolean(),
+    shopLanePracowniaEnabled: z.boolean(),
     maintenanceMode: z.boolean(),
   })
   .superRefine((data, ctx) => {

@@ -13,7 +13,11 @@ function firstAvailable(product: Product) {
 
 export function ProductCardCartButton({ product }: { product: Product }) {
   const addItem = useCartStore((state) => state.addItem);
+  const items = useCartStore((state) => state.items);
   const variant = firstAvailable(product);
+  const remaining = variant
+    ? Math.max(0, variant.stockQuantity - (items.find((line) => line.variantId === variant.id)?.quantity ?? 0))
+    : 0;
   const [added, setAdded] = useState(false);
   const addedTimer = useRef<number>(0);
 
@@ -24,11 +28,19 @@ export function ProductCardCartButton({ product }: { product: Product }) {
   return (
     <button
       type="button"
-      aria-label={added ? `${product.name} jest w koszyku` : `Dodaj ${product.name} do koszyka`}
+      disabled={remaining <= 0}
+      aria-label={
+        remaining <= 0
+          ? `${product.name} — brak wolnych sztuk`
+          : added
+            ? `${product.name} jest w koszyku`
+            : `Dodaj ${product.name} do koszyka`
+      }
       onClick={(event) => {
         event.preventDefault();
         event.stopPropagation();
-        addItem({
+        if (remaining <= 0) return;
+        const result = addItem({
           productId: product.id,
           variantId: variant.id,
           slug: product.slug,
@@ -38,6 +50,7 @@ export function ProductCardCartButton({ product }: { product: Product }) {
           unitPriceInCents: variant.priceInCents ?? product.priceInCents,
           stockQuantity: variant.stockQuantity,
         });
+        if (!result.ok) return;
         setAdded(true);
         window.clearTimeout(addedTimer.current);
         addedTimer.current = window.setTimeout(() => setAdded(false), 1400);
@@ -49,6 +62,7 @@ export function ProductCardCartButton({ product }: { product: Product }) {
         "hover:border-czerwony hover:bg-czerwony hover:text-bialy",
         "focus-visible:opacity-100 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-czerwony",
         added && "border-czerwony bg-czerwony text-bialy",
+        remaining <= 0 && "cursor-not-allowed opacity-40 hover:border-czarny/8 hover:bg-bialy/95 hover:text-czarny",
         "[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-focus-within:opacity-100",
       )}
     >

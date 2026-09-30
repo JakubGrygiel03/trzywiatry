@@ -41,7 +41,10 @@ export type AtelierSnapshot = {
 let hydratePromise: Promise<void> | null = null;
 let hydratedAt = 0;
 let pendingSave: Promise<boolean> | null = null;
+let lastSavedAt = 0;
 const HYDRATE_TTL_MS = 5_000;
+/** After create/update/delete, don't clobber in-memory catalog with a stale remote read. */
+const SKIP_HYDRATE_AFTER_SAVE_MS = 3_000;
 
 function loadSnapshot(): AtelierSnapshot | null {
   if (!existsSync(STATE_FILE)) return null;
@@ -83,7 +86,13 @@ function mergeSettingsForSave(local: StudioSettings, remote?: StudioSettings): S
   const dirty = consumeDirtySettingsKeys();
   if (!remote) return local;
   const merged: StudioSettings = { ...remote, ...local };
-  const flags = ["giftWrapEnabled", "workshopsEnabled", "maintenanceMode"] as const;
+  const flags = [
+    "giftWrapEnabled",
+    "workshopsEnabled",
+    "maintenanceMode",
+    "shopLaneUzytkowaEnabled",
+    "shopLanePracowniaEnabled",
+  ] as const;
   const localAt = local.settingsUpdatedAt ?? "";
   const remoteAt = remote.settingsUpdatedAt ?? "";
   for (const key of flags) {
@@ -135,6 +144,10 @@ async function hydrate() {
 
 /** Restore catalog after restart — Supabase on Vercel, `.data` locally. */
 export async function ensureAtelierHydrated(options?: { force?: boolean }) {
+  if (pendingSave) await pendingSave;
+  // Same isolate just wrote (create/edit/delete) — keep memory, skip stale remote.
+  if (Date.now() - lastSavedAt < SKIP_HYDRATE_AFTER_SAVE_MS) return;
+
   // Warm isolates keep the first snapshot forever — gift wrap / coupons look “stuck”.
   const stale = Date.now() - hydratedAt > HYDRATE_TTL_MS;
   if (options?.force || !hydratePromise || stale) {
@@ -163,12 +176,15 @@ export async function saveAtelierSnapshot() {
   const snap = captureSnapshot(remote ?? undefined);
   const disk = writeDisk(snap);
   const wroteRemote = await writeAtelierState(ATELIER_STATE_KEYS.shop, snap);
+  lastSavedAt = Date.now();
+  hydratedAt = Date.now();
   return wroteRemote || (disk && process.env.VERCEL !== "1");
 }
 
 export async function flushAtelierSave() {
   if (pendingSave) await pendingSave;
   else await saveAtelierSnapshot();
+  lastSavedAt = Date.now();
 }
 
 export function atelierDiskPersistsAcrossDeploys() {

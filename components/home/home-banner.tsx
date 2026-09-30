@@ -67,6 +67,8 @@ function BannerPanel({
         alt=""
         fill
         priority={priority}
+        quality={75}
+        loading={priority ? "eager" : "lazy"}
         className="object-cover object-center transition-transform duration-[1800ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/banner:scale-[1.03] group-[.is-revealed]/banner:scale-[1.03]"
         sizes={sizes}
       />

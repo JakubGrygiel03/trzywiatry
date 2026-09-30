@@ -9,6 +9,9 @@ import { getAllProducts, getProductById } from "@/lib/data/queries";
 import { deleteRuntimeProduct, upsertRuntimeProduct } from "@/lib/data/runtime-store";
 import { ensureAtelierHydrated, flushAtelierSave } from "@/lib/data/atelier-persist";
 import { assertAdminSession } from "@/lib/admin-guard";
+import { laneForDomain, type ShopLaneId } from "@/lib/shop-lanes";
+import { suggestVariantSku, uniqueSku } from "@/lib/sku";
+import { withCmsTick } from "@/lib/cms-redirect";
 import type { Product, ProductDomain, ProductVariant } from "@/lib/types";
 
 const domains = ["ceramika", "drewno", "formy", "warsztaty"] as const;
@@ -16,7 +19,7 @@ const domains = ["ceramika", "drewno", "formy", "warsztaty"] as const;
 const variantDraftSchema = z.object({
   id: z.string().optional(),
   title: z.string().min(1, "Podaj nazwę wariantu"),
-  sku: z.string().min(2, "Podaj SKU"),
+  sku: z.string().trim().max(32).optional(),
   stockQuantity: z.coerce.number().int().min(0),
   priceZl: z.coerce.number().positive().optional(),
   isAvailable: z.boolean().optional(),
@@ -33,6 +36,7 @@ const productSchema = z.object({
   description: z.string().trim().min(10, "Opis min. 10 znaków").max(4000, "Opis jest za długi."),
   shortDescription: z.string().trim().max(220, "Krótki opis: max 220 znaków.").optional(),
   domain: z.enum(domains),
+  shopLane: z.enum(["uzytkowa", "pracownia"]),
   category: z.string().min(1),
   subCategory: z.string().optional(),
   capacityMl: z.number().int().positive().optional(),
@@ -92,6 +96,7 @@ function parseForm(formData: FormData) {
     description: formData.get("description"),
     shortDescription: String(formData.get("shortDescription") ?? "").trim() || undefined,
     domain: formData.get("domain"),
+    shopLane: String(formData.get("shopLane") ?? "").trim() || laneForDomain(String(formData.get("domain") ?? "ceramika") as ProductDomain),
     category: formData.get("category"),
     subCategory: String(formData.get("subCategory") ?? "").trim() || undefined,
     capacityMl:
@@ -122,21 +127,41 @@ function parseRelatedIds(formData: FormData) {
   }
 }
 
+function usedSkus(exceptProductId?: string) {
+  const used = new Set<string>();
+  for (const product of getAllProducts()) {
+    if (exceptProductId && product.id === exceptProductId) continue;
+    for (const variant of product.variants) {
+      const sku = variant.sku?.trim().toUpperCase();
+      if (sku) used.add(sku);
+    }
+  }
+  return used;
+}
+
+function resolveVariantSku(
+  draft: z.infer<typeof variantDraftSchema>,
+  slug: string,
+  used: Set<string>,
+) {
+  const manual = (draft.sku ?? "").trim().toUpperCase();
+  const candidate = manual.length >= 2 ? manual : suggestVariantSku(slug, draft.title);
+  const sku = uniqueSku(candidate, used);
+  used.add(sku);
+  return sku;
+}
+
 function buildVariants(
   drafts: z.infer<typeof variantDraftSchema>[],
-  existing?: ProductVariant[],
+  options: { slug: string; existing?: ProductVariant[]; exceptProductId?: string },
 ): ProductVariant[] | { error: string } {
-  const skus = new Set<string>();
+  const used = usedSkus(options.exceptProductId);
   const variants: ProductVariant[] = [];
 
   for (const draft of drafts) {
-    const sku = draft.sku.toUpperCase();
-    if (skus.has(sku)) {
-      return { error: `SKU „${sku}” jest użyte więcej niż raz.` };
-    }
-    skus.add(sku);
+    const sku = resolveVariantSku(draft, options.slug, used);
 
-    const previous = existing?.find((item) => item.id === draft.id);
+    const previous = options.existing?.find((item) => item.id === draft.id);
     const stockQuantity = draft.stockQuantity;
     variants.push({
       id: previous?.id ?? draft.id ?? `v-${crypto.randomUUID().slice(0, 8)}`,
@@ -196,15 +221,23 @@ function assertCategory(domain: ProductDomain, category: string) {
   return allowed.includes(category);
 }
 
-function revalidateShop(slug: string) {
+function revalidateShop(slug: string, productId?: string) {
   revalidatePath("/sklep");
+  revalidatePath("/sklep", "layout");
   revalidatePath(`/sklep/${slug}`);
   revalidatePath("/admin/produkty");
+  revalidatePath("/admin/produkty", "layout");
+  if (productId) revalidatePath(`/admin/produkty/${productId}`);
   revalidatePath("/", "layout");
+}
+
+function resolveShopLane(domain: ProductDomain, shopLane: ShopLaneId): ShopLaneId {
+  return shopLane === "uzytkowa" || shopLane === "pracownia" ? shopLane : laneForDomain(domain);
 }
 
 export async function createProduct(formData: FormData) {
   await assertAdminSession();
+  await ensureAtelierHydrated({ force: true });
   const parsed = parseForm(formData);
   if (!parsed.success) {
     redirect(`/admin/produkty/nowy?blad=${encodeURIComponent(parsed.error.issues[0]?.message ?? "Błąd")}`);
@@ -220,7 +253,7 @@ export async function createProduct(formData: FormData) {
     redirect("/admin/produkty/nowy?blad=" + encodeURIComponent("Slug jest już zajęty."));
   }
 
-  const built = buildVariants(data.variants);
+  const built = buildVariants(data.variants, { slug: data.slug });
   if ("error" in built) {
     redirect(`/admin/produkty/nowy?blad=${encodeURIComponent(built.error)}`);
   }
@@ -241,6 +274,7 @@ export async function createProduct(formData: FormData) {
     description: data.description,
     shortDescription: data.shortDescription,
     domain: data.domain,
+    shopLane: resolveShopLane(data.domain, data.shopLane),
     category: data.category,
     subCategory: data.subCategory,
     capacityMl: Number.isFinite(data.capacityMl as number) ? data.capacityMl : undefined,
@@ -258,13 +292,14 @@ export async function createProduct(formData: FormData) {
   };
 
   upsertRuntimeProduct(product);
-  revalidateShop(product.slug);
   await flushAtelierSave();
-  redirect(`/admin/produkty/${product.id}?zapisano=1`);
+  revalidateShop(product.slug, product.id);
+  redirect(withCmsTick(`/admin/produkty/${product.id}?zapisano=1`));
 }
 
 export async function updateProduct(formData: FormData) {
   await assertAdminSession();
+  await ensureAtelierHydrated({ force: true });
   const parsed = parseForm(formData);
   if (!parsed.success || !parsed.data.id) {
     redirect("/admin/produkty?blad=1");
@@ -285,7 +320,11 @@ export async function updateProduct(formData: FormData) {
     redirect(`/admin/produkty/${existing.id}?blad=` + encodeURIComponent("Slug jest już zajęty."));
   }
 
-  const built = buildVariants(data.variants, existing.variants);
+  const built = buildVariants(data.variants, {
+    slug: data.slug,
+    existing: existing.variants,
+    exceptProductId: existing.id,
+  });
   if ("error" in built) {
     redirect(`/admin/produkty/${existing.id}?blad=${encodeURIComponent(built.error)}`);
   }
@@ -306,6 +345,7 @@ export async function updateProduct(formData: FormData) {
     description: data.description,
     shortDescription: data.shortDescription,
     domain: data.domain,
+    shopLane: resolveShopLane(data.domain, data.shopLane),
     category: data.category,
     subCategory: data.subCategory,
     capacityMl: Number.isFinite(data.capacityMl as number) ? data.capacityMl : undefined,
@@ -323,26 +363,28 @@ export async function updateProduct(formData: FormData) {
   };
 
   upsertRuntimeProduct(product);
-  revalidateShop(product.slug);
   await flushAtelierSave();
-  redirect(`/admin/produkty/${product.id}?zapisano=1`);
+  revalidateShop(product.slug, product.id);
+  redirect(withCmsTick(`/admin/produkty/${product.id}?zapisano=1`));
 }
 
 export async function deleteProduct(formData: FormData) {
   await assertAdminSession();
+  await ensureAtelierHydrated({ force: true });
   const id = String(formData.get("id") ?? "").trim();
   const existing = getProductById(id);
   if (!existing) redirect("/admin/produkty?blad=1");
 
   deleteRuntimeProduct(id);
-  revalidateShop(existing.slug);
   await flushAtelierSave();
-  redirect("/admin/produkty?usunieto=1");
+  revalidateShop(existing.slug, existing.id);
+  redirect(`/admin/produkty?usunieto=1&t=${Date.now()}`);
 }
 
 /** Quick stock update from the products list — qty + out-of-stock flag. */
 export async function updateVariantStock(formData: FormData) {
   await assertAdminSession();
+  await ensureAtelierHydrated({ force: true });
   const productId = String(formData.get("productId") ?? "").trim();
   const variantId = String(formData.get("variantId") ?? "").trim();
   const outOfStock = formData.get("outOfStock") === "true";
@@ -367,8 +409,8 @@ export async function updateVariantStock(formData: FormData) {
   }
 
   upsertRuntimeProduct({ ...existing, variants });
-  revalidateShop(existing.slug);
   await flushAtelierSave();
+  revalidateShop(existing.slug, existing.id);
   return { ok: true as const, stockQuantity, outOfStock };
 }
 
@@ -382,8 +424,8 @@ export async function updateProductBestseller(formData: FormData) {
   if (!existing) return { ok: false as const };
 
   upsertRuntimeProduct({ ...existing, isBestseller });
-  revalidateShop(existing.slug);
   await flushAtelierSave();
+  revalidateShop(existing.slug, existing.id);
   return { ok: true as const, isBestseller };
 }
 

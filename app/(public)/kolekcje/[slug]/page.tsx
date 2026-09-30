@@ -29,7 +29,7 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
     <div>
       <ScrollCollectionToTop slug={collection.slug} />
       <div className="relative h-[42vh] min-h-64">
-        <Image src={collection.imageUrl} alt={collection.name} fill className="object-cover" priority sizes="100vw" />
+        <Image src={collection.imageUrl} alt={collection.name} fill className="object-cover" priority quality={75} sizes="100vw" />
         <div className="absolute inset-0 bg-gradient-to-t from-czarny/55 via-czarny/15 to-transparent" />
         <div className="absolute inset-0 flex items-end">
           <Container className="pb-10 text-bialy">

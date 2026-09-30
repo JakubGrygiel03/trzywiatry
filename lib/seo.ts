@@ -18,11 +18,12 @@ export function pageMetadata(input: {
   type?: "website" | "article";
 }): Metadata {
   const url = absoluteUrl(input.path);
-  const image = input.image ? [{ url: input.image, alt: input.title }] : undefined;
+  const shareImage = input.image || "/brand/logo-nav.png";
+  const image = [{ url: shareImage, alt: input.title }];
   return {
     title: input.title,
     description: input.description,
-    alternates: { canonical: url },
+    alternates: { canonical: url, languages: { "pl-PL": url } },
     openGraph: {
       title: input.title,
       description: input.description,
@@ -36,7 +37,7 @@ export function pageMetadata(input: {
       card: "summary_large_image",
       title: input.title,
       description: input.description,
-      images: input.image ? [input.image] : undefined,
+      images: [shareImage],
     },
   };
 }
@@ -57,6 +58,7 @@ export function productJsonLd(product: Product) {
     description: product.metaDescription ?? product.description,
     image: image ? [absoluteUrl(image)] : undefined,
     sku,
+    url,
     brand: { "@type": "Brand", name: SITE.name },
     offers: {
       "@type": "Offer",
@@ -65,6 +67,7 @@ export function productJsonLd(product: Product) {
       price: productOfferPrice(product.priceInCents),
       availability: stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       itemCondition: "https://schema.org/NewCondition",
+      seller: { "@type": "Organization", name: SITE.name },
     },
   };
 }
@@ -87,6 +90,18 @@ export function localBusinessJsonLd() {
       addressCountry: "PL",
     },
     sameAs: [SITE.instagram, SITE.facebook],
+    areaServed: { "@type": "Country", name: "PL" },
+  };
+}
+
+export function websiteJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITE.name,
+    url: absoluteUrl("/"),
+    inLanguage: "pl-PL",
+    publisher: { "@type": "Organization", name: SITE.name, url: absoluteUrl("/") },
   };
 }
 

@@ -4,6 +4,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { AdminField, AdminInput } from "@/components/admin/ui/admin-field";
 import { glazeColorHex } from "@/lib/glaze-colors";
+import { suggestVariantSku } from "@/lib/sku";
 import type { ProductVariant } from "@/lib/types";
 
 type DraftVariant = {
@@ -64,13 +65,24 @@ function emptyDraft(index: number): DraftVariant {
   };
 }
 
+function toColorInputValue(hex: string) {
+  const t = hex.trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(t)) return t;
+  if (/^#[0-9a-fA-F]{3}$/.test(t)) {
+    return `#${t[1]}${t[1]}${t[2]}${t[2]}${t[3]}${t[3]}`;
+  }
+  return "#aaa9a5";
+}
+
 /** Simple variant editor — colour / capacity / stock. Admin has full control. */
 export function ProductVariantsField({
   initialVariants,
   imageOptions = [],
+  productSlug = "",
 }: {
   initialVariants?: ProductVariant[];
   imageOptions?: string[];
+  productSlug?: string;
 }) {
   const [variants, setVariants] = useState<DraftVariant[]>(
     initialVariants?.length ? initialVariants.map(toDraft) : [emptyDraft(0)],
@@ -102,7 +114,7 @@ export function ProductVariantsField({
     return {
       id: variant.id,
       title: variant.title.trim() || buildTitle(variant.color, variant.capacityMl, "Wariant"),
-      sku: variant.sku.trim().toUpperCase() || `TW-${variant.key.slice(0, 8).toUpperCase()}`,
+      sku: variant.sku.trim().toUpperCase(),
       stockQuantity: stock,
       priceZl: variant.priceZl.trim() === "" ? undefined : Number(variant.priceZl),
       isAvailable: !variant.outOfStock && stock > 0,
@@ -143,7 +155,7 @@ export function ProductVariantsField({
           <div className="grid gap-4 sm:grid-cols-2">
             <AdminField
               label="Kolor (opcjonalnie)"
-              hint="Np. Czerwony — w sklepie pojawią się kółka kolorów."
+              hint="Nazwa dla klienta. Kliknij kółko, żeby otworzyć paletę odcieni."
             >
               <div className="flex items-center gap-2">
                 <AdminInput
@@ -151,11 +163,27 @@ export function ProductVariantsField({
                   onChange={(e) => update(variant.key, { color: e.target.value })}
                   placeholder="Granatowy"
                 />
-                <span
-                  className="size-9 shrink-0 rounded-full border border-czarny/15"
-                  style={{ background: variant.colorHex || glazeColorHex(variant.color) || "#aaa9a5" }}
-                  title={variant.colorHex || "brak próbki"}
-                />
+                <label
+                  className="relative size-9 shrink-0 cursor-pointer overflow-hidden rounded-full border border-czarny/15 shadow-[inset_0_0_0_1px_rgb(1_1_1/0.04)]"
+                  title="Wybierz odcień z palety"
+                >
+                  <span
+                    className="absolute inset-0"
+                    style={{
+                      background:
+                        variant.colorHex || glazeColorHex(variant.color) || "#aaa9a5",
+                    }}
+                  />
+                  <input
+                    type="color"
+                    aria-label={`Paleta koloru wariantu ${index + 1}`}
+                    className="absolute inset-0 cursor-pointer opacity-0"
+                    value={toColorInputValue(
+                      variant.colorHex || glazeColorHex(variant.color) || "",
+                    )}
+                    onChange={(e) => update(variant.key, { colorHex: e.target.value })}
+                  />
+                </label>
               </div>
             </AdminField>
 
@@ -255,15 +283,22 @@ export function ProductVariantsField({
               </select>
             </AdminField>
 
-            <AdminField label="SKU" hint="Kod magazynowy — można zostawić puste przy nowym wariancie.">
+            <AdminField
+              label="SKU"
+              hint={
+                variant.sku.trim()
+                  ? "Kod magazynowy tego wariantu."
+                  : `Puste = system nada ${suggestVariantSku(productSlug, variant.title || "Standard")}.`
+              }
+            >
               <AdminInput
                 value={variant.sku}
                 onChange={(e) => update(variant.key, { sku: e.target.value })}
-                placeholder="TW-…"
+                placeholder={suggestVariantSku(productSlug, variant.title || "Standard")}
               />
             </AdminField>
 
-            <AdminField label="Próbka koloru (hex)" hint="Uzupełnia się po wpisaniu koloru — możesz zmienić.">
+            <AdminField label="Próbka koloru (hex)" hint="Możesz wpisać ręcznie albo wybrać z palety przy kółku.">
               <AdminInput
                 value={variant.colorHex}
                 onChange={(e) => update(variant.key, { colorHex: e.target.value })}

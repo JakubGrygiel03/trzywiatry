@@ -23,6 +23,7 @@ import {
   adminResetPasswordSchema,
 } from "@/lib/validations/forms";
 import { firstZodMessage } from "@/lib/validations/safe-input";
+import { withCmsTick } from "@/lib/cms-redirect";
 import { studioSettingsFormSchema } from "@/lib/validations/settings";
 import { notifyCustomerOrderStatus, sendAdminPasswordResetEmail, customerMailFailureMessage } from "@/lib/resend";
 import { createPreviewToken } from "@/lib/maintenance";
@@ -188,7 +189,7 @@ export async function updateOrderStatus(formData: FormData) {
   if (!mailed && notify && mailReason) {
     params.set("powod", customerMailFailureMessage(mailReason).slice(0, 220));
   }
-  redirect(`/admin/zamowienia/${id}?${params}`);
+  redirect(withCmsTick(`/admin/zamowienia/${id}?${params}`));
 }
 
 function parseShopHubImage(raw: unknown, fallback: string) {
@@ -209,6 +210,8 @@ export async function saveStudioSettings(formData: FormData) {
     freeShipping: formData.get("freeShipping"),
     workshopsEnabled: formData.getAll("workshopsEnabled").includes("true"),
     giftWrapEnabled: formData.getAll("giftWrapEnabled").includes("true"),
+    shopLaneUzytkowaEnabled: formData.getAll("shopLaneUzytkowaEnabled").includes("true"),
+    shopLanePracowniaEnabled: formData.getAll("shopLanePracowniaEnabled").includes("true"),
     maintenanceMode: formData.get("maintenanceMode") === "true",
   });
   if (!parsed.success) {
@@ -237,6 +240,8 @@ export async function saveStudioSettings(formData: FormData) {
     freeShippingThresholdCents: data.freeShipping > 0 ? data.freeShipping : 30000,
     workshopsEnabled: data.workshopsEnabled,
     giftWrapEnabled: data.giftWrapEnabled,
+    shopLaneUzytkowaEnabled: data.shopLaneUzytkowaEnabled,
+    shopLanePracowniaEnabled: data.shopLanePracowniaEnabled,
     settingsUpdatedAt: new Date().toISOString(),
     maintenanceMode: data.maintenanceMode,
     maintenancePreviewToken: nextToken,
@@ -258,5 +263,5 @@ export async function saveStudioSettings(formData: FormData) {
   revalidatePath("/admin/ustawienia-sklepu");
   revalidatePath("/zamowienie");
   revalidatePath("/warsztaty");
-  redirect("/admin/ustawienia-sklepu?zapisano=1");
+  redirect(withCmsTick(`/admin/ustawienia-sklepu?zapisano=1`));
 }

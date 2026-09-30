@@ -7,8 +7,16 @@ const blogImageSchema = z.object({
 });
 
 export const blogBlockSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("paragraph"), text: z.string().min(1, "Tekst nie może być pusty") }),
-  z.object({ type: z.literal("heading"), text: z.string().min(1, "Nagłówek nie może być pusty") }),
+  z.object({
+    type: z.literal("paragraph"),
+    text: z.string().min(1, "Tekst nie może być pusty"),
+    align: z.enum(["left", "center"]).optional(),
+  }),
+  z.object({
+    type: z.literal("heading"),
+    text: z.string().min(1, "Nagłówek nie może być pusty"),
+    align: z.enum(["left", "center"]).optional(),
+  }),
   z.object({
     type: z.literal("image"),
     src: z.string().min(1, "Dodaj zdjęcie"),
@@ -18,6 +26,7 @@ export const blogBlockSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("list"),
     items: z.array(z.string().min(1)).min(1, "Lista musi mieć co najmniej jeden punkt"),
+    ordered: z.boolean().optional(),
   }),
   z.object({ type: z.literal("formula"), text: z.string().min(1, "Wzór nie może być pusty") }),
   z.object({

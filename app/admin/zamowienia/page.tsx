@@ -8,7 +8,7 @@ import { AdminPageHeader } from "@/components/admin/ui/admin-page-header";
 import { OrderStatusBadge } from "@/components/admin/ui/admin-status-badge";
 import { ensureOrdersHydrated } from "@/lib/data/order-persist";
 import { runtimeStore } from "@/lib/data/runtime-store";
-import { formatPLN } from "@/lib/format";
+import { formatDate, formatPLN } from "@/lib/format";
 import { orderPaymentDisplay } from "@/lib/p24-methods";
 import { filterOrders, monthWindow } from "@/lib/reports/orders-csv";
 import { isAbandonedCheckout } from "@/lib/orders/studio-queue";
@@ -43,7 +43,7 @@ export default async function AdminOrdersPage({
     <div className="mx-auto max-w-6xl space-y-4">
       <AdminPageHeader
         title="Zamówienia"
-        description="Szukaj, pobierz CSV albo usuń test. Raport miesięczny idzie na trzywiatrystudio@gmail.com."
+        description="Kliknij numer albo „Szczegóły”, żeby zobaczyć produkty, warianty i adres. Raport miesięczny idzie na trzywiatrystudio@gmail.com."
       />
 
       {query.usunieto ? (
@@ -125,6 +125,7 @@ export default async function AdminOrdersPage({
                 <tr className="border-b border-czarny/8 bg-krem/40 text-[11px] uppercase tracking-[0.1em] text-czarny/45">
                   <th className="px-4 py-3 font-medium">Numer</th>
                   <th className="px-4 py-3 font-medium">Klient</th>
+                  <th className="px-4 py-3 font-medium">Produkty</th>
                   <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 font-medium">Płatność</th>
                   <th className="px-4 py-3 font-medium">Uwagi</th>
@@ -150,10 +151,22 @@ export default async function AdminOrdersPage({
                       >
                         {order.orderNumber}
                       </Link>
+                      <p className="mt-0.5 text-xs text-czarny/40">{formatDate(order.createdAt)}</p>
                     </td>
                     <td className="px-4 py-3">
-                      <p className="text-czarny/80">{order.customerName}</p>
+                      <Link href={`/admin/zamowienia/${order.id}`} className="text-czarny/80 hover:text-czerwony">
+                        {order.customerName}
+                      </Link>
                       <p className="text-xs text-czarny/40">{order.customerEmail}</p>
+                    </td>
+                    <td className="max-w-[220px] px-4 py-3 text-xs leading-relaxed text-czarny/60">
+                      {order.items.length === 0
+                        ? "—"
+                        : order.items
+                            .slice(0, 2)
+                            .map((item) => `${item.productName} ×${item.quantity}`)
+                            .join(" · ")}
+                      {order.items.length > 2 ? ` · +${order.items.length - 2}` : ""}
                     </td>
                     <td className="px-4 py-3">
                       <OrderStatusBadge status={order.status} />
@@ -173,7 +186,15 @@ export default async function AdminOrdersPage({
                       {formatPLN(order.totalAmountInCents)}
                     </td>
                     <td className="px-4 py-3">
-                      <DeleteOrderButton id={order.id} orderNumber={order.orderNumber} compact />
+                      <div className="flex flex-col items-end gap-1.5 sm:flex-row sm:items-center">
+                        <Link
+                          href={`/admin/zamowienia/${order.id}`}
+                          className="rounded-lg border border-czarny/12 px-3 py-1.5 text-xs font-medium text-czerwony transition hover:border-czerwony/30"
+                        >
+                          Szczegóły
+                        </Link>
+                        <DeleteOrderButton id={order.id} orderNumber={order.orderNumber} compact />
+                      </div>
                     </td>
                   </tr>
                 ))}

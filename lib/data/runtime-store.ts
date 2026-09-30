@@ -377,6 +377,11 @@ function mergeNewSeedProducts() {
 
   const live = liveStockByVariantId();
   const flags = liveProductFlagsById();
+  const seedIds = new Set(seedProducts.map((product) => product.id));
+  // Admin-created products are not in products.ts — keep them across seed merges.
+  const extras = runtimeStore.catalog.filter(
+    (product) => !DROP_PRODUCT_IDS.has(product.id) && !seedIds.has(product.id),
+  );
   const next = structuredClone(seedProducts).filter((product) => !DROP_PRODUCT_IDS.has(product.id));
   for (const product of next) {
     const keptFlags = flags.get(product.id);
@@ -391,7 +396,7 @@ function mergeNewSeedProducts() {
       variant.isAvailable = kept.qty > 0 && kept.available;
     }
   }
-  runtimeStore.catalog = next;
+  runtimeStore.catalog = [...extras, ...next];
   lastSeedIdSignature = signature;
   persist();
 }

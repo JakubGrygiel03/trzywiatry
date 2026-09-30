@@ -56,7 +56,7 @@ export function UpsellRail({
                 className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-krem"
               >
                 {photo ? (
-                  <Image src={photo} alt={product.name} fill className="object-cover" sizes="80px" />
+                  <Image src={photo} alt={product.name} fill quality={60} className="object-cover" sizes="80px" />
                 ) : (
                   <AtelierFrame product={product} className="h-20 min-h-20 w-20 rounded-xl" />
                 )}
