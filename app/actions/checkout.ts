@@ -32,6 +32,11 @@ function formText(formData: FormData, name: string) {
   return typeof value === "string" ? value : "";
 }
 
+function formFlag(formData: FormData, name: string) {
+  const value = formData.get(name);
+  return value === "true" || value === "on" || value === "1";
+}
+
 export type CheckoutState = {
   ok: boolean;
   message: string;
@@ -54,6 +59,13 @@ export async function createCheckoutSession(
     street: formText(formData, "street"),
     postalCode: formText(formData, "postalCode"),
     city: formText(formData, "city"),
+    isCompany: formFlag(formData, "isCompany"),
+    companyName: formText(formData, "companyName"),
+    nip: formText(formData, "nip"),
+    shipToDifferent: formFlag(formData, "shipToDifferent"),
+    shippingStreet: formText(formData, "shippingStreet"),
+    shippingPostalCode: formText(formData, "shippingPostalCode"),
+    shippingCity: formText(formData, "shippingCity"),
     shippingMethod: formText(formData, "shippingMethod"),
     inpostLocker: formText(formData, "inpostLocker"),
     giftMessage: formText(formData, "giftMessage"),
@@ -146,6 +158,20 @@ export async function createCheckoutSession(
     street: parsed.data.street,
     postalCode: parsed.data.postalCode,
     city: parsed.data.city,
+    companyName: parsed.data.isCompany ? parsed.data.companyName?.trim() : undefined,
+    nip: parsed.data.isCompany ? parsed.data.nip : undefined,
+    shippingStreet:
+      parsed.data.shipToDifferent && parsed.data.shippingMethod === "kurier"
+        ? parsed.data.shippingStreet?.trim()
+        : undefined,
+    shippingPostalCode:
+      parsed.data.shipToDifferent && parsed.data.shippingMethod === "kurier"
+        ? parsed.data.shippingPostalCode?.trim()
+        : undefined,
+    shippingCity:
+      parsed.data.shipToDifferent && parsed.data.shippingMethod === "kurier"
+        ? parsed.data.shippingCity?.trim()
+        : undefined,
     shippingMethod: parsed.data.shippingMethod as ShippingMethod,
     inpostLocker: parsed.data.inpostLocker,
     notes: parsed.data.notes,

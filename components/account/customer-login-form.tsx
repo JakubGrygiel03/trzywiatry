@@ -12,6 +12,7 @@ const ERRORS: Record<string, string> = {
   haslo:
     "Nieprawidłowy e-mail lub hasło. Jeśli konto było właśnie zakładane — użyj „Nie pamiętasz hasła?” albo zarejestruj się ponownie tym samym e-mailem.",
   gotowe: "Konto gotowe — możesz się zalogować.",
+  zresetowano: "Hasło zmienione. Możesz się zalogować nowym hasłem.",
 };
 
 const creamField =
@@ -49,7 +50,9 @@ export function CustomerLoginForm({ error, defaultEmail = "" }: { error?: string
           Zaloguj się
         </Button>
         {error && ERRORS[error] ? (
-          <p className={`text-sm ${error === "gotowe" ? "text-czarny/70" : "text-czerwony"}`}>{ERRORS[error]}</p>
+          <p className={`text-sm ${error === "gotowe" || error === "zresetowano" ? "text-czarny/70" : "text-czerwony"}`}>
+            {ERRORS[error]}
+          </p>
         ) : null}
       </LoginFormShell>
       <p className="text-center text-sm">
@@ -61,11 +64,6 @@ export function CustomerLoginForm({ error, defaultEmail = "" }: { error?: string
         Nie masz konta?{" "}
         <Link href="/konto/rejestracja" className="text-czerwony underline-offset-2 hover:underline">
           Zarejestruj się
-        </Link>
-      </p>
-      <p className="text-center text-xs text-szary">
-        <Link href="/admin/logowanie" className="underline-offset-2 hover:text-czerwony hover:underline">
-          Panel pracowni (CMS)
         </Link>
       </p>
     </div>

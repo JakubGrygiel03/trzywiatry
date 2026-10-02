@@ -35,7 +35,7 @@ export type AuthFormState = { ok: boolean; message: string; demoResetUrl?: strin
 export async function logoutAdmin() {
   const store = await cookies();
   store.delete(ADMIN_COOKIE);
-  redirect("/admin/logowanie");
+  redirect("/konto/logowanie");
 }
 
 /**
@@ -115,7 +115,7 @@ export async function resetAdminPassword(
     };
   }
 
-  redirect("/admin/logowanie?zresetowano=1");
+  redirect("/konto/logowanie?blad=zresetowano");
 }
 
 /** Logged-in: change password with current password confirmation. */

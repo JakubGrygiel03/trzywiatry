@@ -8,6 +8,7 @@ import { flushAtelierSave, ensureAtelierHydrated } from "@/lib/data/atelier-pers
 import { assertAdminSession } from "@/lib/admin-guard";
 import type { BlogPost } from "@/lib/types";
 import { blogPostSchema } from "@/lib/validations/blog";
+import { firstZodMessage } from "@/lib/validations/safe-input";
 import { withCmsTick } from "@/lib/cms-redirect";
 
 function slugify(value: string) {
@@ -31,13 +32,32 @@ function revalidateBlog(slug: string) {
   revalidatePath("/admin/blog");
 }
 
+export type BlogSaveState = {
+  ok: boolean;
+  message?: string;
+  fieldErrors?: Record<string, string>;
+};
+
+function fieldErrorsFromZod(error: { issues: { path: PropertyKey[]; message: string }[] }) {
+  const map: Record<string, string> = {};
+  for (const issue of error.issues) {
+    const key = String(issue.path[0] ?? "form");
+    if (!map[key]) map[key] = issue.message;
+  }
+  return map;
+}
+
 async function parseBlogForm(formData: FormData) {
   const blocksRaw = String(formData.get("blocks") ?? "").trim();
   let blocks: unknown = [];
   try {
     blocks = JSON.parse(blocksRaw);
   } catch {
-    return { ok: false as const, message: "Nieprawidłowy format bloków treści." };
+    return {
+      ok: false as const,
+      message: "Nieprawidłowy format bloków treści.",
+      fieldErrors: { blocks: "Nieprawidłowy format bloków treści." },
+    };
   }
 
   const coverImage = String(formData.get("coverImage") ?? "").trim();
@@ -57,24 +77,28 @@ async function parseBlogForm(formData: FormData) {
   });
 
   if (!parsed.success) {
-    return { ok: false as const, message: parsed.error.issues[0]?.message ?? "Błąd walidacji." };
+    return {
+      ok: false as const,
+      message: firstZodMessage(parsed.error, "Błąd walidacji."),
+      fieldErrors: fieldErrorsFromZod(parsed.error),
+    };
   }
 
   return { ok: true as const, data: parsed.data };
 }
 
-export async function createBlogPost(formData: FormData) {
+export async function createBlogPost(_prev: BlogSaveState, formData: FormData): Promise<BlogSaveState> {
   await assertAdminSession();
   await ensureAtelierHydrated({ force: true });
   const result = await parseBlogForm(formData);
   if (!result.ok) {
-    redirect(`/admin/blog/nowy?blad=${encodeURIComponent(result.message)}`);
+    return { ok: false, message: result.message, fieldErrors: result.fieldErrors };
   }
 
   const data = result.data;
   const slugTaken = getAllPosts().some((post) => post.slug === data.slug);
   if (slugTaken) {
-    redirect("/admin/blog/nowy?blad=" + encodeURIComponent("Slug jest już zajęty."));
+    return { ok: false, message: "Slug jest już zajęty.", fieldErrors: { slug: "Slug jest już zajęty." } };
   }
 
   const now = new Date().toISOString();
@@ -100,21 +124,25 @@ export async function createBlogPost(formData: FormData) {
   redirect(withCmsTick(`/admin/blog/${post.id}?zapisano=1`));
 }
 
-export async function updateBlogPost(formData: FormData) {
+export async function updateBlogPost(_prev: BlogSaveState, formData: FormData): Promise<BlogSaveState> {
   await assertAdminSession();
   await ensureAtelierHydrated({ force: true });
   const result = await parseBlogForm(formData);
   if (!result.ok || !result.data.id) {
-    redirect("/admin/blog?blad=1");
+    return {
+      ok: false,
+      message: result.ok ? "Brak identyfikatora wpisu." : result.message,
+      fieldErrors: result.ok ? undefined : result.fieldErrors,
+    };
   }
 
   const data = result.data;
   const existing = getPostById(data.id!);
-  if (!existing) redirect("/admin/blog?blad=1");
+  if (!existing) return { ok: false, message: "Nie znaleziono wpisu." };
 
   const slugTaken = getAllPosts().some((post) => post.slug === data.slug && post.id !== existing.id);
   if (slugTaken) {
-    redirect(`/admin/blog/${existing.id}?blad=` + encodeURIComponent("Slug jest już zajęty."));
+    return { ok: false, message: "Slug jest już zajęty.", fieldErrors: { slug: "Slug jest już zajęty." } };
   }
 
   const wasPublished = existing.status === "published";

@@ -101,10 +101,18 @@ export async function notifyStudioNewOrder(order: StoredOrder) {
       <p style="margin:0 0 18px;font-size:14px;color:#666">${escapeHtml(order.orderNumber)} · ${ORDER_STATUS_LABELS[order.status]}</p>
       ${gift}
       ${emailTable(
-        emailRow("Klient", `<strong>${escapeHtml(order.customerName)}</strong>`) +
+          emailRow("Klient", `<strong>${escapeHtml(order.customerName)}</strong>`) +
+          (order.companyName ? emailRow("Firma", escapeHtml(order.companyName)) : "") +
+          (order.nip ? emailRow("NIP", escapeHtml(order.nip)) : "") +
           emailRow("E-mail", `<a href="mailto:${escapeHtml(order.customerEmail)}" style="color:#9C644E">${escapeHtml(order.customerEmail)}</a>`) +
           emailRow("Telefon", `<a href="tel:${escapeHtml(order.customerPhone.replace(/\s/g, ""))}" style="color:#010101;text-decoration:none">${escapeHtml(formatPhoneDisplay(order.customerPhone))}</a>`) +
-          emailRow("Adres", `${escapeHtml(order.street)}<br/>${escapeHtml(order.postalCode)} ${escapeHtml(order.city)}`) +
+          emailRow("Faktura", `${escapeHtml(order.street)}<br/>${escapeHtml(order.postalCode)} ${escapeHtml(order.city)}`) +
+          (order.shippingStreet
+            ? emailRow(
+                "Wysyłka na",
+                `${escapeHtml(order.shippingStreet)}<br/>${escapeHtml(order.shippingPostalCode ?? "")} ${escapeHtml(order.shippingCity ?? "")}`,
+              )
+            : "") +
           emailRow("Wysyłka", escapeHtml(shippingLabel(order))) +
           (order.inpostLocker ? emailRow("Paczkomat", escapeHtml(order.inpostLocker)) : ""),
       )}

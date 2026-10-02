@@ -27,6 +27,9 @@ export function filterOrders(orders: StoredOrder[], query: string) {
       order.customerPhone,
       order.city,
       order.street,
+      order.companyName,
+      order.nip,
+      order.shippingStreet,
       order.postalCode,
       order.status,
       ORDER_STATUS_LABELS[order.status],
@@ -66,6 +69,11 @@ export function ordersToCsv(orders: StoredOrder[]) {
     "pozycje",
     "uwagi",
     "tracking",
+    "firma",
+    "nip",
+    "ulica_wysylki",
+    "kod_wysylki",
+    "miasto_wysylki",
   ];
   const body = orders.map((order) => [
     order.orderNumber,
@@ -90,6 +98,11 @@ export function ordersToCsv(orders: StoredOrder[]) {
     order.items.map((item) => `${item.productName} (${item.variantTitle}) x${item.quantity}`).join(" | "),
     order.notes ?? "",
     order.trackingNumber ?? "",
+    order.companyName ?? "",
+    order.nip ?? "",
+    order.shippingStreet ?? "",
+    order.shippingPostalCode ?? "",
+    order.shippingCity ?? "",
   ]);
   return toCsv([header, ...body]);
 }

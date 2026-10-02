@@ -207,6 +207,13 @@ export type StoredOrder = {
   street: string;
   postalCode: string;
   city: string;
+  /** Invoice / billing — set when the customer asked for a company invoice. */
+  companyName?: string;
+  nip?: string;
+  /** Parcel destination when different from `street` (courier only). */
+  shippingStreet?: string;
+  shippingPostalCode?: string;
+  shippingCity?: string;
   shippingMethod: ShippingMethod;
   inpostLocker?: string;
   notes?: string;

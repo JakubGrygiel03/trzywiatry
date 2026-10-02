@@ -5,6 +5,7 @@ import {
   getRuntimeBlogPosts,
   getRuntimeCatalog,
   getRuntimeCollections,
+  getRuntimeProductCategories,
   getRuntimeSettings,
   getRuntimeWorkshopById,
   getRuntimeWorkshops,
@@ -27,6 +28,10 @@ export function getSettings() {
 
 export function getCollections() {
   return getRuntimeCollections();
+}
+
+export function getProductCategories() {
+  return getRuntimeProductCategories();
 }
 
 export function getCollectionBySlug(slug: string) {

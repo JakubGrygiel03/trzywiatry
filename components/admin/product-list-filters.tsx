@@ -3,14 +3,16 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminInput, AdminSelect } from "@/components/admin/ui/admin-field";
-import { SHOP_CATEGORY_TREE } from "@/lib/constants";
+import type { ShopCategoryGroup } from "@/lib/product-categories";
 
 export function ProductListFilters({
   initialQ = "",
   initialCategory = "",
+  categoryTree,
 }: {
   initialQ?: string;
   initialCategory?: string;
+  categoryTree: ShopCategoryGroup[];
 }) {
   const router = useRouter();
   const [q, setQ] = useState(initialQ);
@@ -47,7 +49,7 @@ export function ProductListFilters({
           aria-label="Filtruj po kategorii"
         >
           <option value="">Wszystkie kategorie</option>
-          {SHOP_CATEGORY_TREE.map((group) => (
+          {categoryTree.map((group) => (
             <optgroup key={group.id} label={group.label}>
               {group.children.map((child) => (
                 <option key={child.id} value={child.category}>

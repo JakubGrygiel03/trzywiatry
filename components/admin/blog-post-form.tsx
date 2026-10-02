@@ -1,16 +1,18 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useActionState, useState } from "react";
 import { BlogBlockEditor } from "@/components/admin/blog-block-editor";
 import { CoverBackdropField } from "@/components/admin/cover-backdrop-field";
 import { BlogBlocks } from "@/components/blog/blog-blocks";
+import { AdminAlert } from "@/components/admin/ui/admin-alert";
 import { AdminField, AdminInput, AdminSelect, AdminTextarea } from "@/components/admin/ui/admin-field";
 import { AdminFormActions } from "@/components/admin/ui/admin-form-actions";
 import { AdminFormSection } from "@/components/admin/ui/admin-form-section";
 import { coverBackdropClass, DEFAULT_BLOG_COVER_BACKDROP, isBlogCoverBackdrop } from "@/lib/blog-cover";
 import type { BlogPost } from "@/lib/types";
 import type { BlogBlockInput } from "@/lib/validations/blog";
+import type { BlogSaveState } from "@/app/actions/admin-blog";
 import { cn } from "@/lib/utils";
 
 function slugify(value: string) {
@@ -28,10 +30,11 @@ export function BlogPostForm({
   post,
   submitLabel,
 }: {
-  action: (formData: FormData) => void | Promise<void>;
+  action: (state: BlogSaveState, formData: FormData) => Promise<BlogSaveState>;
   post?: BlogPost;
   submitLabel: string;
 }) {
+  const [state, formAction, pending] = useActionState(action, { ok: false });
   const [title, setTitle] = useState(post?.title ?? "");
   const [slug, setSlug] = useState(post?.slug ?? "");
   const [slugTouched, setSlugTouched] = useState(Boolean(post));
@@ -48,9 +51,10 @@ export function BlogPostForm({
   const [mode, setMode] = useState<"edit" | "preview">("edit");
 
   return (
-    <form action={action} className="space-y-6">
+    <form action={formAction} className="space-y-6">
       {post ? <input type="hidden" name="id" value={post.id} /> : null}
       <input type="hidden" name="coverImage" value={coverImage} />
+      {state.message ? <AdminAlert variant="error">{state.message}</AdminAlert> : null}
 
       <div className="flex gap-2">
         <button
@@ -97,7 +101,7 @@ export function BlogPostForm({
             title="Treść wpisu"
             description="Wklej z Worda albo układaj blokami. Zdjęcia z Worda nie wchodzą — dodaj je osobno. Kolejność zmieniasz uchwytem (6 kropek) albo strzałkami."
           >
-            <AdminField label="Tytuł" htmlFor="title" required>
+            <AdminField label="Tytuł" htmlFor="title" required error={state.fieldErrors?.title}>
               <AdminInput
                 id="title"
                 name="title"
@@ -118,6 +122,9 @@ export function BlogPostForm({
               initialBlocks={initialBlocks.length ? initialBlocks : undefined}
               onChange={setBlocks}
             />
+            {state.fieldErrors?.blocks ? (
+              <p className="text-xs text-czerwony">{state.fieldErrors.blocks}</p>
+            ) : null}
           </AdminFormSection>
         </div>
 
@@ -131,7 +138,7 @@ export function BlogPostForm({
               </AdminSelect>
             </AdminField>
 
-            <AdminField label="Adres URL (slug)" htmlFor="slug" required>
+            <AdminField label="Adres URL (slug)" htmlFor="slug" required error={state.fieldErrors?.slug}>
               <AdminInput
                 id="slug"
                 name="slug"
@@ -148,6 +155,7 @@ export function BlogPostForm({
               label="Krótki opis (zajawka)"
               htmlFor="excerpt"
               required
+              error={state.fieldErrors?.excerpt}
               hint="1–2 zdania streszczenia pod tytułem na kafelku listy /blog — zanim ktoś otworzy cały artykuł."
             >
               <AdminTextarea
@@ -171,6 +179,9 @@ export function BlogPostForm({
           </AdminFormSection>
 
           <AdminFormSection title="Okładka" description="Miniatura na liście /blog. Tło widać wokół zdjęcia.">
+            {state.fieldErrors?.coverImage ? (
+              <p className="text-xs text-czerwony">{state.fieldErrors.coverImage}</p>
+            ) : null}
             {coverImage ? (
               <div
                 className={`relative mb-3 aspect-[16/10] overflow-hidden rounded-lg border border-czarny/10 ${coverBackdropClass(coverBackdrop)}`}
@@ -210,7 +221,7 @@ export function BlogPostForm({
         </aside>
       </div>
 
-      <AdminFormActions submitLabel={submitLabel} cancelHref="/admin/blog" />
+      <AdminFormActions submitLabel={submitLabel} cancelHref="/admin/blog" pending={pending} />
     </form>
   );
 }

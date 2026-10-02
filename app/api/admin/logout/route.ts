@@ -5,7 +5,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  const response = NextResponse.redirect(new URL("/admin/logowanie", request.url), 303);
+  const response = NextResponse.redirect(new URL("/konto/logowanie", request.url), 303);
   response.cookies.set(ADMIN_COOKIE, "", { ...adminCookieOptions(request), maxAge: 0 });
   response.headers.set("Cache-Control", "private, no-store");
   return response;

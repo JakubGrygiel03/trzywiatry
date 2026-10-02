@@ -5,12 +5,13 @@ type AdminFieldProps = {
   label: string;
   htmlFor?: string;
   hint?: string;
+  error?: string;
   required?: boolean;
   children: ReactNode;
   className?: string;
 };
 
-export function AdminField({ label, htmlFor, hint, required, children, className }: AdminFieldProps) {
+export function AdminField({ label, htmlFor, hint, error, required, children, className }: AdminFieldProps) {
   return (
     <div className={cn("space-y-1.5", className)}>
       <label
@@ -21,7 +22,8 @@ export function AdminField({ label, htmlFor, hint, required, children, className
         {required ? <span className="ml-0.5 text-czerwony">*</span> : null}
       </label>
       {children}
-      {hint ? <p className="text-xs leading-relaxed text-czarny/45">{hint}</p> : null}
+      {error ? <p className="text-xs leading-relaxed text-czerwony">{error}</p> : null}
+      {hint && !error ? <p className="text-xs leading-relaxed text-czarny/45">{hint}</p> : null}
     </div>
   );
 }

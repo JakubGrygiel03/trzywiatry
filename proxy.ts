@@ -35,7 +35,7 @@ export async function proxy(request: NextRequest) {
 
   if (pathname.startsWith("/admin") && !isPublicAdminPath(pathname)) {
     if (!isAdminCookieValue(request.cookies.get(ADMIN_COOKIE)?.value)) {
-      const login = NextResponse.redirect(new URL("/admin/logowanie", request.url));
+      const login = NextResponse.redirect(new URL("/konto/logowanie?next=/admin", request.url));
       login.headers.set("Cache-Control", "private, no-store");
       return login;
     }

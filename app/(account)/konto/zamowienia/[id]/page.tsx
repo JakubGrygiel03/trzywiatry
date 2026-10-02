@@ -83,9 +83,21 @@ export default async function CustomerOrderPage({ params }: { params: Promise<{ 
             <h2 className="font-heading text-[11px] uppercase tracking-[0.14em] text-czerwony">Dostawa</h2>
             <p>
               {order.customerName}
+              {order.companyName ? (
+                <>
+                  <br />
+                  {order.companyName}
+                  {order.nip ? ` · NIP ${order.nip}` : ""}
+                </>
+              ) : null}
               <br />
               {order.street}, {order.postalCode} {order.city}
             </p>
+            {order.shippingStreet ? (
+              <p>
+                Wysyłka: {order.shippingStreet}, {order.shippingPostalCode} {order.shippingCity}
+              </p>
+            ) : null}
             <p>
               {shippingLabel}
               {order.inpostLocker ? ` · paczkomat ${order.inpostLocker}` : ""}

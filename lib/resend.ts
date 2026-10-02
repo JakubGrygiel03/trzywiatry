@@ -178,6 +178,20 @@ function orderVars(order: StoredOrder, extra: Record<string, string> = {}) {
       { label: "Status", value: ORDER_STATUS_LABELS[order.status] },
       { label: "Dostawa", value: shippingMethodLabel(order.shippingMethod) },
       { label: "Płatność", value: orderPaymentDisplay(order) },
+      ...(order.companyName ? [{ label: "Firma", value: escapeHtml(order.companyName) }] : []),
+      ...(order.nip ? [{ label: "NIP", value: escapeHtml(order.nip) }] : []),
+      {
+        label: order.shippingStreet ? "Faktura" : "Adres",
+        value: `${escapeHtml(order.street)}, ${escapeHtml(order.postalCode)} ${escapeHtml(order.city)}`,
+      },
+      ...(order.shippingStreet
+        ? [
+            {
+              label: "Wysyłka",
+              value: `${escapeHtml(order.shippingStreet)}, ${escapeHtml(order.shippingPostalCode ?? "")} ${escapeHtml(order.shippingCity ?? "")}`,
+            },
+          ]
+        : []),
     ]),
   );
 

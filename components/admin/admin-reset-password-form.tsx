@@ -52,7 +52,7 @@ export function AdminResetPasswordForm({ token }: { token: string }) {
       </Button>
       {state.message ? <p className="text-sm text-czerwony">{state.message}</p> : null}
       <p className="text-center text-xs text-czarny/40">
-        <Link href="/admin/logowanie" className="underline-offset-2 hover:text-czerwony hover:underline">
+        <Link href="/konto/logowanie" className="underline-offset-2 hover:text-czerwony hover:underline">
           Wróć do logowania
         </Link>
       </p>

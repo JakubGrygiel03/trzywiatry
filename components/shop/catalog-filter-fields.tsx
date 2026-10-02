@@ -2,7 +2,8 @@
 
 import { PriceFilter } from "@/components/shop/price-filter";
 import { CAPACITY_FILTERS } from "@/lib/constants";
-import { categoryTreeForLane, type ShopLaneId } from "@/lib/shop-lanes";
+import type { ShopLaneId } from "@/lib/shop-lanes";
+import type { ShopCategoryGroup } from "@/lib/product-categories";
 import { cn } from "@/lib/utils";
 
 export type CategoryCounts = {
@@ -20,6 +21,7 @@ export function CatalogFilterFields({
   floorZl,
   ceilZl,
   categoryCounts,
+  categoryTree,
   hasActive,
   onClear,
   onPush,
@@ -33,6 +35,7 @@ export function CatalogFilterFields({
   floorZl: number;
   ceilZl: number;
   categoryCounts: CategoryCounts;
+  categoryTree: ShopCategoryGroup[];
   hasActive: boolean;
   onClear: () => void;
   onPush: (mutate: (next: URLSearchParams) => void) => void;
@@ -95,7 +98,7 @@ export function CatalogFilterFields({
       <section className="space-y-3 border-t border-krem-ciemny pt-5">
         <p className="font-heading text-[11px] uppercase tracking-[0.18em] text-czerwony">Kategorie</p>
         <ul className="space-y-4">
-          {categoryTreeForLane(lane).map((group) => {
+          {categoryTree.map((group) => {
             const domainCount = categoryCounts.byDomain[group.domain] ?? 0;
             const domainActive = domain === group.domain && !category;
             return (

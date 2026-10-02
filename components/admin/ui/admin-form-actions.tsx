@@ -7,6 +7,7 @@ type AdminFormActionsProps = {
   cancelHref?: string;
   cancelLabel?: string;
   extra?: ReactNode;
+  pending?: boolean;
 };
 
 export function AdminFormActions({
@@ -14,13 +15,14 @@ export function AdminFormActions({
   cancelHref,
   cancelLabel = "Anuluj",
   extra,
+  pending = false,
 }: AdminFormActionsProps) {
   return (
     <div className="sticky bottom-0 z-20 -mx-4 mt-6 border-t border-czarny/8 bg-bialy/95 px-4 py-4 backdrop-blur md:-mx-6 md:px-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <Button type="submit" size="md">
-            {submitLabel}
+          <Button type="submit" size="md" disabled={pending}>
+            {pending ? "Zapisuję…" : submitLabel}
           </Button>
           {cancelHref ? (
             <Link

@@ -10,6 +10,8 @@ import { OrderStatusBadge } from "@/components/admin/ui/admin-status-badge";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/field";
 import { ORDER_STATUS_LABELS, shippingMethodLabel } from "@/lib/constants";
+import { getAllProducts } from "@/lib/data/queries";
+import { ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 import { ensureOrdersHydrated } from "@/lib/data/order-persist";
 import { getOrderById, getOrderByNumber } from "@/lib/data/runtime-store";
 import { formatDate, formatTime } from "@/lib/format";
@@ -25,17 +27,37 @@ export default async function AdminOrderDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ zapisano?: string; status?: string; mail?: string; label?: string; powod?: string }>;
+  searchParams: Promise<{
+    zapisano?: string;
+    status?: string;
+    mail?: string;
+    label?: string;
+    powod?: string;
+    pozycje?: string;
+    blad?: string;
+  }>;
 }) {
   await connection();
   const { id } = await params;
   const query = await searchParams;
   await ensureOrdersHydrated({ force: true });
+  await ensureAtelierHydrated({ force: true });
   const order = getOrderById(id) ?? getOrderByNumber(id);
   if (!order) notFound();
 
   const shippingLabel = shippingMethodLabel(order.shippingMethod);
   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
+  const canEdit = order.status !== "cancelled";
+  const catalog = getAllProducts().map((product) => ({
+    id: product.id,
+    name: product.name,
+    variants: product.variants.map((variant) => ({
+      id: variant.id,
+      title: variant.title,
+      stockQuantity: variant.stockQuantity,
+      priceInCents: variant.priceInCents ?? product.priceInCents,
+    })),
+  }));
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -57,6 +79,8 @@ export default async function AdminOrderDetailPage({
         }
       />
 
+      {query.pozycje ? <AdminAlert variant="success">Zapisano pozycje i przeliczono sumę.</AdminAlert> : null}
+      {query.blad ? <AdminAlert variant="error">{decodeURIComponent(query.blad)}</AdminAlert> : null}
       {query.zapisano ? (
         <AdminAlert variant="success">
           Zapisano status
@@ -88,7 +112,7 @@ export default async function AdminOrderDetailPage({
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
-          <AdminOrderItems order={order} />
+          <AdminOrderItems order={order} catalog={catalog} canEdit={canEdit} />
 
           <form action={updateOrderStatus} className="space-y-4 rounded-xl border border-czarny/8 bg-bialy p-5">
             <input type="hidden" name="id" value={order.id} />
@@ -164,13 +188,30 @@ export default async function AdminOrderDetailPage({
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-czarny/40">Adres dostawy</dt>
+                <dt className="text-xs text-czarny/40">Adres do faktury</dt>
                 <dd className="mt-0.5 leading-relaxed text-czarny/80">
+                  {order.companyName ? (
+                    <>
+                      {order.companyName}
+                      {order.nip ? ` · NIP ${order.nip}` : ""}
+                      <br />
+                    </>
+                  ) : null}
                   {order.street}
                   <br />
                   {order.postalCode} {order.city}
                 </dd>
               </div>
+              {order.shippingStreet ? (
+                <div>
+                  <dt className="text-xs text-czarny/40">Adres wysyłki</dt>
+                  <dd className="mt-0.5 leading-relaxed text-czarny/80">
+                    {order.shippingStreet}
+                    <br />
+                    {order.shippingPostalCode} {order.shippingCity}
+                  </dd>
+                </div>
+              ) : null}
               <div>
                 <dt className="text-xs text-czarny/40">Wysyłka</dt>
                 <dd className="mt-0.5 text-czarny/80">

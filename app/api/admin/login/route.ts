@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function redirectToLogin(request: Request, blad: "dane" | "haslo") {
-  const loginUrl = new URL("/admin/logowanie", request.url);
+  const loginUrl = new URL("/konto/logowanie", request.url);
   loginUrl.searchParams.set("blad", blad);
   const response = NextResponse.redirect(loginUrl, 303);
   response.headers.set("Cache-Control", "private, no-store");

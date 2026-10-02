@@ -4,10 +4,11 @@ import { ProductNavigateLink } from "@/components/shop/product-navigate-link";
 import { PriceBubble } from "@/components/ui/badge";
 import { categoryFrame } from "@/lib/category-frame";
 import { variantColors } from "@/lib/product-variants";
-import { CATEGORY_LABELS, DOMAIN_LABELS } from "@/lib/constants";
+import { DOMAIN_LABELS } from "@/lib/constants";
 import { formatPLN } from "@/lib/format";
 import { getProductPhoto } from "@/lib/media";
-import { variantStockLabel } from "@/lib/data/queries";
+import { getProductCategories, variantStockLabel } from "@/lib/data/queries";
+import { labelForCategory } from "@/lib/product-categories";
 import type { Product } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +31,7 @@ export function ProductCard({
   }, 0);
   const status = variantStockLabel(stock, product.lowStockThreshold);
   const photo = getProductPhoto(product);
-  const categoryLabel = CATEGORY_LABELS[product.category] ?? DOMAIN_LABELS[product.domain];
+  const categoryLabel = labelForCategory(getProductCategories(), product.category) || DOMAIN_LABELS[product.domain];
   const frame = categoryFrame(product.category);
   const colors = variantColors(product);
   const ground = tone === "cream" ? "bg-krem" : "bg-bialy";

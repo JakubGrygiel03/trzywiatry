@@ -8,11 +8,12 @@ import { ProductForm } from "@/components/admin/product-form";
 import { AdminAlert } from "@/components/admin/ui/admin-alert";
 import { AdminPageHeader } from "@/components/admin/ui/admin-page-header";
 import { PublishBadge } from "@/components/admin/ui/admin-status-badge";
-import { CATEGORY_LABELS, DOMAIN_LABELS } from "@/lib/constants";
-import { getAllProducts, getCollections, getProductById } from "@/lib/data/queries";
+import { DOMAIN_LABELS } from "@/lib/constants";
+import { getAllProducts, getCollections, getProductById, getProductCategories } from "@/lib/data/queries";
 import { ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 import { formatPLN } from "@/lib/format";
 import { getProductPhoto } from "@/lib/media";
+import { labelForCategory } from "@/lib/product-categories";
 
 export const dynamic = "force-dynamic";
 
@@ -31,13 +32,14 @@ export default async function EditProductPage({
   if (!product) notFound();
   const collections = getCollections();
   const catalog = getAllProducts().map((item) => ({ id: item.id, name: item.name }));
+  const categoryOptions = getProductCategories();
   const cover = getProductPhoto(product) ?? product.images[0];
 
   return (
     <div className="mx-auto max-w-6xl">
       <AdminPageHeader
         title={product.name}
-        description={`${DOMAIN_LABELS[product.domain]} · ${CATEGORY_LABELS[product.category] ?? product.category} · ${formatPLN(product.priceInCents)}`}
+        description={`${DOMAIN_LABELS[product.domain]} · ${labelForCategory(categoryOptions, product.category)} · ${formatPLN(product.priceInCents)}`}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <PublishBadge published={product.isPublished} />
@@ -80,6 +82,7 @@ export default async function EditProductPage({
           product={product}
           collections={collections}
           catalog={catalog}
+          categoryOptions={categoryOptions}
           submitLabel="Zapisz zmiany"
         />
 

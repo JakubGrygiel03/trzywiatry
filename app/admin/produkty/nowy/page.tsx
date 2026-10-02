@@ -3,7 +3,8 @@ import { createProduct } from "@/app/actions/admin-products";
 import { ProductForm } from "@/components/admin/product-form";
 import { AdminAlert } from "@/components/admin/ui/admin-alert";
 import { AdminPageHeader } from "@/components/admin/ui/admin-page-header";
-import { getAllProducts, getCollections } from "@/lib/data/queries";
+import { ensureAtelierHydrated } from "@/lib/data/atelier-persist";
+import { getAllProducts, getCollections, getProductCategories } from "@/lib/data/queries";
 
 export default async function NewProductPage({
   searchParams,
@@ -11,6 +12,7 @@ export default async function NewProductPage({
   searchParams: Promise<{ blad?: string }>;
 }) {
   const { blad } = await searchParams;
+  await ensureAtelierHydrated({ force: true });
   const collections = getCollections();
   const catalog = getAllProducts().map((item) => ({ id: item.id, name: item.name }));
 
@@ -36,6 +38,7 @@ export default async function NewProductPage({
           action={createProduct}
           collections={collections}
           catalog={catalog}
+          categoryOptions={getProductCategories()}
           submitLabel="Dodaj produkt"
         />
       </div>

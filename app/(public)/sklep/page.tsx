@@ -12,9 +12,10 @@ import {
   getCatalogPriceBounds,
   getSettings,
   getShopCategoryCounts,
+  getProductCategories,
   sortCatalog,
 } from "@/lib/data/queries";
-import { isShopLane, isShopLaneEnabled, laneForDomain, SHOP_LANES } from "@/lib/shop-lanes";
+import { categoryTreeForLane, isShopLane, isShopLaneEnabled, laneForDomain, SHOP_LANES } from "@/lib/shop-lanes";
 import type { ProductDomain } from "@/lib/types";
 import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/seo";
@@ -158,6 +159,7 @@ export default async function ShopPage({
               priceBounds={priceBounds}
               categoryCounts={categoryCounts}
               lane={lane}
+              categoryTree={categoryTreeForLane(lane, getProductCategories())}
             />
           </Suspense>
           <div>

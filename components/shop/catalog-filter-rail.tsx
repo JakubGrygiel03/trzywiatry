@@ -2,7 +2,8 @@
 
 import type { ReactNode } from "react";
 import { CAPACITY_FILTERS } from "@/lib/constants";
-import { categoryTreeForLane, type ShopLaneId } from "@/lib/shop-lanes";
+import type { ShopLaneId } from "@/lib/shop-lanes";
+import type { ShopCategoryGroup } from "@/lib/product-categories";
 import { cn } from "@/lib/utils";
 
 type CategoryCounts = {
@@ -18,6 +19,7 @@ export function CatalogFilterRail({
   category,
   hasActive,
   categoryCounts,
+  categoryTree,
   onClear,
   onPush,
 }: {
@@ -27,10 +29,11 @@ export function CatalogFilterRail({
   category: string | null;
   hasActive: boolean;
   categoryCounts: CategoryCounts;
+  categoryTree: ShopCategoryGroup[];
   onClear: () => void;
   onPush: (mutate: (next: URLSearchParams) => void) => void;
 }) {
-  const tree = categoryTreeForLane(lane);
+  const tree = categoryTree;
 
   return (
     <div className="sticky top-[var(--site-chrome)] z-20 -mx-1 hidden overflow-x-hidden border-b border-czarny/8 bg-papier/95 pb-1 backdrop-blur-sm md:block lg:hidden">

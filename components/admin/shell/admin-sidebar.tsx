@@ -18,6 +18,7 @@ type AdminSidebarProps = {
 
 export function AdminSidebar({ badges, open, onClose }: AdminSidebarProps) {
   const pathname = usePathname();
+  const allItems = ADMIN_NAV_GROUPS.flatMap((group) => group.items);
 
   return (
     <>
@@ -58,7 +59,7 @@ export function AdminSidebar({ badges, open, onClose }: AdminSidebarProps) {
               </p>
               <ul className="space-y-0.5">
                 {group.items.map((item) => {
-                  const active = isAdminNavActive(pathname, item);
+                  const active = isAdminNavActive(pathname, item, allItems);
                   const Icon = item.icon;
                   const badge = item.badgeKey ? badges[item.badgeKey] : 0;
                   return (

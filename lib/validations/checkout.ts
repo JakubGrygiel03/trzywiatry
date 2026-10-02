@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { normalizeCouponCode } from "@/lib/coupon-code";
-import { emailSchema, phoneSchema, plainText } from "@/lib/validations/safe-input";
+import { emailSchema, phoneSchema, plainText, taxIdSchema } from "@/lib/validations/safe-input";
+
+const postalCode = z.string().trim().regex(/^\d{2}-\d{3}$/, "Kod pocztowy: 00-000");
 
 export const checkoutSchema = z
   .object({
@@ -8,8 +10,15 @@ export const checkoutSchema = z
     customerEmail: emailSchema,
     customerPhone: phoneSchema,
     street: plainText("Ulica", 120, 3),
-    postalCode: z.string().trim().regex(/^\d{2}-\d{3}$/, "Kod pocztowy: 00-000"),
+    postalCode,
     city: plainText("Miasto", 60, 2),
+    isCompany: z.boolean(),
+    companyName: z.string().optional(),
+    nip: taxIdSchema,
+    shipToDifferent: z.boolean(),
+    shippingStreet: z.string().optional(),
+    shippingPostalCode: z.string().optional(),
+    shippingCity: z.string().optional(),
     shippingMethod: z.enum(["inpost", "kurier"]),
     inpostLocker: z.string().trim().max(180).optional(),
     giftMessage: plainText("Dedykacja", 280).optional(),
@@ -30,6 +39,32 @@ export const checkoutSchema = z
         path: ["inpostLocker"],
         message: "Wybierz paczkomat InPost na mapie.",
       });
+    }
+    if (data.isCompany) {
+      const company = data.companyName?.trim() ?? "";
+      if (company.length < 2) {
+        ctx.addIssue({ code: "custom", path: ["companyName"], message: "Podaj nazwę firmy." });
+      }
+      if (!data.nip) {
+        ctx.addIssue({ code: "custom", path: ["nip"], message: "Podaj NIP (10 cyfr) albo numer VAT." });
+      }
+    }
+    if (data.shipToDifferent && data.shippingMethod === "kurier") {
+      const street = data.shippingStreet?.trim() ?? "";
+      const city = data.shippingCity?.trim() ?? "";
+      if (street.length < 3) {
+        ctx.addIssue({ code: "custom", path: ["shippingStreet"], message: "Podaj ulicę dostawy." });
+      }
+      if (!/^\d{2}-\d{3}$/.test(data.shippingPostalCode?.trim() ?? "")) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["shippingPostalCode"],
+          message: "Kod pocztowy dostawy: 00-000",
+        });
+      }
+      if (city.length < 2) {
+        ctx.addIssue({ code: "custom", path: ["shippingCity"], message: "Podaj miasto dostawy." });
+      }
     }
   });
 

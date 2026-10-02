@@ -11,6 +11,7 @@ import {
   Package,
   Settings,
   ShoppingBag,
+  Tags,
 } from "lucide-react";
 
 export type AdminNavItem = {
@@ -43,6 +44,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: "Sklep",
     items: [
       { href: "/admin/produkty", label: "Produkty", icon: Package, badgeKey: "lowStock" },
+      { href: "/admin/produkty/kategorie", label: "Kategorie", icon: Tags },
       { href: "/admin/zamowienia", label: "Zamówienia", icon: ShoppingBag, badgeKey: "orders" },
     ],
   },
@@ -77,7 +79,14 @@ export type AdminBadges = {
   b2b: number;
 };
 
-export function isAdminNavActive(pathname: string, item: AdminNavItem) {
+export function isAdminNavActive(pathname: string, item: AdminNavItem, allItems: AdminNavItem[] = []) {
   if (item.exact) return pathname === item.href;
+  const nestedHit = allItems.some(
+    (other) =>
+      other.href !== item.href &&
+      other.href.startsWith(`${item.href}/`) &&
+      (pathname === other.href || pathname.startsWith(`${other.href}/`)),
+  );
+  if (nestedHit) return false;
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }

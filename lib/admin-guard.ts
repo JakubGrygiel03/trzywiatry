@@ -10,6 +10,6 @@ export async function assertAdminSession() {
   await ensureAtelierHydrated();
   const store = await cookies();
   if (!isAdminCookieValue(store.get(ADMIN_COOKIE)?.value)) {
-    redirect("/admin/logowanie");
+    redirect("/konto/logowanie");
   }
 }

@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { verifyAdminCredentials } from "@/lib/admin-auth";
+import { ADMIN_COOKIE, adminCookieOptions, createAdminCookieValue } from "@/lib/admin-session";
 import { loginHandoff } from "@/lib/auth-handoff";
 import {
   ensureCustomersHydrated,
@@ -22,6 +24,12 @@ function redirectToLogin(request: Request, blad: "dane" | "haslo", email?: strin
   return response;
 }
 
+function completeAdminLogin(request: Request) {
+  const response = loginHandoff(request, "/admin");
+  response.cookies.set(ADMIN_COOKIE, createAdminCookieValue(), adminCookieOptions(request));
+  return response;
+}
+
 export async function POST(request: Request) {
   let formData: FormData;
   try {
@@ -38,10 +46,18 @@ export async function POST(request: Request) {
     return redirectToLogin(request, "dane");
   }
 
+  try {
+    if (verifyAdminCredentials(parsed.data.email, parsed.data.password)) {
+      return completeAdminLogin(request);
+    }
+  } catch {
+    // Missing session secret or hash error — fall through to customer login.
+  }
+
   await ensureCustomersHydrated({ force: true });
   const user = verifyCustomerCredentials(parsed.data.email, parsed.data.password);
   if (!user) {
-    return redirectToLogin(request, "haslo");
+    return redirectToLogin(request, "haslo", parsed.data.email);
   }
 
   // Email confirmation is disabled — unlock any leftover unverified accounts on successful login.

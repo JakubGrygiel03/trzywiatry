@@ -1,5 +1,7 @@
 "use client";
 
+import { CheckoutAltAddress } from "@/components/checkout/checkout-alt-address";
+import { CheckoutCompany } from "@/components/checkout/checkout-company";
 import { CheckoutDiscount, type AppliedDiscount } from "@/components/checkout/checkout-discount";
 import { CheckoutField } from "@/components/checkout/checkout-field";
 import { CheckoutPayBox } from "@/components/checkout/checkout-pay-box";
@@ -138,7 +140,7 @@ export function CheckoutForm({
 
       <div className="space-y-4 md:space-y-5">
         <SurfaceTile>
-          <SurfaceTileHeader eyebrow="Dane" title="Dostawa" />
+          <SurfaceTileHeader eyebrow="Dane" title="Faktura i kontakt" />
           <SurfaceTileBody className="space-y-5">
             <TextField
               name="customerName"
@@ -176,7 +178,11 @@ export function CheckoutForm({
               inputClassName={creamField}
               labelClassName="text-czerwony/80"
             />
-            <CheckoutField name="street" label="Ulica i numer" />
+            <CheckoutField
+              name="street"
+              label="Ulica i numer"
+              hint="Adres do faktury. Kurier jedzie tu, chyba że zaznaczysz inny adres wysyłki."
+            />
             <div className="grid gap-5 sm:grid-cols-2">
               <CheckoutField
                 name="postalCode"
@@ -187,6 +193,7 @@ export function CheckoutForm({
               />
               <CheckoutField name="city" label="Miasto" value={city} onChange={setCity} />
             </div>
+            <CheckoutCompany />
           </SurfaceTileBody>
         </SurfaceTile>
 
@@ -196,7 +203,9 @@ export function CheckoutForm({
             <CheckoutShipping value={shippingMethod} onChange={setShippingMethod} hint={shippingHint} />
             {shippingMethod === "inpost" ? (
               <InpostLockerPicker postalCode={postalCode} city={city} value={locker} onChange={setLocker} />
-            ) : null}
+            ) : (
+              <CheckoutAltAddress />
+            )}
           </SurfaceTileBody>
         </SurfaceTile>
 

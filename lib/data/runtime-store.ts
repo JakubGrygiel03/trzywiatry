@@ -5,6 +5,7 @@ import { blogPosts as seedBlogPosts } from "@/lib/data/posts";
 import { products as seedProducts } from "@/lib/data/products";
 import { defaultStudioSettings } from "@/lib/data/settings";
 import { workshops as seedWorkshops } from "@/lib/data/workshops";
+import { defaultProductCategories, type ProductCategoryDef } from "@/lib/product-categories";
 import type {
   BlogPost,
   Collection,
@@ -12,6 +13,7 @@ import type {
   OrderStatus,
   Product,
   StoredOrder,
+  StoredOrderItem,
   StudioSettings,
   Workshop,
 } from "@/lib/types";
@@ -55,6 +57,7 @@ type RuntimeStore = {
   /** Overlay copy for B2B / O nas / Kontakt (same page_layouts table). */
   contentPages?: Partial<ContentOverlayMap>;
   collections?: Collection[];
+  productCategories?: ProductCategoryDef[];
 };
 
 const globalStore = globalThis as typeof globalThis & { __twStore?: RuntimeStore };
@@ -75,6 +78,7 @@ function createStore(): RuntimeStore {
     homeLayout: undefined,
     contentPages: {},
     collections: structuredClone(seedCollections),
+    productCategories: defaultProductCategories(),
   };
 }
 
@@ -90,6 +94,10 @@ if (!runtimeStore.emailTemplates) {
 
 if (!runtimeStore.contentPages) {
   runtimeStore.contentPages = {};
+}
+
+if (!Array.isArray(runtimeStore.productCategories)) {
+  runtimeStore.productCategories = defaultProductCategories();
 }
 
 // Old seed baked the campaign into the sentence — tokens + chip follow the admin field.
@@ -291,6 +299,18 @@ export function getRuntimeCollections(): Collection[] {
   return runtimeStore.collections;
 }
 
+export function getRuntimeProductCategories(): ProductCategoryDef[] {
+  if (!Array.isArray(runtimeStore.productCategories)) {
+    runtimeStore.productCategories = defaultProductCategories();
+  }
+  return runtimeStore.productCategories;
+}
+
+export function setRuntimeProductCategories(categories: ProductCategoryDef[]) {
+  runtimeStore.productCategories = categories;
+  persist();
+}
+
 export function upsertCollectionsFromGlaze(
   lines: { id: string; name: string; slug: string; description: string }[],
 ) {
@@ -441,6 +461,87 @@ export function applyVariantStockDelta(
     }
   }
   persist();
+}
+
+function catalogQtyByVariant(items: StoredOrderItem[]) {
+  const map = new Map<string, number>();
+  for (const item of items) {
+    if (!item.variantId || item.productId.startsWith("custom:")) continue;
+    map.set(item.variantId, (map.get(item.variantId) ?? 0) + item.quantity);
+  }
+  return map;
+}
+
+function findCatalogVariant(variantId: string) {
+  for (const product of getRuntimeCatalog()) {
+    const variant = product.variants.find((row) => row.id === variantId);
+    if (variant) return { product, variant };
+  }
+  return null;
+}
+
+function orderTotals(order: StoredOrder, items: StoredOrderItem[]) {
+  const goodsInCents = items.reduce((sum, item) => sum + item.unitPriceInCents * item.quantity, 0);
+  const discountAmountCents = Math.min(order.discountAmountCents, goodsInCents);
+  const totalAmountInCents = Math.max(
+    0,
+    goodsInCents + order.shippingCostInCents + order.giftWrappingCostCents - discountAmountCents,
+  );
+  return { goodsInCents, discountAmountCents, totalAmountInCents };
+}
+
+export function updateOrderItemsInStore(
+  id: string,
+  items: StoredOrderItem[],
+): { ok: true; order: StoredOrder } | { ok: false; error: string } {
+  const index = runtimeStore.orders.findIndex((order) => order.id === id);
+  if (index < 0) return { ok: false, error: "Nie znaleziono zamówienia." };
+
+  const current = runtimeStore.orders[index]!;
+  if (current.status === "cancelled") {
+    return { ok: false, error: "Anulowanego zamówienia nie edytujemy — zmień status albo złóż nowe." };
+  }
+
+  const sanitized = items.filter((item) => item.quantity > 0);
+  const oldMap = catalogQtyByVariant(current.items);
+  const newMap = catalogQtyByVariant(sanitized);
+  const variantIds = new Set([...oldMap.keys(), ...newMap.keys()]);
+
+  for (const variantId of variantIds) {
+    const need = (newMap.get(variantId) ?? 0) - (oldMap.get(variantId) ?? 0);
+    if (need <= 0) continue;
+    const found = findCatalogVariant(variantId);
+    if (!found) return { ok: false, error: "Ten wariant nie istnieje już w katalogu." };
+    if (found.variant.stockQuantity < need) {
+      return {
+        ok: false,
+        error: `Brak stanu: ${found.product.name} (${found.variant.title}). Zostało ${found.variant.stockQuantity} szt.`,
+      };
+    }
+  }
+
+  for (const variantId of variantIds) {
+    const diff = (newMap.get(variantId) ?? 0) - (oldMap.get(variantId) ?? 0);
+    if (diff > 0) applyVariantStockDelta([{ variantId, quantity: diff }], -1);
+    if (diff < 0) applyVariantStockDelta([{ variantId, quantity: -diff }], 1);
+  }
+
+  const totals = orderTotals(current, sanitized);
+  const now = new Date().toISOString();
+  const next: StoredOrder = {
+    ...current,
+    items: sanitized,
+    ...totals,
+    updatedAt: now,
+    payload: {
+      ...current.payload,
+      total: totals.totalAmountInCents,
+      discount: totals.discountAmountCents,
+    },
+  };
+  runtimeStore.orders[index] = next;
+  persist();
+  return { ok: true, order: next };
 }
 
 export function getOrderById(id: string) {

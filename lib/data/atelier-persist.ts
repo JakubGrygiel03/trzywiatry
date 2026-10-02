@@ -14,6 +14,7 @@ import {
 } from "@/lib/data/runtime-store";
 import { ATELIER_STATE_KEYS, hasSupabaseService, readAtelierState, writeAtelierState } from "@/lib/data/supabase-state";
 import { mergeNewsletterSnapshot } from "@/lib/newsletter-coupons";
+import { defaultProductCategories, type ProductCategoryDef } from "@/lib/product-categories";
 import type { BlogPost, Collection, Product, StudioSettings, Workshop } from "@/lib/types";
 
 const DATA_DIR = path.join(process.cwd(), ".data");
@@ -36,6 +37,7 @@ export type AtelierSnapshot = {
   bookings?: Inquiry[];
   homeLayout?: HomeSection[];
   contentPages?: Partial<ContentOverlayMap>;
+  productCategories?: ProductCategoryDef[];
 };
 
 let hydratePromise: Promise<void> | null = null;
@@ -78,6 +80,11 @@ function applySnapshot(snap: AtelierSnapshot) {
     runtimeStore.homeLayout = snap.homeLayout;
   }
   if (snap.contentPages) runtimeStore.contentPages = snap.contentPages;
+  if (Array.isArray(snap.productCategories)) {
+    runtimeStore.productCategories = snap.productCategories;
+  } else if (!Array.isArray(runtimeStore.productCategories)) {
+    runtimeStore.productCategories = defaultProductCategories();
+  }
   if (snap.seedSignature) setCatalogSeedSignature(snap.seedSignature);
 }
 
@@ -119,6 +126,7 @@ function captureSnapshot(remote?: AtelierSnapshot): AtelierSnapshot {
     bookings: runtimeStore.bookings,
     homeLayout: runtimeStore.homeLayout,
     contentPages: runtimeStore.contentPages,
+    productCategories: runtimeStore.productCategories,
   };
 }
 

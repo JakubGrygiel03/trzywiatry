@@ -7,7 +7,8 @@ import { RelatedProductsField } from "@/components/admin/related-products-field"
 import { AdminField, AdminInput, AdminSelect, AdminTextarea } from "@/components/admin/ui/admin-field";
 import { AdminFormActions } from "@/components/admin/ui/admin-form-actions";
 import { AdminFormSection } from "@/components/admin/ui/admin-form-section";
-import { CATEGORIES_BY_DOMAIN, CATEGORY_LABELS, DOMAIN_LABELS } from "@/lib/constants";
+import { DOMAIN_LABELS } from "@/lib/constants";
+import { categoriesForDomain, type ProductCategoryDef } from "@/lib/product-categories";
 import { laneForDomain, SHOP_LANES, type ShopLaneId } from "@/lib/shop-lanes";
 import type { Collection, Product, ProductDomain } from "@/lib/types";
 
@@ -21,17 +22,25 @@ function slugify(value: string) {
     .replace(/(^-|-$)/g, "");
 }
 
+function firstCategoryId(list: ProductCategoryDef[], domain: ProductDomain, preferred?: string) {
+  const cats = categoriesForDomain(list, domain);
+  if (preferred && cats.some((row) => row.id === preferred)) return preferred;
+  return cats[0]?.id ?? "";
+}
+
 export function ProductForm({
   action,
   product,
   collections,
   catalog = [],
+  categoryOptions,
   submitLabel,
 }: {
   action: (formData: FormData) => void | Promise<void>;
   product?: Product;
   collections: Collection[];
   catalog?: { id: string; name: string }[];
+  categoryOptions: ProductCategoryDef[];
   submitLabel: string;
 }) {
   const [domain, setDomain] = useState<ProductDomain>(product?.domain ?? "ceramika");
@@ -43,10 +52,8 @@ export function ProductForm({
   const [slugTouched, setSlugTouched] = useState(Boolean(product));
 
   const laneDomains = SHOP_LANES[shopLane].domains;
-  const categories = useMemo(() => CATEGORIES_BY_DOMAIN[domain] ?? [], [domain]);
-  const defaultCategory =
-    product?.category && categories.includes(product.category) ? product.category : categories[0];
-  const [category, setCategory] = useState(defaultCategory ?? "kubki");
+  const categories = useMemo(() => categoriesForDomain(categoryOptions, domain), [categoryOptions, domain]);
+  const [category, setCategory] = useState(() => firstCategoryId(categoryOptions, domain, product?.category));
 
   const priceZl = product ? (product.priceInCents / 100).toFixed(0) : "";
 
@@ -255,8 +262,7 @@ export function ProductForm({
                           if (!(nextDomains as readonly string[]).includes(domain)) {
                             const nextDomain = nextDomains[0];
                             setDomain(nextDomain);
-                            const nextCats = CATEGORIES_BY_DOMAIN[nextDomain] ?? [];
-                            setCategory(nextCats[0] ?? "kubki");
+                            setCategory(firstCategoryId(categoryOptions, nextDomain));
                           }
                         }}
                         className="mt-0.5 accent-czerwony"
@@ -282,8 +288,7 @@ export function ProductForm({
                   const next = event.target.value as ProductDomain;
                   setDomain(next);
                   setShopLane(laneForDomain(next));
-                  const nextCats = CATEGORIES_BY_DOMAIN[next] ?? [];
-                  setCategory(nextCats[0] ?? "kubki");
+                  setCategory(firstCategoryId(categoryOptions, next));
                 }}
               >
                 {(Object.keys(DOMAIN_LABELS) as ProductDomain[])
@@ -297,16 +302,30 @@ export function ProductForm({
               </AdminSelect>
             </AdminField>
 
-            <AdminField label="Kategoria" htmlFor="category" required>
+            <AdminField
+              label="Kategoria"
+              htmlFor="category"
+              required
+              hint={
+                categories.length === 0
+                  ? "Brak kategorii w tym dziale — dodaj ją w CMS → Kategorie."
+                  : undefined
+              }
+            >
               <AdminSelect
                 id="category"
                 name="category"
                 value={category}
                 onChange={(event) => setCategory(event.target.value)}
+                required
               >
-                {categories.map((key) => (
-                  <option key={key} value={key}>
-                    {CATEGORY_LABELS[key] ?? key}
+                {categories.length === 0 ? <option value="">— dodaj kategorię —</option> : null}
+                {product?.category && !categories.some((row) => row.id === product.category) ? (
+                  <option value={product.category}>{product.category}</option>
+                ) : null}
+                {categories.map((row) => (
+                  <option key={row.id} value={row.id}>
+                    {row.label}
                   </option>
                 ))}
               </AdminSelect>

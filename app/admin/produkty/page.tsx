@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Package } from "lucide-react";
+import { Plus, Package, Tags } from "lucide-react";
 import { connection } from "next/server";
 import { AdminBestsellerToggle } from "@/components/admin/admin-bestseller-toggle";
 import { AdminCacheBust } from "@/components/admin/admin-cache-bust";
@@ -9,11 +9,13 @@ import { AdminEmptyState } from "@/components/admin/ui/admin-empty-state";
 import { AdminPageHeader } from "@/components/admin/ui/admin-page-header";
 import { PublishBadge } from "@/components/admin/ui/admin-status-badge";
 import { ProductListFilters } from "@/components/admin/product-list-filters";
-import { CATEGORY_LABELS, DOMAIN_LABELS } from "@/lib/constants";
+import { DOMAIN_LABELS } from "@/lib/constants";
 import { filterAdminProducts } from "@/lib/data/admin-product-filter";
-import { getAllProducts } from "@/lib/data/queries";
+import { ensureAtelierHydrated } from "@/lib/data/atelier-persist";
+import { getAllProducts, getProductCategories } from "@/lib/data/queries";
 import { formatPLN } from "@/lib/format";
 import { getProductPhoto } from "@/lib/media";
+import { labelForCategory, shopCategoryTreeFrom } from "@/lib/product-categories";
 import { laneForDomain, SHOP_LANES } from "@/lib/shop-lanes";
 
 export const dynamic = "force-dynamic";
@@ -24,9 +26,11 @@ export default async function AdminProductsPage({
   searchParams: Promise<{ q?: string; kategoria?: string; usunieto?: string; t?: string; blad?: string }>;
 }) {
   await connection();
+  await ensureAtelierHydrated({ force: true });
   const { q, kategoria, usunieto, t, blad } = await searchParams;
   const catalog = getAllProducts();
-  const products = filterAdminProducts(catalog, { q, category: kategoria });
+  const categories = getProductCategories();
+  const products = filterAdminProducts(catalog, { q, category: kategoria }, categories);
   const variantCount = products.reduce((sum, product) => sum + product.variants.length, 0);
   const filtered = Boolean(q?.trim() || kategoria);
 
@@ -40,13 +44,22 @@ export default async function AdminProductsPage({
             : `${catalog.length} produktów · ${variantCount} wariantów — stan magazynowy edytujesz poniżej albo w karcie produktu.`
         }
         actions={
-          <Link
-            href="/admin/produkty/nowy"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-czarny px-3.5 py-2 text-xs font-medium text-bialy transition hover:bg-czerwony"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Dodaj produkt
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/admin/produkty/kategorie"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-czarny/12 bg-bialy px-3.5 py-2 text-xs font-medium text-czarny transition hover:border-czerwony/30"
+            >
+              <Tags className="h-3.5 w-3.5" />
+              Kategorie
+            </Link>
+            <Link
+              href="/admin/produkty/nowy"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-czarny px-3.5 py-2 text-xs font-medium text-bialy transition hover:bg-czerwony"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Dodaj produkt
+            </Link>
+          </div>
         }
       />
 
@@ -54,7 +67,11 @@ export default async function AdminProductsPage({
       {blad ? <AdminAlert variant="error">Nie udało się wykonać tej operacji.</AdminAlert> : null}
       <AdminCacheBust nonce={usunieto ? t ?? "1" : undefined} />
 
-      <ProductListFilters initialQ={q ?? ""} initialCategory={kategoria ?? ""} />
+      <ProductListFilters
+        initialQ={q ?? ""}
+        initialCategory={kategoria ?? ""}
+        categoryTree={shopCategoryTreeFrom(categories)}
+      />
 
       {products.length === 0 ? (
         <div className="rounded-xl border border-czarny/8 bg-bialy">
@@ -133,7 +150,7 @@ export default async function AdminProductsPage({
                     <p className="mt-0.5 text-xs text-czarny/45">
                       {SHOP_LANES[product.shopLane ?? laneForDomain(product.domain)].shortLabel}
                       {" · "}
-                      {DOMAIN_LABELS[product.domain]} · {CATEGORY_LABELS[product.category] ?? product.category}
+                      {DOMAIN_LABELS[product.domain]} · {labelForCategory(categories, product.category) || product.category}
                       {product.capacityMl ? ` · ${product.capacityMl} ml` : ""}
                       {` · ${product.variants.length} ${product.variants.length === 1 ? "wariant" : "warianty"}`}
                     </p>

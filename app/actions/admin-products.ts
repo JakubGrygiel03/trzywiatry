@@ -4,8 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { mergeProductImages, saveProductImageUploads } from "@/lib/admin-product-images";
-import { CATEGORIES_BY_DOMAIN } from "@/lib/constants";
-import { getAllProducts, getProductById } from "@/lib/data/queries";
+import { getAllProducts, getProductById, getProductCategories } from "@/lib/data/queries";
 import { deleteRuntimeProduct, upsertRuntimeProduct } from "@/lib/data/runtime-store";
 import { ensureAtelierHydrated, flushAtelierSave } from "@/lib/data/atelier-persist";
 import { assertAdminSession } from "@/lib/admin-guard";
@@ -217,8 +216,7 @@ async function resolveProductImages(formData: FormData, slug: string) {
 }
 
 function assertCategory(domain: ProductDomain, category: string) {
-  const allowed = CATEGORIES_BY_DOMAIN[domain] ?? [];
-  return allowed.includes(category);
+  return getProductCategories().some((row) => row.domain === domain && row.id === category);
 }
 
 function revalidateShop(slug: string, productId?: string) {

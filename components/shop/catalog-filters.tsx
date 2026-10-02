@@ -7,16 +7,19 @@ import { CatalogFilterFields, type CategoryCounts } from "@/components/shop/cata
 import { CatalogFilterRail } from "@/components/shop/catalog-filter-rail";
 import { PriceFilter } from "@/components/shop/price-filter";
 import type { ShopLaneId } from "@/lib/shop-lanes";
+import type { ShopCategoryGroup } from "@/lib/product-categories";
 import { cn } from "@/lib/utils";
 
 export function CatalogFilters({
   priceBounds,
   categoryCounts,
   lane,
+  categoryTree,
 }: {
   priceBounds: { minCents: number; maxCents: number };
   categoryCounts: CategoryCounts;
   lane: ShopLaneId;
+  categoryTree: ShopCategoryGroup[];
 }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
@@ -47,6 +50,7 @@ export function CatalogFilters({
     floorZl: Math.floor(priceBounds.minCents / 100),
     ceilZl: Math.ceil(priceBounds.maxCents / 100),
     categoryCounts,
+    categoryTree,
     hasActive: activeCount > 0,
     onClear: () => router.push(`/sklep?sklep=${lane}`),
     onPush: pushParams,
@@ -111,6 +115,7 @@ export function CatalogFilters({
         category={category}
         hasActive={activeCount > 0}
         categoryCounts={categoryCounts}
+        categoryTree={categoryTree}
         onClear={fieldProps.onClear}
         onPush={pushParams}
       />

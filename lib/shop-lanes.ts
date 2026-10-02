@@ -1,4 +1,6 @@
 import { SHOP_CATEGORY_TREE } from "@/lib/constants";
+import type { ProductCategoryDef, ShopCategoryGroup } from "@/lib/product-categories";
+import { shopCategoryTreeFrom } from "@/lib/product-categories";
 import type { Product, ProductDomain } from "@/lib/types";
 
 export type ShopLaneId = "uzytkowa" | "pracownia";
@@ -43,7 +45,20 @@ export function isShopLaneEnabled(
   return settings.shopLanePracowniaEnabled !== false;
 }
 
-export function categoryTreeForLane(lane: ShopLaneId) {
+export function categoryTreeForLane(
+  lane: ShopLaneId,
+  categories?: ProductCategoryDef[],
+): ShopCategoryGroup[] {
   const domains = SHOP_LANES[lane].domains as readonly string[];
-  return SHOP_CATEGORY_TREE.filter((group) => domains.includes(group.domain));
+  const tree = categories ? shopCategoryTreeFrom(categories) : SHOP_CATEGORY_TREE.map((group) => ({
+    id: group.id,
+    label: group.label,
+    domain: group.domain,
+    children: group.children.map((child) => ({
+      id: child.id,
+      label: child.label,
+      category: child.category,
+    })),
+  }));
+  return tree.filter((group) => domains.includes(group.domain));
 }
