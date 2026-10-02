@@ -14,7 +14,7 @@ export default async function AdminContentPagesHub({
     <div className="mx-auto max-w-4xl">
       <AdminPageHeader
         title="Strony"
-        description="Nakładki B2B, O nas i Kontakt — te same teksty, które widzi klient. Formularze zostają w kodzie."
+        description="Nakładki B2B, O nas, Kontakt, FAQ, dostawa i poradnik — te same teksty, które widzi klient."
       />
       {blad ? <AdminAlert variant="error">{blad}</AdminAlert> : null}
       <ul className="grid gap-4 md:grid-cols-3">

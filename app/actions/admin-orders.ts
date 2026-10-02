@@ -8,13 +8,22 @@ import { withCmsTick } from "@/lib/cms-redirect";
 import { ensureAtelierHydrated, flushAtelierSave } from "@/lib/data/atelier-persist";
 import { ensureOrdersHydrated, flushOrdersSave } from "@/lib/data/order-persist";
 import {
+  addRuntimeOrder,
+  applyVariantStockDelta,
   deleteRuntimeOrder,
   getOrderById,
   getRuntimeCatalog,
+  nextOrderNumber,
   updateOrderItemsInStore,
 } from "@/lib/data/runtime-store";
 import { sendMonthlyStudioReport } from "@/lib/reports/monthly-studio";
-import type { StoredOrderItem } from "@/lib/types";
+import { wrapEmail } from "@/lib/email/render";
+import { sendEmail } from "@/lib/resend";
+import { enabledShippingMethods, isEnabledShippingMethod } from "@/lib/shipping";
+import { studioIdentity } from "@/lib/studio-identity";
+import { getSettings } from "@/lib/data/queries";
+import type { ShippingMethod, StoredOrder, StoredOrderItem } from "@/lib/types";
+import { escapeHtml, firstZodMessage, emailSchema, plainText } from "@/lib/validations/safe-input";
 
 function failItems(orderId: string, message: string): never {
   redirect(withCmsTick(`/admin/zamowienia/${orderId}?blad=${encodeURIComponent(message)}`));
@@ -184,4 +193,137 @@ export async function removeOrderItem(formData: FormData) {
     orderId,
     order.items.filter((_, i) => i !== index.data),
   );
+}
+
+const postalCode = z.string().trim().regex(/^\d{2}-\d{3}$/, "Kod pocztowy: 00-000");
+
+export async function createManualOrder(formData: FormData) {
+  await assertAdminSession();
+  await ensureOrdersHydrated({ force: true });
+  await ensureAtelierHydrated({ force: true });
+  const parsed = z
+    .object({
+      customerName: plainText("Imię i nazwisko", 80, 2),
+      customerEmail: emailSchema,
+      customerPhone: z.string().trim().min(8, "Podaj telefon.").max(20),
+      street: plainText("Ulica", 120, 3),
+      postalCode,
+      city: plainText("Miasto", 60, 2),
+      shippingMethod: z.enum(["inpost", "kurier", "odbior"]),
+      variantId: z.string().min(1, "Wybierz produkt."),
+      quantity: qtySchema,
+      notes: plainText("Uwagi", 500).optional(),
+      markPaid: z.boolean(),
+    })
+    .safeParse({
+      customerName: formData.get("customerName"),
+      customerEmail: formData.get("customerEmail"),
+      customerPhone: formData.get("customerPhone"),
+      street: formData.get("street"),
+      postalCode: formData.get("postalCode"),
+      city: formData.get("city"),
+      shippingMethod: formData.get("shippingMethod"),
+      variantId: formData.get("variantId"),
+      quantity: formData.get("quantity"),
+      notes: formData.get("notes"),
+      markPaid: formData.getAll("markPaid").includes("true"),
+    });
+  if (!parsed.success) {
+    redirect(`/admin/zamowienia/nowe?blad=${encodeURIComponent(firstZodMessage(parsed.error))}`);
+  }
+  const data = parsed.data;
+  const settings = getSettings();
+  if (!isEnabledShippingMethod(data.shippingMethod, settings)) {
+    redirect(`/admin/zamowienia/nowe?blad=${encodeURIComponent("Ta metoda dostawy jest wyłączona.")}`);
+  }
+  const catalog = getRuntimeCatalog();
+  const product = catalog.find((item) => item.variants.some((variant) => variant.id === data.variantId));
+  const variant = product?.variants.find((item) => item.id === data.variantId);
+  if (!product || !variant) {
+    redirect(`/admin/zamowienia/nowe?blad=${encodeURIComponent("Nie znaleziono wariantu.")}`);
+  }
+  const unit = variant.priceInCents ?? product.priceInCents;
+  const goods = unit * data.quantity;
+  const shipping = enabledShippingMethods(settings).find((row) => row.id === data.shippingMethod);
+  const shippingCost =
+    data.shippingMethod === "odbior" || goods >= settings.freeShippingThresholdCents ? 0 : (shipping?.priceInCents ?? 0);
+  const now = new Date().toISOString();
+  const status = data.markPaid ? "paid" : "pending";
+  const items: StoredOrderItem[] = [
+    {
+      productId: product.id,
+      variantId: variant.id,
+      productName: product.name,
+      variantTitle: variant.title,
+      quantity: data.quantity,
+      unitPriceInCents: unit,
+    },
+  ];
+  const order: StoredOrder = {
+    id: crypto.randomUUID(),
+    createdAt: now,
+    updatedAt: now,
+    orderNumber: nextOrderNumber(),
+    status,
+    statusHistory: [{ status, at: now }],
+    customerEmail: data.customerEmail,
+    customerName: data.customerName,
+    customerPhone: data.customerPhone,
+    street: data.street,
+    postalCode: data.postalCode,
+    city: data.city,
+    shippingMethod: data.shippingMethod as ShippingMethod,
+    notes: data.notes,
+    items,
+    hasGiftWrapping: false,
+    goodsInCents: goods,
+    shippingCostInCents: shippingCost,
+    giftWrappingCostCents: 0,
+    discountAmountCents: 0,
+    totalAmountInCents: goods + shippingCost,
+    paymentProvider: "manual",
+    paidAt: data.markPaid ? now : undefined,
+    payload: {
+      orderNumber: "",
+      customerName: data.customerName,
+      customerEmail: data.customerEmail,
+      total: goods + shippingCost,
+      status,
+      paymentProvider: "manual",
+    },
+  };
+  order.payload.orderNumber = order.orderNumber;
+  addRuntimeOrder(order);
+  applyVariantStockDelta([{ variantId: variant.id, quantity: data.quantity }], -1);
+  await flushOrdersSave();
+  await flushAtelierSave();
+  revalidatePath("/admin/zamowienia");
+  revalidatePath("/admin/analityka");
+  revalidatePath("/sklep", "layout");
+  redirect(withCmsTick(`/admin/zamowienia/${order.id}?zapisano=1`));
+}
+
+export async function sendOrderCustomerMessage(formData: FormData) {
+  await assertAdminSession();
+  await ensureOrdersHydrated({ force: true });
+  const id = String(formData.get("id") ?? "").trim();
+  const subject = String(formData.get("subject") ?? "").trim().slice(0, 120);
+  const body = String(formData.get("body") ?? "").trim().slice(0, 4000);
+  const order = getOrderById(id);
+  if (!order) redirect("/admin/zamowienia?blad=1");
+  if (subject.length < 3 || body.length < 4) {
+    redirect(`/admin/zamowienia/${id}?blad=${encodeURIComponent("Wpisz temat i treść wiadomości.")}`);
+  }
+  const html = wrapEmail(
+    `<p>Cześć ${escapeHtml(order.customerName)},</p><p>${escapeHtml(body).replace(/\n/g, "<br/>")}</p><p>Zamówienie ${escapeHtml(order.orderNumber)}.</p>`,
+  );
+  const mailed = await sendEmail({
+    to: order.customerEmail,
+    subject,
+    html,
+    replyTo: studioIdentity(getSettings()).email,
+  });
+  const params = new URLSearchParams({ wiadomosc: mailed.ok ? "1" : "0" });
+  if (!mailed.ok) params.set("powod", (mailed.error ?? "e-mail nie wyszedł").slice(0, 220));
+  redirect(withCmsTick(`/admin/zamowienia/${id}?${params}`));
 }

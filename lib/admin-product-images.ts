@@ -1,4 +1,5 @@
 import "server-only";
+import { isDeletableLibraryUrl } from "@/lib/admin-media-delete";
 import { MAX_IMAGE_BYTES, MAX_PRODUCT_IMAGES } from "@/lib/admin-product-constants";
 import { listLocalPublicImages, listPublicImages, persistUploadedImage, randomImageName } from "@/lib/admin-storage";
 import { PRODUCT_IMAGE_OPTIONS } from "@/lib/constants";
@@ -31,7 +32,7 @@ function safeSlugPart(value: string) {
     .slice(0, 40);
 }
 
-export type AdminImageOption = { url: string; label: string };
+export type AdminImageOption = { url: string; label: string; deletable?: boolean };
 
 function mergeLibrary(groups: AdminImageOption[][]): AdminImageOption[] {
   const seen = new Set<string>();
@@ -65,6 +66,10 @@ export async function getAdminProductImageLibrary(): Promise<AdminImageOption[]>
     ...listLocalPublicImages("public/brand/photos/home/banner", "/brand/photos/home/banner/"),
   ];
   uploads.sort((a, b) => b.label.localeCompare(a.label));
+  const taggedUploads = uploads.map((item) => ({
+    ...item,
+    deletable: isDeletableLibraryUrl(item.url),
+  }));
 
   const presets: AdminImageOption[] = [
     ...aboutGalleryWorks.map((work, index) => ({
@@ -74,7 +79,7 @@ export async function getAdminProductImageLibrary(): Promise<AdminImageOption[]>
     ...PRODUCT_IMAGE_OPTIONS.map((option) => ({ url: option.value, label: option.label })),
   ];
 
-  return mergeLibrary([uploads, presets]);
+  return mergeLibrary([taggedUploads, presets]);
 }
 
 async function persistProductFile(file: File, slugPart: string): Promise<string> {

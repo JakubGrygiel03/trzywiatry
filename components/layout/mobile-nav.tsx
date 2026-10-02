@@ -5,9 +5,10 @@ import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { SITE } from "@/lib/constants";
+import { useSiteSettings } from "@/components/cms/site-settings-provider";
 import { MailtoLink } from "@/components/layout/mailto-link";
 import { drawerTransition, fadeTransition, motionEase } from "@/lib/motion";
+import { studioIdentity } from "@/lib/studio-identity";
 import { cn } from "@/lib/utils";
 
 type NavLink = { href: string; label: string };
@@ -19,6 +20,8 @@ export function MobileNav({
   links: readonly NavLink[];
   accountHref?: string;
 }) {
+  const settings = useSiteSettings();
+  const identity = studioIdentity(settings);
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const reduceMotion = useReducedMotion();
@@ -142,11 +145,11 @@ export function MobileNav({
                 </Link>
 
                 <div className="flex items-center gap-3 text-[12px] tracking-wide text-czarny/45">
-                  <a href={SITE.instagram} target="_blank" rel="noreferrer" className="hover:text-czerwony">
+                  <a href={identity.instagram} target="_blank" rel="noreferrer" className="hover:text-czerwony">
                     Instagram
                   </a>
                   <span aria-hidden>·</span>
-                  <MailtoLink email={SITE.email} className="truncate" />
+                  <MailtoLink email={identity.email} className="truncate" />
                 </div>
               </motion.div>
             </div>

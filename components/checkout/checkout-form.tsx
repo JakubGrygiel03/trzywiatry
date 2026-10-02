@@ -15,7 +15,8 @@ import { useActionState, useEffect, useState } from "react";
 import { createCheckoutSession, type CheckoutState } from "@/app/actions/checkout";
 import { P24HandoffNotice } from "@/components/checkout/p24-handoff-notice";
 import { useSiteSettings } from "@/components/cms/site-settings-provider";
-import { SHIPPING_METHODS } from "@/lib/constants";
+import { enabledShippingMethods } from "@/lib/shipping";
+import type { ShippingMethod } from "@/lib/types";
 import { formatPLN } from "@/lib/format";
 import { beginP24Handoff, endP24Handoff, goToP24 } from "@/lib/p24-handoff";
 import { cartGiftWrapCost, cartSubtotal, useCartStore } from "@/store/use-cart-store";
@@ -51,20 +52,29 @@ export function CheckoutForm({
   const hasGiftWrapping = useCartStore((state) => state.hasGiftWrapping);
   const giftMessage = useCartStore((state) => state.giftMessage);
   const [state, action, pending] = useActionState(createCheckoutSession, initial);
-  const [shippingMethod, setShippingMethod] = useState<(typeof SHIPPING_METHODS)[number]["id"]>("inpost");
+  const settings = useSiteSettings();
+  const shippingOptions = enabledShippingMethods(settings);
+  const [shippingMethod, setShippingMethod] = useState<ShippingMethod>(
+    shippingOptions[0]?.id ?? "inpost",
+  );
   const [postalCode, setPostalCode] = useState("");
   const [city, setCity] = useState("");
   const [locker, setLocker] = useState("");
   const [discount, setDiscount] = useState<AppliedDiscount | null>(null);
   const [email, setEmail] = useState(defaultEmail);
-  const settings = useSiteSettings();
   const subtotal = cartSubtotal(items);
   const gift = cartGiftWrapCost(hasGiftWrapping, settings.giftWrapPriceCents, settings.giftWrapEnabled);
   const thresholdLabel = formatPLN(settings.freeShippingThresholdCents);
   const shippingHint =
     subtotal >= settings.freeShippingThresholdCents
-      ? `Darmowa dostawa od ${thresholdLabel} — kurier i InPost 0 zł.`
+      ? `Darmowa dostawa od ${thresholdLabel} — dostawa 0 zł.`
       : `Doliczymy koszt dostawy, jeśli nie osiągniesz ${thresholdLabel}.`;
+
+  useEffect(() => {
+    if (shippingOptions.some((method) => method.id === shippingMethod)) return;
+    const fallback = shippingOptions[0]?.id;
+    if (fallback) setShippingMethod(fallback);
+  }, [shippingOptions, shippingMethod]);
 
   useEffect(() => {
     if (!state.ok || !state.redirectTo) return;
@@ -181,7 +191,11 @@ export function CheckoutForm({
             <CheckoutField
               name="street"
               label="Ulica i numer"
-              hint="Adres do faktury. Kurier jedzie tu, chyba że zaznaczysz inny adres wysyłki."
+              hint={
+                shippingMethod === "odbior"
+                  ? "Adres do faktury — naczynie odbierzesz w pracowni."
+                  : "Adres do faktury. Kurier jedzie tu, chyba że zaznaczysz inny adres wysyłki."
+              }
             />
             <div className="grid gap-5 sm:grid-cols-2">
               <CheckoutField
@@ -200,11 +214,28 @@ export function CheckoutForm({
         <SurfaceTile>
           <SurfaceTileHeader eyebrow="Wysyłka" title="Sposób dostawy" />
           <SurfaceTileBody className="space-y-5">
-            <CheckoutShipping value={shippingMethod} onChange={setShippingMethod} hint={shippingHint} />
-            {shippingMethod === "inpost" ? (
-              <InpostLockerPicker postalCode={postalCode} city={city} value={locker} onChange={setLocker} />
+            {shippingOptions.length === 0 ? (
+              <p className="text-sm text-czerwony">
+                Brak włączonych metod dostawy. Włącz choć jedną w ustawieniach sklepu.
+              </p>
             ) : (
-              <CheckoutAltAddress />
+              <>
+                <CheckoutShipping
+                  methods={shippingOptions}
+                  value={shippingMethod}
+                  onChange={setShippingMethod}
+                  hint={shippingHint}
+                />
+                {shippingMethod === "inpost" ? (
+                  <InpostLockerPicker postalCode={postalCode} city={city} value={locker} onChange={setLocker} />
+                ) : null}
+                {shippingMethod === "kurier" ? <CheckoutAltAddress /> : null}
+                {shippingMethod === "odbior" ? (
+                  <p className="text-sm leading-relaxed text-czarny/55">
+                    Odbierzesz naczynie w pracowni. Adres powyżej jest do faktury — paczki nie wysyłamy.
+                  </p>
+                ) : null}
+              </>
             )}
           </SurfaceTileBody>
         </SurfaceTile>

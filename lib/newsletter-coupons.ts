@@ -4,6 +4,7 @@ import { isMintedNewsletterCode, normalizeCouponCode } from "@/lib/coupon-code";
 import { discountAmountFromGoods } from "@/lib/discount";
 import { isSignedNewsletterCode, mintSignedNewsletterCode } from "@/lib/newsletter-code-sign";
 import { runtimeStore } from "@/lib/data/runtime-store";
+import { resolveShopCouponDiscount } from "@/lib/shop-coupons";
 import type { NewsletterCoupon } from "@/lib/types";
 
 export { normalizeCouponCode };
@@ -259,6 +260,9 @@ export function resolveCheckoutDiscount(
     }
     return { ok: true, amountCents: discountAmountFromGoods(goodsCents), code: unique.code, unique: true };
   }
+
+  const shop = resolveShopCouponDiscount(typed, goodsCents, customerEmail);
+  if (shop) return shop;
 
   const campaign = (campaignPromo ?? "").trim().toUpperCase();
   if (campaign && code === campaign) {

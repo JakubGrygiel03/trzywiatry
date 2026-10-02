@@ -9,6 +9,7 @@ import { deleteRuntimeProduct, upsertRuntimeProduct } from "@/lib/data/runtime-s
 import { ensureAtelierHydrated, flushAtelierSave } from "@/lib/data/atelier-persist";
 import { assertAdminSession } from "@/lib/admin-guard";
 import { laneForDomain, type ShopLaneId } from "@/lib/shop-lanes";
+import { recordSlugRedirect } from "@/lib/slug-redirects";
 import { suggestVariantSku, uniqueSku } from "@/lib/sku";
 import { withCmsTick } from "@/lib/cms-redirect";
 import type { Product, ProductDomain, ProductVariant } from "@/lib/types";
@@ -361,9 +362,48 @@ export async function updateProduct(formData: FormData) {
   };
 
   upsertRuntimeProduct(product);
+  if (existing.slug !== product.slug) {
+    recordSlugRedirect("product", existing.slug, product.slug);
+  }
   await flushAtelierSave();
   revalidateShop(product.slug, product.id);
+  if (existing.slug !== product.slug) {
+    revalidatePath(`/sklep/${existing.slug}`);
+  }
   redirect(withCmsTick(`/admin/produkty/${product.id}?zapisano=1`));
+}
+
+export async function duplicateProduct(formData: FormData) {
+  await assertAdminSession();
+  await ensureAtelierHydrated({ force: true });
+  const id = String(formData.get("id") ?? "").trim();
+  const source = getProductById(id);
+  if (!source) redirect("/admin/produkty?blad=1");
+
+  const catalog = getAllProducts();
+  let slug = `${source.slug}-kopia`;
+  let n = 2;
+  while (catalog.some((row) => row.slug === slug)) {
+    slug = `${source.slug}-kopia-${n}`;
+    n += 1;
+  }
+  const used = new Set(catalog.flatMap((row) => row.variants.map((variant) => variant.sku)));
+  const copy: Product = {
+    ...source,
+    id: crypto.randomUUID(),
+    name: `${source.name} (kopia)`,
+    slug,
+    isPublished: false,
+    variants: source.variants.map((variant) => {
+      const sku = uniqueSku(`${variant.sku}-K`, used);
+      used.add(sku);
+      return { ...variant, id: `v-${crypto.randomUUID().slice(0, 8)}`, sku };
+    }),
+  };
+  upsertRuntimeProduct(copy);
+  await flushAtelierSave();
+  revalidateShop(copy.slug, copy.id);
+  redirect(withCmsTick(`/admin/produkty/${copy.id}?zapisano=1`));
 }
 
 export async function deleteProduct(formData: FormData) {

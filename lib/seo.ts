@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { SITE } from "@/lib/constants";
+import type { StudioIdentity } from "@/lib/studio-identity";
+import { studioIdentity } from "@/lib/studio-identity";
 import type { Product } from "@/lib/types";
 import { getProductPhoto } from "@/lib/media";
 import { absoluteUrl } from "@/lib/site-url";
@@ -74,24 +76,28 @@ export function productJsonLd(product: Product) {
   };
 }
 
-export function localBusinessJsonLd() {
+export function localBusinessJsonLd(identity: StudioIdentity = studioIdentity()) {
+  const street = identity.addressLines[0]?.replace(/,$/, "") ?? identity.address;
+  const cityLine = identity.addressLines[1] ?? "";
+  const postal = cityLine.match(/\d{2}-\d{3}/)?.[0] ?? "80-176";
+  const city = cityLine.replace(/\d{2}-\d{3}\s*/, "").trim() || "Gdańsk";
   return {
     "@context": "https://schema.org",
     "@type": "HomeGoodsStore",
-    name: SITE.name,
+    name: identity.name,
     description: SITE.seoDescription,
     url: absoluteUrl("/"),
-    email: SITE.email,
-    telephone: SITE.phone,
+    email: identity.email,
+    telephone: identity.phone,
     image: absoluteUrl("/brand/logo-nav.png"),
     address: {
       "@type": "PostalAddress",
-      streetAddress: "Życzliwa 13/4",
-      addressLocality: "Gdańsk",
-      postalCode: "80-176",
+      streetAddress: street,
+      addressLocality: city,
+      postalCode: postal,
       addressCountry: "PL",
     },
-    sameAs: [SITE.instagram, SITE.facebook],
+    sameAs: [identity.instagram, identity.facebook],
     areaServed: { "@type": "Country", name: "PL" },
   };
 }

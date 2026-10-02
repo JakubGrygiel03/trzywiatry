@@ -3,14 +3,16 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { updateOrderStatus } from "@/app/actions/admin";
 import { AdminOrderItems } from "@/components/admin/admin-order-items";
+import { AdminOrderMessageForm } from "@/components/admin/admin-order-message-form";
 import { DeleteOrderButton } from "@/components/admin/delete-order-button";
 import { AdminAlert } from "@/components/admin/ui/admin-alert";
 import { AdminPageHeader } from "@/components/admin/ui/admin-page-header";
 import { OrderStatusBadge } from "@/components/admin/ui/admin-status-badge";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/field";
-import { ORDER_STATUS_LABELS, shippingMethodLabel } from "@/lib/constants";
-import { getAllProducts } from "@/lib/data/queries";
+import { ORDER_STATUS_LABELS } from "@/lib/constants";
+import { getAllProducts, getSettings } from "@/lib/data/queries";
+import { shippingMethodLabel } from "@/lib/shipping";
 import { ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 import { ensureOrdersHydrated } from "@/lib/data/order-persist";
 import { getOrderById, getOrderByNumber } from "@/lib/data/runtime-store";
@@ -35,6 +37,7 @@ export default async function AdminOrderDetailPage({
     powod?: string;
     pozycje?: string;
     blad?: string;
+    wiadomosc?: string;
   }>;
 }) {
   await connection();
@@ -45,7 +48,7 @@ export default async function AdminOrderDetailPage({
   const order = getOrderById(id) ?? getOrderByNumber(id);
   if (!order) notFound();
 
-  const shippingLabel = shippingMethodLabel(order.shippingMethod);
+  const shippingLabel = shippingMethodLabel(order.shippingMethod, getSettings());
   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
   const canEdit = order.status !== "cancelled";
   const catalog = getAllProducts().map((product) => ({
@@ -70,6 +73,13 @@ export default async function AdminOrderDetailPage({
           <div className="flex flex-wrap items-center gap-2">
             <OrderStatusBadge status={order.status} />
             <Link
+              href={`/admin/zamowienia/${order.id}/faktura`}
+              target="_blank"
+              className="rounded-lg border border-czarny/12 bg-bialy px-3.5 py-2 text-xs font-medium text-czarny transition hover:border-czerwony/30"
+            >
+              Faktura
+            </Link>
+            <Link
               href="/admin/zamowienia"
               className="rounded-lg border border-czarny/12 bg-bialy px-3.5 py-2 text-xs font-medium text-czarny transition hover:border-czerwony/30"
             >
@@ -80,6 +90,10 @@ export default async function AdminOrderDetailPage({
       />
 
       {query.pozycje ? <AdminAlert variant="success">Zapisano pozycje i przeliczono sumę.</AdminAlert> : null}
+      {query.wiadomosc === "1" ? <AdminAlert variant="success">Wysłano wiadomość do klienta.</AdminAlert> : null}
+      {query.wiadomosc === "0" ? (
+        <AdminAlert variant="error">Wiadomość nie wyszła. {query.powod ?? "Sprawdź SMTP."}</AdminAlert>
+      ) : null}
       {query.blad ? <AdminAlert variant="error">{decodeURIComponent(query.blad)}</AdminAlert> : null}
       {query.zapisano ? (
         <AdminAlert variant="success">
@@ -113,6 +127,7 @@ export default async function AdminOrderDetailPage({
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
           <AdminOrderItems order={order} catalog={catalog} canEdit={canEdit} />
+          <AdminOrderMessageForm orderId={order.id} />
 
           <form action={updateOrderStatus} className="space-y-4 rounded-xl border border-czarny/8 bg-bialy p-5">
             <input type="hidden" name="id" value={order.id} />

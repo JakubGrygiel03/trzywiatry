@@ -3,8 +3,10 @@ import {
   BarChart3,
   Building2,
   CalendarDays,
-  LayoutDashboard,
   FileText,
+  Images,
+  Layers,
+  LayoutDashboard,
   LayoutTemplate,
   Mail,
   Newspaper,
@@ -12,6 +14,8 @@ import {
   Settings,
   ShoppingBag,
   Tags,
+  TicketPercent,
+  Users,
 } from "lucide-react";
 
 export type AdminNavItem = {
@@ -46,6 +50,8 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       { href: "/admin/produkty", label: "Produkty", icon: Package, badgeKey: "lowStock" },
       { href: "/admin/produkty/kategorie", label: "Kategorie", icon: Tags },
       { href: "/admin/zamowienia", label: "Zamówienia", icon: ShoppingBag, badgeKey: "orders" },
+      { href: "/admin/kupony", label: "Kupony", icon: TicketPercent },
+      { href: "/admin/klienci", label: "Klienci", icon: Users },
     ],
   },
   {
@@ -61,7 +67,9 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: "Treści",
     items: [
       { href: "/admin/strona-glowna", label: "Strona główna", icon: LayoutTemplate },
-      { href: "/admin/strony", label: "B2B, O nas, Kontakt", icon: FileText },
+      { href: "/admin/strony", label: "Strony", icon: FileText },
+      { href: "/admin/kolekcje", label: "Kolekcje szkliw", icon: Layers },
+      { href: "/admin/media", label: "Zdjęcia", icon: Images },
       { href: "/admin/blog", label: "Blog i poradniki", icon: Newspaper },
       { href: "/admin/emaile", label: "E-maile do klientów", icon: Mail },
     ],

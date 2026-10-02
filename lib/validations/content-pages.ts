@@ -52,10 +52,29 @@ export const contactOverlaySchema = z.object({
   formIntro: plainText("Wstęp przy formularzu", 280, 0),
 });
 
+export const infoPageOverlaySchema = z.object({
+  ...seo,
+  eyebrow: plainText("Etykieta", 40, 1),
+  title: plainText("Tytuł", 80, 1),
+  description: plainText("Wstęp", 400, 8),
+  items: z
+    .array(
+      z.object({
+        title: plainText("Nagłówek", 120, 2),
+        body: plainText("Treść", 2000, 10),
+      }),
+    )
+    .min(1, "Dodaj przynajmniej jedną sekcję.")
+    .max(16, "Maksimum 16 sekcji."),
+});
+
 const schemas = {
   b2b: b2bOverlaySchema,
   "o-nas": aboutOverlaySchema,
   kontakt: contactOverlaySchema,
+  faq: infoPageOverlaySchema,
+  "dostawa-i-zwroty": infoPageOverlaySchema,
+  "poradnik-pielegnacji": infoPageOverlaySchema,
 } as const;
 
 export function parseContentOverlay<K extends ContentPageKey>(key: K, input: unknown) {

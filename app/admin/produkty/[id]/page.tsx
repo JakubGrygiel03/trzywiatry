@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { ExternalLink } from "lucide-react";
-import { deleteProduct, updateProduct } from "@/app/actions/admin-products";
+import { deleteProduct, duplicateProduct, updateProduct } from "@/app/actions/admin-products";
 import { ProductForm } from "@/components/admin/product-form";
 import { AdminAlert } from "@/components/admin/ui/admin-alert";
 import { AdminPageHeader } from "@/components/admin/ui/admin-page-header";
@@ -43,6 +43,15 @@ export default async function EditProductPage({
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <PublishBadge published={product.isPublished} />
+            <form action={duplicateProduct}>
+              <input type="hidden" name="id" value={product.id} />
+              <button
+                type="submit"
+                className="rounded-lg border border-czarny/12 bg-bialy px-3.5 py-2 text-xs font-medium text-czarny transition hover:border-czerwony/30"
+              >
+                Duplikuj
+              </button>
+            </form>
             <Link
               href={`/sklep/${product.slug}`}
               target="_blank"

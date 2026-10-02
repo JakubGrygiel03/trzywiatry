@@ -15,7 +15,17 @@ import {
 import { ATELIER_STATE_KEYS, hasSupabaseService, readAtelierState, writeAtelierState } from "@/lib/data/supabase-state";
 import { mergeNewsletterSnapshot } from "@/lib/newsletter-coupons";
 import { defaultProductCategories, type ProductCategoryDef } from "@/lib/product-categories";
-import type { BlogPost, Collection, Product, StudioSettings, Workshop } from "@/lib/types";
+import type {
+  BlogPost,
+  Collection,
+  CouponRedemption,
+  CustomerNote,
+  Product,
+  ShopCoupon,
+  SlugRedirect,
+  StudioSettings,
+  Workshop,
+} from "@/lib/types";
 
 const DATA_DIR = path.join(process.cwd(), ".data");
 const STATE_FILE = path.join(DATA_DIR, "atelier.json");
@@ -38,6 +48,10 @@ export type AtelierSnapshot = {
   homeLayout?: HomeSection[];
   contentPages?: Partial<ContentOverlayMap>;
   productCategories?: ProductCategoryDef[];
+  shopCoupons?: ShopCoupon[];
+  couponRedemptions?: CouponRedemption[];
+  slugRedirects?: SlugRedirect[];
+  customerNotes?: CustomerNote[];
 };
 
 let hydratePromise: Promise<void> | null = null;
@@ -85,6 +99,10 @@ function applySnapshot(snap: AtelierSnapshot) {
   } else if (!Array.isArray(runtimeStore.productCategories)) {
     runtimeStore.productCategories = defaultProductCategories();
   }
+  if (Array.isArray(snap.shopCoupons)) runtimeStore.shopCoupons = snap.shopCoupons;
+  if (Array.isArray(snap.couponRedemptions)) runtimeStore.couponRedemptions = snap.couponRedemptions;
+  if (Array.isArray(snap.slugRedirects)) runtimeStore.slugRedirects = snap.slugRedirects;
+  if (Array.isArray(snap.customerNotes)) runtimeStore.customerNotes = snap.customerNotes;
   if (snap.seedSignature) setCatalogSeedSignature(snap.seedSignature);
 }
 
@@ -127,6 +145,10 @@ function captureSnapshot(remote?: AtelierSnapshot): AtelierSnapshot {
     homeLayout: runtimeStore.homeLayout,
     contentPages: runtimeStore.contentPages,
     productCategories: runtimeStore.productCategories,
+    shopCoupons: runtimeStore.shopCoupons,
+    couponRedemptions: runtimeStore.couponRedemptions,
+    slugRedirects: runtimeStore.slugRedirects,
+    customerNotes: runtimeStore.customerNotes,
   };
 }
 

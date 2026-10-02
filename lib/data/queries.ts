@@ -9,6 +9,7 @@ import {
   getRuntimeSettings,
   getRuntimeWorkshopById,
   getRuntimeWorkshops,
+  runtimeStore,
 } from "@/lib/data/runtime-store";
 import { getProductPhoto, isUsableProductPhoto } from "@/lib/media";
 import { productInLane, type ShopLaneId } from "@/lib/shop-lanes";
@@ -35,7 +36,9 @@ export function getProductCategories() {
 }
 
 export function getCollectionBySlug(slug: string) {
-  return getCollections().find((item) => item.slug === slug);
+  const target =
+    runtimeStore.slugRedirects?.find((row) => row.kind === "collection" && row.from === slug)?.to ?? slug;
+  return getCollections().find((item) => item.slug === target);
 }
 
 export const getAllProducts = cache(() => getRuntimeCatalog());
@@ -79,11 +82,14 @@ export function getProductBySlug(slug: string) {
 }
 
 export function resolveProductSlug(slug: string) {
-  return PRODUCT_SLUG_ALIASES[slug] ?? slug;
+  const alias = PRODUCT_SLUG_ALIASES[slug] ?? slug;
+  if (PRODUCT_SLUG_ALIASES[slug]) return alias;
+  const redirected = runtimeStore.slugRedirects?.find((row) => row.kind === "product" && row.from === slug)?.to;
+  return redirected ?? slug;
 }
 
 export function isAliasedProductSlug(slug: string) {
-  return Boolean(PRODUCT_SLUG_ALIASES[slug]);
+  return resolveProductSlug(slug) !== slug;
 }
 
 export function getProductById(id: string) {
@@ -306,7 +312,18 @@ export function getPublishedPosts() {
 }
 
 export function getPostBySlug(slug: string) {
-  return getPublishedPosts().find((post) => post.slug === slug);
+  const target =
+    runtimeStore.slugRedirects?.find((row) => row.kind === "blog" && row.from === slug)?.to ?? slug;
+  return getPublishedPosts().find((post) => post.slug === target);
+}
+
+export function isAliasedContentSlug(kind: "blog" | "collection", slug: string) {
+  const target = runtimeStore.slugRedirects?.find((row) => row.kind === kind && row.from === slug)?.to;
+  return Boolean(target && target !== slug);
+}
+
+export function resolveContentSlug(kind: "blog" | "collection", slug: string) {
+  return runtimeStore.slugRedirects?.find((row) => row.kind === kind && row.from === slug)?.to ?? slug;
 }
 
 export function getPostById(id: string) {

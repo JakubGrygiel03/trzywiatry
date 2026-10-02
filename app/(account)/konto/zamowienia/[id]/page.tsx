@@ -5,9 +5,10 @@ import { OrderTimeline } from "@/components/account/order-timeline";
 import { SurfaceCanvas } from "@/components/layout/surface-canvas";
 import { AccountTile, AccountTileBody } from "@/components/account/account-tile";
 import { Container } from "@/components/ui/badge";
-import { shippingMethodLabel } from "@/lib/constants";
+import { shippingMethodLabel } from "@/lib/shipping";
 import { getCustomerSession } from "@/lib/customer-session";
 import { getCustomerOrder } from "@/lib/data/orders";
+import { getSettings } from "@/lib/data/queries";
 import { formatDate, formatPLN } from "@/lib/format";
 import type { Metadata } from "next";
 
@@ -21,7 +22,7 @@ export default async function CustomerOrderPage({ params }: { params: Promise<{ 
   const order = await getCustomerOrder(id, user);
   if (!order) notFound();
 
-  const shippingLabel = shippingMethodLabel(order.shippingMethod);
+  const shippingLabel = shippingMethodLabel(order.shippingMethod, getSettings());
 
   return (
     <SurfaceCanvas>
@@ -41,6 +42,9 @@ export default async function CustomerOrderPage({ params }: { params: Promise<{ 
               <OrderStatusChip status={order.status} />
             </div>
             <p className="text-sm text-czarny/55">{formatDate(order.createdAt)}</p>
+            <Link href={`/konto/zamowienia/${order.id}/faktura`} className="text-sm text-czerwony underline-offset-2 hover:underline">
+              Faktura PDF
+            </Link>
           </AccountTileBody>
         </AccountTile>
 

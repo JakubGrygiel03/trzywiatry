@@ -7,11 +7,13 @@ import { AdminEmptyState } from "@/components/admin/ui/admin-empty-state";
 import { AdminPageHeader } from "@/components/admin/ui/admin-page-header";
 import { OrderStatusBadge } from "@/components/admin/ui/admin-status-badge";
 import { ensureOrdersHydrated } from "@/lib/data/order-persist";
+import { getSettings } from "@/lib/data/queries";
 import { runtimeStore } from "@/lib/data/runtime-store";
 import { formatDate, formatPLN } from "@/lib/format";
 import { orderPaymentDisplay } from "@/lib/p24-methods";
 import { filterOrders, monthWindow } from "@/lib/reports/orders-csv";
 import { isAbandonedCheckout } from "@/lib/orders/studio-queue";
+import { shippingMethodLabel } from "@/lib/shipping";
 
 export default async function AdminOrdersPage({
   searchParams,
@@ -44,6 +46,14 @@ export default async function AdminOrdersPage({
       <AdminPageHeader
         title="Zamówienia"
         description="Kliknij numer albo „Szczegóły”, żeby zobaczyć produkty, warianty i adres. Raport miesięczny idzie na trzywiatrystudio@gmail.com."
+        actions={
+          <Link
+            href="/admin/zamowienia/nowe"
+            className="rounded-lg bg-czarny px-3.5 py-2 text-xs font-medium text-bialy hover:bg-czerwony"
+          >
+            Ręczne zamówienie
+          </Link>
+        }
       />
 
       {query.usunieto ? (
@@ -181,7 +191,9 @@ export default async function AdminOrdersPage({
                         <span className="text-czarny/25">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-czarny/55">{order.shippingMethod}</td>
+                    <td className="px-4 py-3 text-czarny/55">
+                      {shippingMethodLabel(order.shippingMethod, getSettings())}
+                    </td>
                     <td className="px-4 py-3 text-right font-heading text-xs">
                       {formatPLN(order.totalAmountInCents)}
                     </td>

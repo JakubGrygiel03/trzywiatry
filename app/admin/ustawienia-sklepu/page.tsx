@@ -2,7 +2,9 @@ import Link from "next/link";
 import { saveStudioSettings } from "@/app/actions/admin";
 import { AdminChangePasswordForm } from "@/components/admin/admin-change-password-form";
 import { CmsTokenField } from "@/components/admin/cms-token-field";
+import { ShippingMethodsFields } from "@/components/admin/shipping-methods-fields";
 import { ShopHubPhotoPicker } from "@/components/admin/shop-hub-photo-picker";
+import { StudioIdentityFields } from "@/components/admin/studio-identity-fields";
 import { AdminAlert } from "@/components/admin/ui/admin-alert";
 import { AdminField, AdminInput, AdminSelect } from "@/components/admin/ui/admin-field";
 import { AdminFormActions } from "@/components/admin/ui/admin-form-actions";
@@ -73,6 +75,13 @@ export default async function ShopSettingsPage({
           </AdminField>
         </AdminFormSection>
 
+        <AdminFormSection
+          title="Dane pracowni"
+          description="Telefon, adres, NIP i social — stopka, kontakt, faktury i maile biorą te same pola. Puste pole wraca do danych z księgi znaku."
+        >
+          <StudioIdentityFields settings={settings} />
+        </AdminFormSection>
+
         <AdminFormSection title="Urlop — daty">
           <div className="grid gap-5 sm:grid-cols-3">
             <AdminField label="Od" htmlFor="vacationStart">
@@ -112,6 +121,13 @@ export default async function ShopSettingsPage({
               defaultValue={settings.freeShippingThresholdCents}
             />
           </AdminField>
+          <div>
+            <p className="mb-2 text-sm font-medium text-czarny/85">Metody dostawy</p>
+            <p className="mb-3 text-xs leading-relaxed text-czarny/45">
+              Ceny w złotych. Odznacz metodę, żeby zniknęła z kasy. Włącz odbiór, gdy klient ma przyjść do pracowni.
+            </p>
+            <ShippingMethodsFields settings={settings} />
+          </div>
           <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-czarny/8 bg-krem/40 p-4">
             <input type="hidden" name="giftWrapEnabled" value="false" />
             <input

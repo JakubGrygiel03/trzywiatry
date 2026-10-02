@@ -19,7 +19,7 @@ export const checkoutSchema = z
     shippingStreet: z.string().optional(),
     shippingPostalCode: z.string().optional(),
     shippingCity: z.string().optional(),
-    shippingMethod: z.enum(["inpost", "kurier"]),
+    shippingMethod: z.enum(["inpost", "kurier", "odbior"]),
     inpostLocker: z.string().trim().max(180).optional(),
     giftMessage: plainText("Dedykacja", 280).optional(),
     discountCode: z.preprocess(

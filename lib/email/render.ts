@@ -1,7 +1,9 @@
 import { SITE } from "@/lib/constants";
+import { getRuntimeSettings } from "@/lib/data/runtime-store";
 import { EMAIL_TEMPLATES, type EmailTemplateKey } from "@/lib/email/catalog";
 import { getEmailTemplate } from "@/lib/data/email-templates";
 import { getPublicSiteUrl } from "@/lib/site-url";
+import { studioIdentity } from "@/lib/studio-identity";
 
 export type EmailVars = Record<string, string>;
 
@@ -28,6 +30,7 @@ export function wrapEmail(body: string) {
   const year = new Date().getFullYear();
   const site = getPublicSiteUrl();
   const polished = polishEmailBody(body);
+  const who = studioIdentity(getRuntimeSettings());
 
   return `<!DOCTYPE html>
 <html lang="pl">
@@ -68,14 +71,14 @@ export function wrapEmail(body: string) {
       <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:560px;border-collapse:collapse;">
         <tr>
           <td align="center" style="padding:28px 12px 8px;font-family:${FONT};font-size:12px;line-height:1.55;color:${B.szaryJasny};">
-            <strong style="color:${B.szary};">${SITE.name}</strong> · ${SITE.owner}<br/>
-            ${SITE.address}<br/>
-            NIP ${SITE.nip} · REGON ${SITE.regon}<br/>
-            <a href="mailto:${SITE.email}" style="color:${B.czerwony};text-decoration:none;">${SITE.email}</a>
+            <strong style="color:${B.szary};">${who.name}</strong> · ${who.owner}<br/>
+            ${who.address}<br/>
+            NIP ${who.nip} · REGON ${who.regon}<br/>
+            <a href="mailto:${who.email}" style="color:${B.czerwony};text-decoration:none;">${who.email}</a>
             &nbsp;·&nbsp;
             <a href="${site}" style="color:${B.czerwony};text-decoration:none;">trzywiatry.pl</a>
             &nbsp;·&nbsp;
-            <a href="${SITE.instagram}" style="color:${B.czerwony};text-decoration:none;">Instagram</a>
+            <a href="${who.instagram}" style="color:${B.czerwony};text-decoration:none;">Instagram</a>
           </td>
         </tr>
         <tr>

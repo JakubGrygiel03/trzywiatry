@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { checkoutSchema } from "@/lib/validations/checkout";
-import { SHIPPING_METHODS, SITE } from "@/lib/constants";
+import { SITE } from "@/lib/constants";
+import { findShippingMethod, isEnabledShippingMethod } from "@/lib/shipping";
 import {
   addRuntimeOrder,
   applyVariantStockDelta,
@@ -22,6 +23,7 @@ import { storefrontClosedMessage } from "@/lib/maintenance";
 import { getVacationCheckoutNote } from "@/lib/vacation-message";
 import { getPublicSiteUrl } from "@/lib/site-url";
 import { reserveCouponForOrder, resolveCheckoutDiscount } from "@/lib/newsletter-coupons";
+import { reserveShopCoupon } from "@/lib/shop-coupons";
 import type { ShippingMethod, StoredOrder, StoredOrderItem } from "@/lib/types";
 import { formatPLN } from "@/lib/format";
 
@@ -123,9 +125,14 @@ export async function createCheckoutSession(
     });
   }
 
-  const shipping = SHIPPING_METHODS.find((method) => method.id === parsed.data.shippingMethod);
+  if (!isEnabledShippingMethod(parsed.data.shippingMethod, settings)) {
+    return { ok: false, message: "Ta metoda dostawy jest wyłączona. Wybierz inną." };
+  }
+  const shipping = findShippingMethod(parsed.data.shippingMethod, settings);
   const shippingCost =
-    goods >= settings.freeShippingThresholdCents ? 0 : (shipping?.priceInCents ?? 0);
+    parsed.data.shippingMethod === "odbior" || goods >= settings.freeShippingThresholdCents
+      ? 0
+      : (shipping?.priceInCents ?? 0);
   const giftCost = giftWrap ? settings.giftWrapPriceCents : 0;
   const discountResult = resolveCheckoutDiscount(
     parsed.data.discountCode,
@@ -173,7 +180,7 @@ export async function createCheckoutSession(
         ? parsed.data.shippingCity?.trim()
         : undefined,
     shippingMethod: parsed.data.shippingMethod as ShippingMethod,
-    inpostLocker: parsed.data.inpostLocker,
+    inpostLocker: parsed.data.shippingMethod === "inpost" ? parsed.data.inpostLocker : undefined,
     notes: parsed.data.notes,
     items,
     hasGiftWrapping: giftWrap,
@@ -199,7 +206,10 @@ export async function createCheckoutSession(
   };
 
   if (discountResult.unique && discountResult.code) {
-    if (!reserveCouponForOrder(discountResult.code, order.id, parsed.data.customerEmail)) {
+    const reserved =
+      reserveCouponForOrder(discountResult.code, order.id, parsed.data.customerEmail) ||
+      reserveShopCoupon(discountResult.code, order.id, parsed.data.customerEmail);
+    if (!reserved) {
       return { ok: false, message: "Ten kod rabatowy jest już używany przy innym zamówieniu." };
     }
   }

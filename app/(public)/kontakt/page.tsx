@@ -4,7 +4,9 @@ import { SurfacePageIntro } from "@/components/layout/surface-page";
 import { Container } from "@/components/ui/badge";
 import { SurfaceTile, SurfaceTileBody, SurfaceTileHeader } from "@/components/ui/surface-tile";
 import { getContentPage } from "@/lib/data/content-pages";
+import { getSettings } from "@/lib/data/queries";
 import { pageMetadata } from "@/lib/seo";
+import { studioIdentity } from "@/lib/studio-identity";
 import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -38,7 +40,7 @@ export default async function ContactPage() {
           <SurfaceTile>
             <SurfaceTileHeader eyebrow="Bezpośrednio" title={page.directHeading} />
             <SurfaceTileBody>
-              <ContactDirect />
+              <ContactDirect identity={studioIdentity(getSettings())} />
             </SurfaceTileBody>
           </SurfaceTile>
         </div>

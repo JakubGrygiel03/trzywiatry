@@ -1,10 +1,10 @@
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import Image from "next/image";
 import { ProductCard } from "@/components/shop/product-card";
 import { ScrollCollectionToTop } from "@/components/shop/scroll-collection-to-top";
 import { Container, SectionHeading } from "@/components/ui/badge";
 import { noIndexRobots, pageMetadata } from "@/lib/seo";
-import { getCollectionBySlug, getProductsByCollection } from "@/lib/data/queries";
+import { getCollectionBySlug, getProductsByCollection, isAliasedContentSlug, resolveContentSlug } from "@/lib/data/queries";
 import type { Metadata } from "next";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -21,6 +21,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function CollectionPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  if (isAliasedContentSlug("collection", slug)) {
+    permanentRedirect(`/kolekcje/${resolveContentSlug("collection", slug)}`);
+  }
   const collection = getCollectionBySlug(slug);
   if (!collection) notFound();
   const products = getProductsByCollection(collection.id);

@@ -8,6 +8,7 @@ import { findHomeSection } from "@/lib/cms/home-layout";
 import { getHomeLayout } from "@/lib/data/home-layout";
 import { getHeroGalleryProducts, getSettings, getWorkshops } from "@/lib/data/queries";
 import { localBusinessJsonLd, pageMetadata, websiteJsonLd } from "@/lib/seo";
+import { studioIdentity } from "@/lib/studio-identity";
 
 export const metadata: Metadata = pageMetadata({
   title: "Trzy Wiatry — ceramika, drewno, warsztaty",
@@ -25,7 +26,7 @@ export default async function HomePage() {
 
   return (
     <SurfaceCanvas>
-      <JsonLd data={[localBusinessJsonLd(), websiteJsonLd()]} />
+      <JsonLd data={[localBusinessJsonLd(studioIdentity(getSettings())), websiteJsonLd()]} />
       <MaintenanceNotice />
       <HomeSectionStack
         sections={sections}

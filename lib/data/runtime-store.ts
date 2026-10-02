@@ -9,9 +9,13 @@ import { defaultProductCategories, type ProductCategoryDef } from "@/lib/product
 import type {
   BlogPost,
   Collection,
+  CouponRedemption,
+  CustomerNote,
   NewsletterCoupon,
   OrderStatus,
   Product,
+  ShopCoupon,
+  SlugRedirect,
   StoredOrder,
   StoredOrderItem,
   StudioSettings,
@@ -58,6 +62,10 @@ type RuntimeStore = {
   contentPages?: Partial<ContentOverlayMap>;
   collections?: Collection[];
   productCategories?: ProductCategoryDef[];
+  shopCoupons?: ShopCoupon[];
+  couponRedemptions?: CouponRedemption[];
+  slugRedirects?: SlugRedirect[];
+  customerNotes?: CustomerNote[];
 };
 
 const globalStore = globalThis as typeof globalThis & { __twStore?: RuntimeStore };
@@ -79,6 +87,10 @@ function createStore(): RuntimeStore {
     contentPages: {},
     collections: structuredClone(seedCollections),
     productCategories: defaultProductCategories(),
+    shopCoupons: [],
+    couponRedemptions: [],
+    slugRedirects: [],
+    customerNotes: [],
   };
 }
 
@@ -129,6 +141,22 @@ if (!Array.isArray(runtimeStore.orders)) {
 
 if (!Array.isArray(runtimeStore.newsletterCoupons)) {
   runtimeStore.newsletterCoupons = [];
+}
+
+if (!Array.isArray(runtimeStore.shopCoupons)) {
+  runtimeStore.shopCoupons = [];
+}
+
+if (!Array.isArray(runtimeStore.couponRedemptions)) {
+  runtimeStore.couponRedemptions = [];
+}
+
+if (!Array.isArray(runtimeStore.slugRedirects)) {
+  runtimeStore.slugRedirects = [];
+}
+
+if (!Array.isArray(runtimeStore.customerNotes)) {
+  runtimeStore.customerNotes = [];
 }
 
 if (!Array.isArray(runtimeStore.catalog) || runtimeStore.catalog.length === 0) {
@@ -297,6 +325,19 @@ export function getRuntimeCollections(): Collection[] {
     runtimeStore.collections = structuredClone(seedCollections);
   }
   return runtimeStore.collections;
+}
+
+export function upsertRuntimeCollection(collection: Collection) {
+  const list = getRuntimeCollections();
+  const index = list.findIndex((item) => item.id === collection.id);
+  if (index >= 0) list[index] = collection;
+  else list.push(collection);
+  persist();
+}
+
+export function deleteRuntimeCollection(id: string) {
+  runtimeStore.collections = getRuntimeCollections().filter((item) => item.id !== id);
+  persist();
 }
 
 export function getRuntimeProductCategories(): ProductCategoryDef[] {
@@ -569,6 +610,7 @@ export function deleteRuntimeOrder(id: string): StoredOrder | null {
       1,
     );
     releaseNewsletterCouponForOrder(id);
+    releaseShopCouponForOrder(id);
   }
   runtimeStore.orders.splice(index, 1);
   persist();
@@ -604,6 +646,7 @@ export function updateOrderStatusInStore(
       1,
     );
     releaseNewsletterCouponForOrder(id);
+    releaseShopCouponForOrder(id);
   }
 
   const becamePaid = status === "paid" && current.status !== "paid";
@@ -664,6 +707,18 @@ function releaseNewsletterCouponForOrder(orderId: string) {
     coupon.usedAt = undefined;
     coupon.usedOrderId = undefined;
     coupon.reservedOrderId = undefined;
+  }
+  persist();
+}
+
+function releaseShopCouponForOrder(orderId: string) {
+  const list = runtimeStore.couponRedemptions ?? [];
+  const related = list.filter((row) => row.orderId === orderId);
+  if (related.length === 0) return;
+  runtimeStore.couponRedemptions = list.filter((row) => row.orderId !== orderId);
+  for (const row of related) {
+    const coupon = (runtimeStore.shopCoupons ?? []).find((item) => item.id === row.couponId);
+    if (coupon) coupon.usedCount = Math.max(0, coupon.usedCount - 1);
   }
   persist();
 }

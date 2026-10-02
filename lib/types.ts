@@ -97,6 +97,17 @@ export type StudioSettings = {
   maintenanceMode: boolean;
   /** Opaque token for /podglad/[token] — rotate from admin to revoke access. */
   maintenancePreviewToken: string;
+  /** Checkout carriers — prices in grosze. Missing = seed InPost/kurier. */
+  shippingMethods?: ShippingMethodDef[];
+  /** Public atelier identity — missing fields fall back to SITE. */
+  studioEmail?: string;
+  studioPhone?: string;
+  studioAddress?: string;
+  studioNip?: string;
+  studioBankAccount?: string;
+  studioInstagram?: string;
+  studioFacebook?: string;
+  studioOwner?: string;
 };
 
 export type Workshop = {
@@ -157,8 +168,15 @@ export type CartItem = {
 };
 
 export type ShippingMethod = "inpost" | "kurier" | "odbior";
-/** Methods selectable in checkout — personal pickup withdrawn. */
-export type CheckoutShippingMethod = "inpost" | "kurier";
+export type CheckoutShippingMethod = ShippingMethod;
+
+export type ShippingMethodDef = {
+  id: ShippingMethod;
+  label: string;
+  priceInCents: number;
+  enabled: boolean;
+  hint: string;
+};
 
 export type StoredOrderItem = {
   productId: string;
@@ -189,6 +207,39 @@ export type NewsletterCoupon = {
   welcomeSentAt?: string;
   /** Last welcome send failed; next signup click may retry once. */
   welcomeSendFailed?: boolean;
+};
+
+export type ShopCoupon = {
+  id: string;
+  code: string;
+  kind: "percent" | "fixed";
+  /** Percent 1–100 or amount in grosze. */
+  value: number;
+  expiresAt?: string;
+  maxUses?: number;
+  usedCount: number;
+  oncePerEmail: boolean;
+  enabled: boolean;
+  minGoodsCents?: number;
+};
+
+export type CouponRedemption = {
+  couponId: string;
+  email: string;
+  orderId: string;
+  at: string;
+};
+
+export type SlugRedirect = {
+  from: string;
+  to: string;
+  kind: "product" | "blog" | "collection";
+};
+
+export type CustomerNote = {
+  email: string;
+  note: string;
+  updatedAt: string;
 };
 
 /** In-memory / file-backed order until Supabase `orders` table is wired. */

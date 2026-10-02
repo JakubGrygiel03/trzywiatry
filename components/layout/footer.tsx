@@ -4,6 +4,7 @@ import { Logo } from "@/components/layout/logo";
 import { MailtoLink } from "@/components/layout/mailto-link";
 import { OutboundSocialLink } from "@/components/layout/outbound-social-link";
 import { SITE } from "@/lib/constants";
+import { studioIdentity, type StudioIdentity } from "@/lib/studio-identity";
 
 const helpLinks = [
   { href: "/faq", label: "FAQ" },
@@ -20,15 +21,15 @@ function FooterLink({ href, children }: { href: string; children: string }) {
   );
 }
 
-function FooterSocials() {
+function FooterSocials({ identity }: { identity: StudioIdentity }) {
   const iconClass =
     "relative z-[1] flex size-7 shrink-0 items-center justify-center text-czarny/55 transition-colors hover:text-czerwony";
   return (
     <span className="inline-flex shrink-0 items-center gap-0.5">
-      <OutboundSocialLink href={SITE.instagram} className={iconClass} aria-label="Instagram Trzy Wiatry">
+      <OutboundSocialLink href={identity.instagram} className={iconClass} aria-label="Instagram Trzy Wiatry">
         <InstagramIcon className="size-3.5" />
       </OutboundSocialLink>
-      <OutboundSocialLink href={SITE.facebook} className={iconClass} aria-label="Facebook Trzy Wiatry">
+      <OutboundSocialLink href={identity.facebook} className={iconClass} aria-label="Facebook Trzy Wiatry">
         <FacebookIcon className="size-3.5" />
       </OutboundSocialLink>
     </span>
@@ -36,7 +37,8 @@ function FooterSocials() {
 }
 
 /** Slim bar — help, credit and legal on one line. Header already covers Sklep / O nas / B2B. */
-export function Footer() {
+export function Footer({ identity }: { identity?: StudioIdentity }) {
+  const who = identity ?? studioIdentity();
   const year = new Date().getFullYear();
 
   return (
@@ -63,8 +65,8 @@ export function Footer() {
               {link.label}
             </FooterLink>
           ))}
-          <MailtoLink email={SITE.email} className="shrink-0" />
-          <FooterSocials />
+          <MailtoLink email={who.email} className="shrink-0" />
+          <FooterSocials identity={who} />
         </nav>
 
         <div className="flex flex-wrap items-center justify-center gap-x-3 text-[11px] tracking-wide text-czarny/40 md:flex-nowrap md:justify-end">

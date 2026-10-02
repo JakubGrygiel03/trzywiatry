@@ -5,9 +5,17 @@ import { saveContentPage } from "@/app/actions/admin-content-pages";
 import { AboutOverlayFields } from "@/components/admin/content-pages/about-overlay-fields";
 import { B2BOverlayFields } from "@/components/admin/content-pages/b2b-overlay-fields";
 import { ContactOverlayFields } from "@/components/admin/content-pages/contact-overlay-fields";
+import { InfoOverlayFields } from "@/components/admin/content-pages/info-overlay-fields";
 import { AdminAlert } from "@/components/admin/ui/admin-alert";
 import { AdminFormActions } from "@/components/admin/ui/admin-form-actions";
-import type { AboutOverlay, B2BOverlay, ContactOverlay, ContentOverlayMap, ContentPageKey } from "@/lib/cms/content-pages";
+import type {
+  AboutOverlay,
+  B2BOverlay,
+  ContactOverlay,
+  ContentOverlayMap,
+  ContentPageKey,
+  InfoPageOverlay,
+} from "@/lib/cms/content-pages";
 import { explainContentOverlayIssue } from "@/lib/validations/content-pages";
 
 export function ContentPageEditor<K extends ContentPageKey>({
@@ -41,6 +49,9 @@ export function ContentPageEditor<K extends ContentPageKey>({
       ) : null}
       {pageKey === "kontakt" ? (
         <ContactOverlayFields value={overlay as ContactOverlay} onChange={(next) => setOverlay(next as ContentOverlayMap[K])} />
+      ) : null}
+      {pageKey === "faq" || pageKey === "dostawa-i-zwroty" || pageKey === "poradnik-pielegnacji" ? (
+        <InfoOverlayFields value={overlay as InfoPageOverlay} onChange={(next) => setOverlay(next as ContentOverlayMap[K])} />
       ) : null}
       <AdminFormActions submitLabel="Zapisz nakładkę" cancelHref="/admin/strony" cancelLabel="← Strony" />
     </form>

@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { BlogBlocks } from "@/components/blog/blog-blocks";
 import { JsonLd } from "@/components/seo/json-ld";
 import { Container } from "@/components/ui/badge";
 import { SurfaceTile, SurfaceTileBody, SurfaceTileHeader } from "@/components/ui/surface-tile";
 import { SITE } from "@/lib/constants";
-import { getPostBySlug, getPublishedPosts } from "@/lib/data/queries";
+import { getPostBySlug, getPublishedPosts, isAliasedContentSlug, resolveContentSlug } from "@/lib/data/queries";
 import { breadcrumbJsonLd, noIndexRobots, pageMetadata } from "@/lib/seo";
 import { absoluteUrl } from "@/lib/site-url";
 import type { Metadata } from "next";
@@ -33,6 +33,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  if (isAliasedContentSlug("blog", slug)) {
+    permanentRedirect(`/blog/${resolveContentSlug("blog", slug)}`);
+  }
   const post = getPostBySlug(slug);
   if (!post) notFound();
 

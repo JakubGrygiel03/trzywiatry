@@ -90,7 +90,7 @@ export default async function AccountPage({
           <AccountStudioNotes settings={settings} />
         </div>
 
-        <AccountHelpLinks />
+        <AccountHelpLinks settings={settings} />
         <CustomerChangePasswordForm />
       </Container>
     </SurfaceCanvas>

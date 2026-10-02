@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AccountTile, AccountTileBody, AccountTileHeader } from "@/components/account/account-tile";
-import { SITE } from "@/lib/constants";
 import { formatDate, formatPLN } from "@/lib/format";
+import { studioIdentity } from "@/lib/studio-identity";
 import type { StudioSettings } from "@/lib/types";
 import { buildVacationBannerMessage } from "@/lib/vacation-message";
 
@@ -99,7 +99,8 @@ export function AccountStudioNotes({ settings }: { settings: StudioSettings }) {
   );
 }
 
-export function AccountHelpLinks() {
+export function AccountHelpLinks({ settings }: { settings?: StudioSettings }) {
+  const identity = studioIdentity(settings);
   return (
     <div className="space-y-4">
       <AccountTile>
@@ -134,16 +135,16 @@ export function AccountHelpLinks() {
         <AccountTileHeader eyebrow="Pracownia" title="Kontakt bezpośredni" />
         <AccountTileBody className="space-y-1.5 text-[14px] text-czarny/75">
           <p>
-            <a href={`mailto:${SITE.email}`} className="text-czarny hover:text-czerwony">
-              {SITE.email}
+            <a href={`mailto:${identity.email}`} className="text-czarny hover:text-czerwony">
+              {identity.email}
             </a>
           </p>
           <p>
-            <a href={SITE.phoneHref} className="text-czarny hover:text-czerwony">
-              {SITE.phone}
+            <a href={identity.phoneHref} className="text-czarny hover:text-czerwony">
+              {identity.phone}
             </a>
           </p>
-          <p className="text-czarny/55">{SITE.address}</p>
+          <p className="text-czarny/55">{identity.address}</p>
         </AccountTileBody>
       </AccountTile>
     </div>

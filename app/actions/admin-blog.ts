@@ -10,6 +10,7 @@ import type { BlogPost } from "@/lib/types";
 import { blogPostSchema } from "@/lib/validations/blog";
 import { firstZodMessage } from "@/lib/validations/safe-input";
 import { withCmsTick } from "@/lib/cms-redirect";
+import { recordSlugRedirect } from "@/lib/slug-redirects";
 
 function slugify(value: string) {
   return value
@@ -165,6 +166,10 @@ export async function updateBlogPost(_prev: BlogSaveState, formData: FormData): 
   };
 
   upsertRuntimeBlogPost(post);
+  if (existing.slug !== post.slug) {
+    recordSlugRedirect("blog", existing.slug, post.slug);
+    revalidateBlog(existing.slug);
+  }
   await flushAtelierSave();
   revalidateBlog(post.slug);
   redirect(withCmsTick(`/admin/blog/${post.id}?zapisano=1`));

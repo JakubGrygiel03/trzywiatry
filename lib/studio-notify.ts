@@ -1,9 +1,12 @@
-import { ORDER_STATUS_LABELS, SITE, shippingMethodLabel } from "@/lib/constants";
+import { ORDER_STATUS_LABELS } from "@/lib/constants";
+import { getRuntimeSettings } from "@/lib/data/runtime-store";
 import { wrapEmail } from "@/lib/email/render";
 import { formatPLN } from "@/lib/format";
 import { formatPhoneDisplay } from "@/lib/phone";
 import { sendEmail } from "@/lib/resend";
+import { shippingMethodLabel } from "@/lib/shipping";
 import { absoluteUrl } from "@/lib/site-url";
+import { studioIdentity } from "@/lib/studio-identity";
 import type { StoredOrder } from "@/lib/types";
 import { escapeHtml } from "@/lib/validations/safe-input";
 import type { B2BInput } from "@/lib/validations/b2b";
@@ -12,8 +15,9 @@ import type { B2BInput } from "@/lib/validations/b2b";
 const DEFAULT_STUDIO_INBOX = "trzywiatrystudio@gmail.com";
 
 export function studioNotifyInboxes() {
+  const who = studioIdentity(getRuntimeSettings());
   const raw =
-    process.env.STUDIO_NOTIFY_EMAIL?.trim() || `${DEFAULT_STUDIO_INBOX},${SITE.email}`;
+    process.env.STUDIO_NOTIFY_EMAIL?.trim() || `${DEFAULT_STUDIO_INBOX},${who.email}`;
   return [...new Set(raw.split(",").map((item) => item.trim().toLowerCase()).filter(Boolean))];
 }
 
@@ -37,7 +41,7 @@ export async function notifyStudio(input: { subject: string; html: string; reply
 }
 
 function shippingLabel(order: StoredOrder) {
-  return shippingMethodLabel(order.shippingMethod);
+  return shippingMethodLabel(order.shippingMethod, getRuntimeSettings());
 }
 
 /** Labeled rows — easier to skim in Gmail than a wall of text. */

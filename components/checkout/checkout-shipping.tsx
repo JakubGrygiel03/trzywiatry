@@ -1,28 +1,25 @@
 "use client";
 
-import { SHIPPING_METHODS } from "@/lib/constants";
 import { formatPLN } from "@/lib/format";
+import type { ShippingMethod, ShippingMethodDef } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const HINTS: Record<(typeof SHIPPING_METHODS)[number]["id"], string> = {
-  inpost: "Odbiór 24/7 — paczkomat wybierzesz na mapie.",
-  kurier: "Dostawa pod wskazany adres.",
-};
-
 export function CheckoutShipping({
+  methods,
   value,
   onChange,
   hint,
 }: {
-  value: (typeof SHIPPING_METHODS)[number]["id"];
-  onChange: (id: (typeof SHIPPING_METHODS)[number]["id"]) => void;
+  methods: ShippingMethodDef[];
+  value: ShippingMethod;
+  onChange: (id: ShippingMethod) => void;
   hint: string;
 }) {
   return (
     <fieldset className="space-y-3">
       <legend className="font-heading text-[11px] uppercase tracking-[0.16em] text-szary">Dostawa</legend>
       <div className="grid gap-2">
-        {SHIPPING_METHODS.map((method) => {
+        {methods.map((method) => {
           const selected = method.id === value;
           return (
             <label
@@ -42,9 +39,11 @@ export function CheckoutShipping({
                   className="sr-only"
                 />
                 <span className="block text-sm">{method.label}</span>
-                <span className="mt-1 block text-xs text-szary">{HINTS[method.id]}</span>
+                <span className="mt-1 block text-xs text-szary">{method.hint}</span>
               </span>
-              <span className="font-heading text-sm">{formatPLN(method.priceInCents)}</span>
+              <span className="font-heading text-sm">
+                {method.priceInCents === 0 ? "0 zł" : formatPLN(method.priceInCents)}
+              </span>
             </label>
           );
         })}

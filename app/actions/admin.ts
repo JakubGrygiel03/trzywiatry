@@ -15,6 +15,8 @@ import { getRuntimeSettings, updateRuntimeSettings, updateOrderStatusInStore } f
 import { ensureOrdersHydrated, flushOrdersSave } from "@/lib/data/order-persist";
 import { ensureAtelierHydrated, flushAtelierSave } from "@/lib/data/atelier-persist";
 import { defaultStudioSettings } from "@/lib/data/settings";
+import { DEFAULT_SHIPPING_METHODS } from "@/lib/shipping";
+import { isSafeHref } from "@/lib/validations/safe-input";
 import { isAllowedImageSrc } from "@/lib/validations/image-src";
 import type { OrderStatus } from "@/lib/types";
 import {
@@ -192,6 +194,17 @@ export async function updateOrderStatus(formData: FormData) {
   redirect(withCmsTick(`/admin/zamowienia/${id}?${params}`));
 }
 
+function optionalStudioText(formData: FormData, name: string, max = 180) {
+  const value = String(formData.get(name) ?? "").trim().slice(0, max);
+  return value || undefined;
+}
+
+function optionalStudioUrl(formData: FormData, name: string) {
+  const value = optionalStudioText(formData, name, 220);
+  if (!value) return undefined;
+  return isSafeHref(value) ? value : undefined;
+}
+
 function parseShopHubImage(raw: unknown, fallback: string) {
   const value = String(raw ?? "").trim();
   return isAllowedImageSrc(value) ? value : fallback;
@@ -216,6 +229,16 @@ export async function saveStudioSettings(formData: FormData) {
   });
   if (!parsed.success) {
     redirect(`/admin/ustawienia-sklepu?blad=${encodeURIComponent(firstZodMessage(parsed.error))}`);
+  }
+
+  const shippingMethods = DEFAULT_SHIPPING_METHODS.map((row) => {
+    const enabled = formData.getAll(`ship_${row.id}_enabled`).includes("true");
+    const raw = Number(formData.get(`ship_${row.id}_zl`));
+    const priceInCents = Number.isFinite(raw) ? Math.max(0, Math.round(raw * 100)) : row.priceInCents;
+    return { ...row, enabled, priceInCents };
+  });
+  if (!shippingMethods.some((row) => row.enabled)) {
+    redirect(`/admin/ustawienia-sklepu?blad=${encodeURIComponent("Zostaw włączoną choć jedną metodę dostawy.")}`);
   }
 
   const data = parsed.data;
@@ -253,6 +276,15 @@ export async function saveStudioSettings(formData: FormData) {
       formData.get("shopHubPracowniaImage"),
       defaultStudioSettings.shopHubPracowniaImage,
     ),
+    shippingMethods,
+    studioEmail: optionalStudioText(formData, "studioEmail"),
+    studioPhone: optionalStudioText(formData, "studioPhone", 40),
+    studioAddress: optionalStudioText(formData, "studioAddress"),
+    studioNip: optionalStudioText(formData, "studioNip", 20)?.replace(/\s/g, ""),
+    studioBankAccount: optionalStudioText(formData, "studioBankAccount", 64),
+    studioInstagram: optionalStudioUrl(formData, "studioInstagram"),
+    studioFacebook: optionalStudioUrl(formData, "studioFacebook"),
+    studioOwner: optionalStudioText(formData, "studioOwner", 80),
   });
 
   await flushAtelierSave();
@@ -262,6 +294,8 @@ export async function saveStudioSettings(formData: FormData) {
   revalidatePath("/koszyk");
   revalidatePath("/admin/ustawienia-sklepu");
   revalidatePath("/zamowienie");
+  revalidatePath("/dostawa-i-zwroty");
+  revalidatePath("/kontakt");
   revalidatePath("/warsztaty");
   redirect(withCmsTick(`/admin/ustawienia-sklepu?zapisano=1`));
 }

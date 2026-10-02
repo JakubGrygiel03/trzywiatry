@@ -1,4 +1,7 @@
-import { ORDER_STATUS_LABELS, SITE, shippingMethodLabel } from "@/lib/constants";
+import { ORDER_STATUS_LABELS } from "@/lib/constants";
+import { getRuntimeSettings } from "@/lib/data/runtime-store";
+import { shippingMethodLabel } from "@/lib/shipping";
+import { studioIdentity } from "@/lib/studio-identity";
 import {
   renderEmailTemplate,
   resetButtonHtml,
@@ -35,7 +38,8 @@ export type SendEmailResult = {
 const ONBOARDING_FROM = `Trzy Wiatry <onboarding@${["resend", "dev"].join(".")}>`;
 
 function productionFrom() {
-  return process.env.NEWSLETTER_FROM_EMAIL?.trim() || `Trzy Wiatry <${SITE.email}>`;
+  const email = studioIdentity(getRuntimeSettings()).email;
+  return process.env.NEWSLETTER_FROM_EMAIL?.trim() || `Trzy Wiatry <${email}>`;
 }
 
 function domainLooksVerified() {
@@ -70,7 +74,7 @@ async function postResend(
       body: JSON.stringify({
         from,
         to: [message.to],
-        reply_to: message.replyTo?.trim() || SITE.email,
+        reply_to: message.replyTo?.trim() || studioIdentity(getRuntimeSettings()).email,
         subject: message.subject,
         html: message.html,
         ...(message.attachments?.length
@@ -170,13 +174,15 @@ function itemsList(order: StoredOrder) {
 }
 
 function orderVars(order: StoredOrder, extra: Record<string, string> = {}) {
+  const settings = getRuntimeSettings();
+  const who = studioIdentity(settings);
   const details = emailDetailTile(
     "Szczegóły zamówienia",
     emailDetailRows([
       { label: "Numer", value: escapeHtml(order.orderNumber) },
       { label: "Kwota", value: formatPLN(order.totalAmountInCents) },
       { label: "Status", value: ORDER_STATUS_LABELS[order.status] },
-      { label: "Dostawa", value: shippingMethodLabel(order.shippingMethod) },
+      { label: "Dostawa", value: shippingMethodLabel(order.shippingMethod, settings) },
       { label: "Płatność", value: orderPaymentDisplay(order) },
       ...(order.companyName ? [{ label: "Firma", value: escapeHtml(order.companyName) }] : []),
       ...(order.nip ? [{ label: "NIP", value: escapeHtml(order.nip) }] : []),
@@ -204,7 +210,7 @@ function orderVars(order: StoredOrder, extra: Record<string, string> = {}) {
     highlightBlock: emailHighlightTile("Numer zamówienia", escapeHtml(order.orderNumber)),
     detailsBlock: details,
     statusLabel: ORDER_STATUS_LABELS[order.status],
-    studioEmail: SITE.email,
+    studioEmail: who.email,
     vacationBlock: "",
     trackingBlock: order.trackingNumber
       ? emailDetailTile(

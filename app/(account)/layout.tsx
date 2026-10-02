@@ -12,6 +12,7 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 import { getSettings } from "@/lib/data/queries";
 import { noIndexRobots } from "@/lib/seo";
+import { studioIdentity } from "@/lib/studio-identity";
 
 export const metadata: Metadata = {
   robots: noIndexRobots,
@@ -32,7 +33,7 @@ export default async function AccountLayout({ children }: { children: ReactNode 
         <SiteHeader />
         <div className="site-frame flex min-h-0 flex-1 flex-col">
           <main className="min-w-0 max-w-full flex-1 overflow-x-clip">{children}</main>
-          <Footer />
+          <Footer identity={studioIdentity(settings)} />
         </div>
         <CartDrawer />
         <CookieConsent />
