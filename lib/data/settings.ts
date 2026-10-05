@@ -24,6 +24,7 @@ export const defaultStudioSettings: StudioSettings = {
     "Kod rabatowy przychodzi mailem. Zero spamu — nowe wypusty, kolekcje i przerwy twórcze.",
   newsletterFormLabel: "Podaj e-mail",
   newsletterButtonLabel: "Odbierz −15%",
+  launchNoticeEnabled: false,
   maintenanceMode: false,
   maintenancePreviewToken: "",
 };

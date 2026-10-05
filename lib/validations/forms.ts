@@ -11,6 +11,11 @@ export const newsletterSchema = z.object({
     }),
 });
 
+export const newsletterBroadcastSchema = z.object({
+  subject: plainText("Temat", 120, 3),
+  body: plainText("Treść", 4000, 20),
+});
+
 export const contactSchema = z.object({
   name: plainText(bi("Imię", "Name"), 80, 2),
   phone: z.preprocess(

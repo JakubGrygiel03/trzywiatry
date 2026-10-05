@@ -60,9 +60,15 @@ let hydratePromise: Promise<void> | null = null;
 let hydratedAt = 0;
 let pendingSave: Promise<boolean> | null = null;
 let lastSavedAt = 0;
+/** When true, skip merging remote newsletter so deletes are not resurrected. */
+let newsletterListAuthoritative = false;
 const HYDRATE_TTL_MS = 5_000;
 /** After create/update/delete, don't clobber in-memory catalog with a stale remote read. */
 const SKIP_HYDRATE_AFTER_SAVE_MS = 3_000;
+
+export function markNewsletterListAuthoritative() {
+  newsletterListAuthoritative = true;
+}
 
 function loadSnapshot(): AtelierSnapshot | null {
   if (!existsSync(STATE_FILE)) return null;
@@ -116,6 +122,7 @@ function mergeSettingsForSave(local: StudioSettings, remote?: StudioSettings): S
   const flags = [
     "giftWrapEnabled",
     "workshopsEnabled",
+    "launchNoticeEnabled",
     "maintenanceMode",
     "shopLaneUzytkowaEnabled",
     "shopLanePracowniaEnabled",
@@ -203,8 +210,9 @@ export async function saveAtelierSnapshot() {
     mergeNewsletterSnapshot({
       newsletterCoupons: remote.newsletterCoupons,
     });
-    mergeNewsletterEmails(remote.newsletter);
+    if (!newsletterListAuthoritative) mergeNewsletterEmails(remote.newsletter);
   }
+  newsletterListAuthoritative = false;
   const snap = captureSnapshot(remote ?? undefined);
   const disk = writeDisk(snap);
   const wroteRemote = await writeAtelierState(ATELIER_STATE_KEYS.shop, snap);
@@ -215,7 +223,7 @@ export async function saveAtelierSnapshot() {
 
 export async function flushAtelierSave() {
   if (pendingSave) await pendingSave;
-  else await saveAtelierSnapshot();
+  await saveAtelierSnapshot();
   lastSavedAt = Date.now();
 }
 

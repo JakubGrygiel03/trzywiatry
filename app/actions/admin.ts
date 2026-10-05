@@ -225,6 +225,7 @@ export async function saveStudioSettings(formData: FormData) {
     giftWrapEnabled: formData.getAll("giftWrapEnabled").includes("true"),
     shopLaneUzytkowaEnabled: formData.getAll("shopLaneUzytkowaEnabled").includes("true"),
     shopLanePracowniaEnabled: formData.getAll("shopLanePracowniaEnabled").includes("true"),
+    launchNoticeEnabled: formData.get("launchNoticeEnabled") === "true",
     maintenanceMode: formData.get("maintenanceMode") === "true",
   });
   if (!parsed.success) {
@@ -266,6 +267,7 @@ export async function saveStudioSettings(formData: FormData) {
     shopLaneUzytkowaEnabled: data.shopLaneUzytkowaEnabled,
     shopLanePracowniaEnabled: data.shopLanePracowniaEnabled,
     settingsUpdatedAt: new Date().toISOString(),
+    launchNoticeEnabled: data.launchNoticeEnabled,
     maintenanceMode: data.maintenanceMode,
     maintenancePreviewToken: nextToken,
     shopHubUzytkowaImage: parseShopHubImage(

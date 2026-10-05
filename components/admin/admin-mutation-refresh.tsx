@@ -3,7 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
 
-const MUTATION_KEYS = ["zapisano", "usunieto", "przywrocono", "t", "raport"];
+const MUTATION_KEYS = ["zapisano", "usunieto", "przywrocono", "t", "raport", "wyslano"];
 
 /** The admin shell stays mounted — refresh RSC after any mutation redirect. */
 export function AdminMutationRefresh() {

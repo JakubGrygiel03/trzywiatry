@@ -69,6 +69,37 @@ export function rememberNewsletterEmail(email: string, source = "footer_discount
   return true;
 }
 
+/** Removes the address from the marketing list. Coupon history stays. */
+export function removeNewsletterEmail(email: string) {
+  const key = normalizeEmail(email);
+  const list = subscribers();
+  const next = list.filter((row) => row.email !== key);
+  if (next.length === list.length) return false;
+  runtimeStore.newsletter = next;
+  return true;
+}
+
+export function listConsentingNewsletterSubscribers() {
+  return listNewsletterSubscribers().filter((row) => row.consentMarketing);
+}
+
+export function updateNewsletterSubscriber(currentEmail: string, nextEmail: string, consentMarketing: boolean) {
+  const from = normalizeEmail(currentEmail);
+  const to = normalizeEmail(nextEmail);
+  const list = subscribers();
+  const row = list.find((item) => item.email === from);
+  if (!row) return { ok: false as const, error: "missing" };
+  if (to !== from && list.some((item) => item.email === to)) {
+    return { ok: false as const, error: "taken" };
+  }
+  row.email = to;
+  row.consentMarketing = consentMarketing;
+  if (consentMarketing) {
+    row.consentAt = row.consentAt ?? new Date().toISOString();
+  }
+  return { ok: true as const, from, to };
+}
+
 export function mergeNewsletterEmails(incoming: unknown) {
   const list = subscribers();
   const map = new Map(list.map((row) => [row.email, row]));

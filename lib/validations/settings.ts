@@ -28,6 +28,7 @@ export const studioSettingsFormSchema = z
     giftWrapEnabled: z.boolean(),
     shopLaneUzytkowaEnabled: z.boolean(),
     shopLanePracowniaEnabled: z.boolean(),
+    launchNoticeEnabled: z.boolean(),
     maintenanceMode: z.boolean(),
   })
   .superRefine((data, ctx) => {

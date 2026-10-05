@@ -93,6 +93,8 @@ export type StudioSettings = {
   newsletterBody: string;
   newsletterFormLabel: string;
   newsletterButtonLabel: string;
+  /** Homepage overlay “Nowa strona pracowni”. Off by default — shop is live. */
+  launchNoticeEnabled: boolean;
   /** Closes the storefront for visitors; testers use the preview cookie. */
   maintenanceMode: boolean;
   /** Opaque token for /podglad/[token] — rotate from admin to revoke access. */

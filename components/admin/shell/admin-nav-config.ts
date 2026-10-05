@@ -34,7 +34,7 @@ export type AdminNavGroup = {
   items: AdminNavItem[];
 };
 
-/** Menu groups mirror WooCommerce: Sklep → Treści → Analityka → Ustawienia. */
+/** Menu: catalog + shop settings together, then customers, atelier, website copy. */
 export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   {
     id: "overview",
@@ -50,10 +50,19 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     items: [
       { href: "/admin/produkty", label: "Produkty", icon: Package, badgeKey: "lowStock" },
       { href: "/admin/produkty/kategorie", label: "Kategorie", icon: Tags },
+      { href: "/admin/kolekcje", label: "Kolekcje szkliw", icon: Layers },
+      { href: "/admin/ustawienia-sklepu", label: "Ustawienia sklepu", icon: Settings },
       { href: "/admin/zamowienia", label: "Zamówienia", icon: ShoppingBag, badgeKey: "orders" },
       { href: "/admin/kupony", label: "Kupony", icon: TicketPercent },
+    ],
+  },
+  {
+    id: "customers",
+    label: "Klienci",
+    items: [
       { href: "/admin/klienci", label: "Klienci", icon: Users },
       { href: "/admin/newsletter", label: "Newsletter", icon: Mails },
+      { href: "/admin/emaile", label: "E-maile do klientów", icon: Mail },
     ],
   },
   {
@@ -70,16 +79,9 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     items: [
       { href: "/admin/strona-glowna", label: "Strona główna", icon: LayoutTemplate },
       { href: "/admin/strony", label: "Strony", icon: FileText },
-      { href: "/admin/kolekcje", label: "Kolekcje szkliw", icon: Layers },
       { href: "/admin/media", label: "Zdjęcia", icon: Images },
       { href: "/admin/blog", label: "Blog i poradniki", icon: Newspaper },
-      { href: "/admin/emaile", label: "E-maile do klientów", icon: Mail },
     ],
-  },
-  {
-    id: "system",
-    label: "System",
-    items: [{ href: "/admin/ustawienia-sklepu", label: "Ustawienia sklepu", icon: Settings }],
   },
 ];
 

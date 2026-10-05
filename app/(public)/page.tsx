@@ -19,15 +19,16 @@ export const metadata: Metadata = pageMetadata({
 
 export default async function HomePage() {
   const sections = await getHomeLayout();
-  const workshopsEnabled = getSettings().workshopsEnabled;
+  const settings = getSettings();
+  const workshopsEnabled = settings.workshopsEnabled;
   const nextWorkshop = workshopsEnabled ? getWorkshops()[0] : undefined;
   const hero = findHomeSection(sections, "hero");
   const galleryProducts = getHeroGalleryProducts(12, hero?.payload.slots);
 
   return (
     <SurfaceCanvas>
-      <JsonLd data={[localBusinessJsonLd(studioIdentity(getSettings())), websiteJsonLd()]} />
-      <MaintenanceNotice />
+      <JsonLd data={[localBusinessJsonLd(studioIdentity(settings)), websiteJsonLd()]} />
+      {settings.launchNoticeEnabled ? <MaintenanceNotice /> : null}
       <HomeSectionStack
         sections={sections}
         workshopsEnabled={workshopsEnabled}

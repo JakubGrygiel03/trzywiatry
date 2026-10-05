@@ -20,10 +20,11 @@ export async function subscribeNewsletter(_: { ok: boolean; message: string }, f
     consent: formData.get("consent"),
   });
   if (!parsed.success) {
-    return { ok: false, message: parsed.error.issues[0]?.message ?? "Sprawdź e-mail. / Check the email address." };
+    return { ok: false, message: parsed.error.issues[0]?.message ?? "Zaznacz zgodę i podaj e-mail." };
   }
 
   const email = parsed.data.email;
+  // Consent already passed the schema — never mint a code or store the address without it.
   const { coupon, minted } = issueOrReuseNewsletterCoupon(email);
   const isNewOnList = rememberNewsletterEmail(email);
   await saveAtelierSnapshot();

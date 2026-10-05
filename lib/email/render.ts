@@ -26,11 +26,15 @@ const FONT =
  * Hostinger / Przelewy24 style: gray canvas → logo → white rounded card → footer.
  * Every visual style is INLINE (Gmail strips most <style> rules).
  */
-export function wrapEmail(body: string) {
+export function wrapEmail(body: string, options?: { kind?: "transactional" | "newsletter" }) {
   const year = new Date().getFullYear();
   const site = getPublicSiteUrl();
   const polished = polishEmailBody(body);
   const who = studioIdentity(getRuntimeSettings());
+  const footerNote =
+    options?.kind === "newsletter"
+      ? `Wiadomość z newslettera Trzy Wiatry. Rezygnacja: napisz na ${who.email}.`
+      : `© ${year} ${SITE.name}. Wiadomość transakcyjna ze sklepu.`;
 
   return `<!DOCTYPE html>
 <html lang="pl">
@@ -83,7 +87,7 @@ export function wrapEmail(body: string) {
         </tr>
         <tr>
           <td align="center" style="padding:8px 12px 0;font-family:${FONT};font-size:11px;color:${B.szaryJasny};">
-            © ${year} ${SITE.name}. Wiadomość transakcyjna ze sklepu.
+            ${footerNote}
           </td>
         </tr>
       </table>

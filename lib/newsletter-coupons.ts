@@ -75,6 +75,16 @@ export function findCouponByCode(code: string) {
   return coupons().find((coupon) => coupon.code === key || coupon.code.replace(/-/g, "") === compact);
 }
 
+/** Keep the −15% code tied to the corrected address. */
+export function rebindNewsletterCouponEmail(from: string, to: string) {
+  const coupon = findCouponByEmail(from);
+  if (!coupon) return;
+  const next = normalizeCouponEmail(to);
+  const clash = findCouponByEmail(next);
+  if (clash && clash.id !== coupon.id) return;
+  coupon.email = next;
+}
+
 /** One coupon per e-mail: reuse the existing row, never mint a second. */
 export function issueOrReuseNewsletterCoupon(email: string) {
   const existing = findCouponByEmail(email);

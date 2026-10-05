@@ -228,6 +228,21 @@ export default async function ShopSettingsPage({
           <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-czarny/8 bg-krem/40 p-4">
             <input
               type="checkbox"
+              name="launchNoticeEnabled"
+              value="true"
+              defaultChecked={settings.launchNoticeEnabled}
+              className="mt-0.5 accent-czerwony"
+            />
+            <span className="text-sm">
+              <span className="font-medium text-czarny">Komunikat „Nowa strona pracowni”</span>
+              <span className="mt-1 block text-xs text-czarny/45">
+                Nakładka na stronie głównej. Odznaczona = sklep wygląda jak gotowy. Włącz tylko przy miękkim starcie.
+              </span>
+            </span>
+          </label>
+          <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-czarny/8 bg-krem/40 p-4">
+            <input
+              type="checkbox"
               name="maintenanceMode"
               value="true"
               defaultChecked={settings.maintenanceMode}
