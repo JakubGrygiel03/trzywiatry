@@ -50,8 +50,15 @@ export function ContentPageEditor<K extends ContentPageKey>({
       {pageKey === "kontakt" ? (
         <ContactOverlayFields value={overlay as ContactOverlay} onChange={(next) => setOverlay(next as ContentOverlayMap[K])} />
       ) : null}
-      {pageKey === "faq" || pageKey === "dostawa-i-zwroty" || pageKey === "poradnik-pielegnacji" ? (
-        <InfoOverlayFields value={overlay as InfoPageOverlay} onChange={(next) => setOverlay(next as ContentOverlayMap[K])} />
+      {pageKey === "faq" ||
+      pageKey === "dostawa-i-zwroty" ||
+      pageKey === "poradnik-pielegnacji" ||
+      pageKey === "regulamin" ? (
+        <InfoOverlayFields
+          value={overlay as InfoPageOverlay}
+          onChange={(next) => setOverlay(next as ContentOverlayMap[K])}
+          bodyRows={pageKey === "regulamin" ? 8 : 4}
+        />
       ) : null}
       <AdminFormActions submitLabel="Zapisz nakładkę" cancelHref="/admin/strony" cancelLabel="← Strony" />
     </form>

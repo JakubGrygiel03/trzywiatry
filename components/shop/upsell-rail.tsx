@@ -94,7 +94,7 @@ export function UpsellRail({
                   }}
                   className="self-start font-heading text-[10px] uppercase tracking-[0.14em] text-czerwony underline-offset-4 hover:underline disabled:opacity-40"
                 >
-                  {soldOut ? "Wyprzedane" : "Dodaj do pary"}
+                  {soldOut ? "Wyprzedane" : "Dodaj"}
                 </button>
               </div>
             </li>

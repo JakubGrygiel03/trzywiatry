@@ -4,6 +4,11 @@ import { emailSchema, phoneSchema, plainText } from "@/lib/validations/safe-inpu
 
 export const newsletterSchema = z.object({
   email: emailSchema,
+  consent: z
+    .union([z.literal("on"), z.literal("true"), z.boolean()])
+    .refine((value) => value === "on" || value === "true" || value === true, {
+      message: "Zaznacz zgodę na newsletter, żebyśmy mogli wysyłać Ci wiadomości.",
+    }),
 });
 
 export const contactSchema = z.object({

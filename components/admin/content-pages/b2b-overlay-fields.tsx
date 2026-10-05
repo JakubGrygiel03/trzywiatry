@@ -2,6 +2,7 @@
 
 import { AdminField, AdminInput, AdminTextarea } from "@/components/admin/ui/admin-field";
 import { AdminFormSection } from "@/components/admin/ui/admin-form-section";
+import { CmsImagePicker } from "@/components/admin/cms-image-picker";
 import type { B2BOverlay } from "@/lib/cms/content-pages";
 
 export function B2BOverlayFields({
@@ -35,6 +36,25 @@ export function B2BOverlayFields({
         </AdminField>
         <AdminField label="Podpis kadru" htmlFor="b2b-caption">
           <AdminInput id="b2b-caption" value={value.frameCaption} onChange={(e) => patch({ frameCaption: e.target.value })} />
+        </AdminField>
+        <CmsImagePicker
+          value={value.imageSrc}
+          onChange={(imageSrc) => patch({ imageSrc })}
+          folder="cms"
+          aspectClass="aspect-[4/3]"
+          hint="Zdjęcie obok formularza na /b2b. Puste pole zostawia rysunek kubków."
+        />
+        {value.imageSrc ? (
+          <button
+            type="button"
+            className="text-xs text-czarny/50 underline-offset-2 hover:text-czerwony hover:underline"
+            onClick={() => patch({ imageSrc: "" })}
+          >
+            Przywróć rysunek kubków
+          </button>
+        ) : null}
+        <AdminField label="Opis zdjęcia" htmlFor="b2b-alt">
+          <AdminInput id="b2b-alt" value={value.imageAlt} onChange={(e) => patch({ imageAlt: e.target.value })} />
         </AdminField>
       </AdminFormSection>
       <SeoFields value={value} onChange={patch} />

@@ -1,35 +1,29 @@
 import Link from "next/link";
+import { PlainLegalBody } from "@/components/legal/plain-legal-body";
 import { Container, SectionHeading } from "@/components/ui/badge";
-import {
-  REGULAMIN_EFFECTIVE_DATE,
-  privacySections,
-  regulaminSections,
-  renderLegalBlocks,
-} from "@/lib/legal/shop-terms";
+import { getContentPage } from "@/lib/data/content-pages";
+import { privacySections, renderLegalBlocks } from "@/lib/legal/shop-terms";
 import { pageMetadata } from "@/lib/seo";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Regulamin sklepu internetowego",
-  description:
-    "Regulamin sklepu internetowego Trzy Wiatry — zasady zamówień, płatności, dostawy, odstąpienia i reklamacji.",
-  path: "/regulamin",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const page = await getContentPage("regulamin");
+  return pageMetadata({
+    title: page.metaTitle,
+    description: page.metaDescription,
+    path: "/regulamin",
+  });
+}
 
-export default function RegulaminPage() {
+export default async function RegulaminPage() {
+  const page = await getContentPage("regulamin");
+
   return (
     <div className="py-16 md:py-24">
       <Container className="max-w-3xl space-y-12">
         <div className="space-y-4">
-          <SectionHeading
-            eyebrow="Sklep"
-            title="Regulamin sklepu internetowego"
-            description={`Obowiązuje od dnia ${REGULAMIN_EFFECTIVE_DATE}.`}
-          />
+          <SectionHeading eyebrow={page.eyebrow} title={page.title} description={page.description} />
           <nav className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-czarny/55">
-            <a href="#zalacznik-1" className="underline-offset-2 hover:text-czerwony hover:underline">
-              Formularz odstąpienia
-            </a>
             <Link href="/polityka-prywatnosci" className="underline-offset-2 hover:text-czerwony hover:underline">
               Polityka prywatności
             </Link>
@@ -39,14 +33,23 @@ export default function RegulaminPage() {
           </nav>
         </div>
 
-        {regulaminSections.map((section) => (
-          <article key={section.id} id={section.id} className="scroll-mt-24 space-y-4 border-b border-czarny/8 pb-8">
-            <h2 className="font-heading text-base uppercase tracking-[0.08em] text-czarny">
-              {section.title}
-            </h2>
-            <div className="space-y-4">{renderLegalBlocks(section.blocks)}</div>
-          </article>
-        ))}
+        {page.items.map((section, index) => {
+          const anchor = /załącznik nr 1/i.test(section.title)
+            ? "zalacznik-1"
+            : `par-${section.title.match(/§(\d+)/)?.[1] ?? index + 1}`;
+          return (
+            <article
+              key={`${section.title}-${index}`}
+              id={anchor}
+              className="scroll-mt-24 space-y-4 border-b border-czarny/8 pb-8"
+            >
+              <h2 className="font-heading text-base uppercase tracking-[0.08em] text-czarny">{section.title}</h2>
+              <div className="space-y-4">
+                <PlainLegalBody body={section.body} />
+              </div>
+            </article>
+          );
+        })}
 
         <section id="zalacznik-2" className="scroll-mt-24 space-y-6">
           <h2 className="font-heading text-base uppercase tracking-[0.08em] text-czarny">

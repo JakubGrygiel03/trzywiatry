@@ -16,7 +16,7 @@ function marqueeLabels(workshopsEnabled: boolean) {
     "Ceramika",
     "Drewno",
     ...(workshopsEnabled ? ["Warsztaty"] : []),
-    "Formy matki",
+    "Dla pracowni",
   ];
 }
 

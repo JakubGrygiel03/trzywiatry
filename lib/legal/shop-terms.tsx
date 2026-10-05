@@ -538,6 +538,26 @@ export const privacySections: LegalSection[] = [
   },
 ];
 
+export function flattenLegalBlocks(blocks: Block[]): string {
+  return blocks
+    .map((block) => {
+      switch (block.type) {
+        case "p":
+        case "note":
+          return block.text;
+        case "ul":
+          return block.items.map((item) => `• ${item}`).join("\n");
+        case "ol":
+          return block.items.map((item, index) => `${index + 1}. ${item}`).join("\n");
+        case "table":
+          return [block.headers.join(" | "), ...block.rows.map((row) => row.join(" | "))].join("\n");
+        case "form":
+          return block.lines.join("\n");
+      }
+    })
+    .join("\n\n");
+}
+
 export function renderLegalBlocks(blocks: Block[]): ReactNode {
   return blocks.map((block, index) => {
     switch (block.type) {

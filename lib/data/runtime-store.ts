@@ -12,6 +12,7 @@ import type {
   CouponRedemption,
   CustomerNote,
   NewsletterCoupon,
+  NewsletterSubscriber,
   OrderStatus,
   Product,
   ShopCoupon,
@@ -42,7 +43,7 @@ type Inquiry = {
 type RuntimeStore = {
   orders: StoredOrder[];
   bookings: Inquiry[];
-  newsletter: string[];
+  newsletter: NewsletterSubscriber[];
   /** Unique one-time −15% codes issued on newsletter signup. */
   newsletterCoupons: NewsletterCoupon[];
   b2b: Inquiry[];

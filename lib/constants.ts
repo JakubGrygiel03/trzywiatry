@@ -46,7 +46,7 @@ export const DOMAIN_LABELS: Record<ProductDomain, string> = {
   ceramika: "Ceramika",
   drewno: "Drewno",
   warsztaty: "Warsztaty",
-  formy: "Formy matki",
+  formy: "Dla pracowni",
 };
 
 export const CATEGORY_LABELS: Record<string, string> = {
@@ -80,7 +80,7 @@ export const SHOP_CATEGORY_TREE = [
   },
   {
     id: "formy",
-    label: "Formy",
+    label: "Dla pracowni",
     domain: "formy" as const,
     children: [
       { id: "formy_matki", label: "forma gipsowa", category: "formy_matki" },

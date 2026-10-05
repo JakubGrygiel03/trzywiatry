@@ -178,7 +178,7 @@ export default async function ShopSettingsPage({
             <span className="text-sm">
               <span className="font-medium text-czarny">Dla pracowni / Dla ceramików</span>
               <span className="mt-1 block text-xs text-czarny/45">
-                Formy matki i narzędzia. Odznacz, gdy dział jest w przygotowaniu.
+                Formy gipsowe i narzędzia. Odznacz, gdy dział jest w przygotowaniu.
               </span>
             </span>
           </label>

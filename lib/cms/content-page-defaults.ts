@@ -7,6 +7,7 @@ import type {
   InfoPageOverlay,
 } from "@/lib/cms/content-pages";
 import { aboutGalleryWorks } from "@/lib/data/gallery";
+import { flattenLegalBlocks, REGULAMIN_EFFECTIVE_DATE, regulaminSections } from "@/lib/legal/shop-terms";
 
 export function defaultB2BOverlay(): B2BOverlay {
   return {
@@ -19,6 +20,8 @@ export function defaultB2BOverlay(): B2BOverlay {
     descriptionEn: "Custom cups and moulds for cafés and hotels — English is welcome.",
     formIntro: "English welcome — Polish characters are not required. VAT instead of Polish NIP is fine.",
     frameCaption: "B2B",
+    imageSrc: "",
+    imageAlt: "Ceramika na zamówienie dla lokali — Trzy Wiatry",
   };
 }
 
@@ -137,11 +140,27 @@ export function defaultCareOverlay(): InfoPageOverlay {
   };
 }
 
+export function defaultRegulaminOverlay(): InfoPageOverlay {
+  return {
+    metaTitle: "Regulamin sklepu internetowego",
+    metaDescription:
+      "Regulamin sklepu internetowego Trzy Wiatry — zasady zamówień, płatności, dostawy, odstąpienia i reklamacji.",
+    eyebrow: "Sklep",
+    title: "Regulamin sklepu internetowego",
+    description: `Obowiązuje od dnia ${REGULAMIN_EFFECTIVE_DATE}.`,
+    items: regulaminSections.map((section) => ({
+      title: section.title,
+      body: flattenLegalBlocks(section.blocks),
+    })),
+  };
+}
+
 export function defaultContentOverlay<K extends ContentPageKey>(key: K): ContentOverlayMap[K] {
   if (key === "b2b") return defaultB2BOverlay() as ContentOverlayMap[K];
   if (key === "o-nas") return defaultAboutOverlay() as ContentOverlayMap[K];
   if (key === "kontakt") return defaultContactOverlay() as ContentOverlayMap[K];
   if (key === "faq") return defaultFaqOverlay() as ContentOverlayMap[K];
   if (key === "dostawa-i-zwroty") return defaultShippingOverlay() as ContentOverlayMap[K];
+  if (key === "regulamin") return defaultRegulaminOverlay() as ContentOverlayMap[K];
   return defaultCareOverlay() as ContentOverlayMap[K];
 }

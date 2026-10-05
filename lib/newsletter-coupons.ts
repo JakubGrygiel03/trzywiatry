@@ -4,6 +4,7 @@ import { isMintedNewsletterCode, normalizeCouponCode } from "@/lib/coupon-code";
 import { discountAmountFromGoods } from "@/lib/discount";
 import { isSignedNewsletterCode, mintSignedNewsletterCode } from "@/lib/newsletter-code-sign";
 import { runtimeStore } from "@/lib/data/runtime-store";
+import { rememberNewsletterEmail } from "@/lib/newsletter-subscribers";
 import { resolveShopCouponDiscount } from "@/lib/shop-coupons";
 import type { NewsletterCoupon } from "@/lib/types";
 
@@ -90,17 +91,8 @@ export function issueOrReuseNewsletterCoupon(email: string) {
   return { coupon, minted: true as const };
 }
 
-export function rememberNewsletterEmail(email: string) {
-  const key = normalizeCouponEmail(email);
-  if (runtimeStore.newsletter.some((item) => normalizeCouponEmail(item) === key)) {
-    return false;
-  }
-  runtimeStore.newsletter.push(key);
-  return true;
-}
-
 /** Union remote + memory so a warm serverless instance cannot wipe minted codes. */
-export function mergeNewsletterSnapshot(incoming: { newsletter?: string[]; newsletterCoupons?: unknown }) {
+export function mergeNewsletterSnapshot(incoming: { newsletterCoupons?: unknown }) {
   const byCode = new Map(coupons().map((coupon) => [coupon.code, coupon]));
   for (const next of parseNewsletterCoupons(incoming.newsletterCoupons)) {
     const prev = byCode.get(next.code);
@@ -119,13 +111,6 @@ export function mergeNewsletterSnapshot(incoming: { newsletter?: string[]; newsl
     }
     if (next.welcomeSentAt && !prev.welcomeSentAt) prev.welcomeSentAt = next.welcomeSentAt;
   }
-
-  const emails = new Set(runtimeStore.newsletter.map(normalizeCouponEmail));
-  for (const email of incoming.newsletter ?? []) {
-    const key = normalizeCouponEmail(email);
-    if (key) emails.add(key);
-  }
-  runtimeStore.newsletter = [...emails];
 }
 
 /**

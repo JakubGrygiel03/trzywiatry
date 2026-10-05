@@ -192,6 +192,15 @@ export type OrderStatusEvent = {
   at: string;
 };
 
+/** Marketing list row — consent timestamp kept for RODO. */
+export type NewsletterSubscriber = {
+  email: string;
+  createdAt: string;
+  source: string;
+  consentMarketing: boolean;
+  consentAt?: string;
+};
+
 /** One-time −15% code minted on newsletter signup (format TW-XXXXXX). */
 export type NewsletterCoupon = {
   id: string;

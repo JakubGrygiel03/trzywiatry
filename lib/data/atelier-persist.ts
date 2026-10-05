@@ -14,6 +14,7 @@ import {
 } from "@/lib/data/runtime-store";
 import { ATELIER_STATE_KEYS, hasSupabaseService, readAtelierState, writeAtelierState } from "@/lib/data/supabase-state";
 import { mergeNewsletterSnapshot } from "@/lib/newsletter-coupons";
+import { mergeNewsletterEmails } from "@/lib/newsletter-subscribers";
 import { defaultProductCategories, type ProductCategoryDef } from "@/lib/product-categories";
 import type {
   BlogPost,
@@ -23,6 +24,7 @@ import type {
   Product,
   ShopCoupon,
   SlugRedirect,
+  NewsletterSubscriber,
   StudioSettings,
   Workshop,
 } from "@/lib/types";
@@ -42,7 +44,7 @@ export type AtelierSnapshot = {
   collections?: Collection[];
   b2b?: Inquiry[];
   contacts?: Inquiry[];
-  newsletter?: string[];
+  newsletter?: Array<string | NewsletterSubscriber>;
   newsletterCoupons?: unknown;
   bookings?: Inquiry[];
   homeLayout?: HomeSection[];
@@ -86,9 +88,9 @@ function applySnapshot(snap: AtelierSnapshot) {
   if (Array.isArray(snap.b2b)) runtimeStore.b2b = snap.b2b;
   if (Array.isArray(snap.contacts)) runtimeStore.contacts = snap.contacts;
   mergeNewsletterSnapshot({
-    newsletter: snap.newsletter,
     newsletterCoupons: snap.newsletterCoupons,
   });
+  mergeNewsletterEmails(snap.newsletter);
   if (Array.isArray(snap.bookings)) runtimeStore.bookings = snap.bookings;
   if (Array.isArray(snap.homeLayout) && snap.homeLayout.length > 0) {
     runtimeStore.homeLayout = snap.homeLayout;
@@ -199,9 +201,9 @@ export async function saveAtelierSnapshot() {
   const remote = await readAtelierState<AtelierSnapshot>(ATELIER_STATE_KEYS.shop);
   if (remote) {
     mergeNewsletterSnapshot({
-      newsletter: remote.newsletter,
       newsletterCoupons: remote.newsletterCoupons,
     });
+    mergeNewsletterEmails(remote.newsletter);
   }
   const snap = captureSnapshot(remote ?? undefined);
   const disk = writeDisk(snap);

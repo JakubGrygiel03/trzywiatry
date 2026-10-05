@@ -114,7 +114,7 @@ export function CartDrawer() {
               {items.length > 0 ? (
                 <>
                   <div className="flex justify-between text-sm">
-                    <span>Suma częściowa</span>
+                    <span>Suma</span>
                     <span className="font-heading">{formatPLN(subtotal + gift)}</span>
                   </div>
                   {!isPublic && !isTester ? (
@@ -129,7 +129,7 @@ export function CartDrawer() {
                   </Button>
                   <Button asChild variant="outline" className="w-full" onClick={closeCart}>
                     <Link href="/koszyk" prefetch>
-                      Pełny koszyk
+                      Pokaż koszyk
                     </Link>
                   </Button>
                 </>

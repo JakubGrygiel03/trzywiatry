@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   LayoutTemplate,
   Mail,
+  Mails,
   Newspaper,
   Package,
   Settings,
@@ -52,6 +53,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       { href: "/admin/zamowienia", label: "Zamówienia", icon: ShoppingBag, badgeKey: "orders" },
       { href: "/admin/kupony", label: "Kupony", icon: TicketPercent },
       { href: "/admin/klienci", label: "Klienci", icon: Users },
+      { href: "/admin/newsletter", label: "Newsletter", icon: Mails },
     ],
   },
   {

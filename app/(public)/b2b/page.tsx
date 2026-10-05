@@ -1,8 +1,8 @@
 import { B2BForm } from "@/components/b2b/b2b-form";
+import { B2BAsideVisual } from "@/components/b2b/b2b-aside-visual";
 import { SurfacePageIntro } from "@/components/layout/surface-page";
 import { Container } from "@/components/ui/badge";
 import { SurfaceTile, SurfaceTileBody, SurfaceTileHeader } from "@/components/ui/surface-tile";
-import { AtelierFrame } from "@/components/visual/atelier-frame";
 import { getContentPage } from "@/lib/data/content-pages";
 import { pageMetadata } from "@/lib/seo";
 import type { Metadata } from "next";
@@ -29,14 +29,7 @@ export default async function B2BPage() {
             description={page.description}
             descriptionEn={page.descriptionEn}
           />
-          <SurfaceTile className="hidden lg:block">
-            <AtelierFrame
-              kind="set"
-              glaze="dust"
-              className="aspect-[4/3] min-h-[16rem] rounded-none border-0"
-              caption={page.frameCaption || "B2B"}
-            />
-          </SurfaceTile>
+          <B2BAsideVisual src={page.imageSrc} alt={page.imageAlt} caption={page.frameCaption || "B2B"} />
         </div>
         <SurfaceTile>
           <SurfaceTileHeader eyebrow="Zapytanie" title="Formularz B2B" />

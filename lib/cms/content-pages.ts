@@ -1,4 +1,12 @@
-export const CONTENT_PAGE_KEYS = ["b2b", "o-nas", "kontakt", "faq", "dostawa-i-zwroty", "poradnik-pielegnacji"] as const;
+export const CONTENT_PAGE_KEYS = [
+  "b2b",
+  "o-nas",
+  "kontakt",
+  "faq",
+  "dostawa-i-zwroty",
+  "poradnik-pielegnacji",
+  "regulamin",
+] as const;
 export type ContentPageKey = (typeof CONTENT_PAGE_KEYS)[number];
 
 export const CONTENT_PAGE_META: Record<
@@ -41,6 +49,12 @@ export const CONTENT_PAGE_META: Record<
     adminHref: "/admin/strony/poradnik-pielegnacji",
     hint: "Sekcje: zmywarka, szok termiczny, formy, drewno.",
   },
+  regulamin: {
+    label: "Regulamin",
+    href: "/regulamin",
+    adminHref: "/admin/strony/regulamin",
+    hint: "Pełna treść regulaminu sklepu — paragrafy, które widzi klient.",
+  },
 };
 
 export type B2BOverlay = {
@@ -52,6 +66,8 @@ export type B2BOverlay = {
   descriptionEn: string;
   formIntro: string;
   frameCaption: string;
+  imageSrc: string;
+  imageAlt: string;
 };
 
 export type AboutOverlay = {
@@ -93,6 +109,7 @@ export type ContentOverlayMap = {
   faq: InfoPageOverlay;
   "dostawa-i-zwroty": InfoPageOverlay;
   "poradnik-pielegnacji": InfoPageOverlay;
+  regulamin: InfoPageOverlay;
 };
 
 export function isContentPageKey(value: string): value is ContentPageKey {

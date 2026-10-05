@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { subscribeNewsletter } from "@/app/actions/newsletter";
 import { EmailField } from "@/components/forms/email-field";
@@ -16,11 +17,12 @@ export function NewsletterForm({
   buttonLabel?: string;
 }) {
   const [state, action, pending] = useActionState(subscribeNewsletter, initial);
+  const muted = tone === "dark" ? "text-bialy/70" : "text-czarny/55";
 
   return (
     <form
       action={action}
-      className="flex w-full flex-col gap-2"
+      className="flex w-full flex-col gap-3"
       noValidate
       onSubmit={(event) => {
         if (pending) event.preventDefault();
@@ -49,8 +51,30 @@ export function NewsletterForm({
           {pending ? "Zapisuję…" : buttonLabel}
         </Button>
       </div>
+      <label className={cn("flex items-start gap-2 text-left text-[11px] leading-relaxed", muted)}>
+        <input
+          type="checkbox"
+          name="consent"
+          value="on"
+          required
+          className="mt-0.5 accent-czerwony"
+        />
+        <span>
+          Chcę dostawać newsletter Trzy Wiatry (nowości i promocje) na podany adres. Zgodę mogę wycofać w
+          każdej chwili.
+        </span>
+      </label>
+      <p className={cn("text-[11px] leading-relaxed", muted)}>
+        Zapisujemy Twój e-mail, żeby wysyłać newsletter i jednorazowy kod rabatowy. Szczegóły:{" "}
+        <Link href="/polityka-prywatnosci" className="underline underline-offset-2 hover:text-czerwony">
+          Polityka prywatności
+        </Link>
+        .
+      </p>
       {state.message ? (
-        <p className={cn("text-xs", tone === "dark" ? "text-ceglany" : "text-czerwony")}>{state.message}</p>
+        <p className={cn("text-xs", state.ok ? "text-czarny/70" : tone === "dark" ? "text-ceglany" : "text-czerwony")}>
+          {state.message}
+        </p>
       ) : null}
     </form>
   );

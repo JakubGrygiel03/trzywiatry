@@ -2,7 +2,7 @@ import { z } from "zod";
 import { defaultContentOverlay } from "@/lib/cms/content-page-defaults";
 import type { ContentOverlayMap, ContentPageKey } from "@/lib/cms/content-pages";
 import { MAX_ABOUT_GALLERY_WORKS } from "@/lib/data/gallery";
-import { cmsImageSrcSchema } from "@/lib/validations/image-src";
+import { cmsImageSrcSchema, optionalCmsImageSrcSchema } from "@/lib/validations/image-src";
 import { firstZodMessage, plainText } from "@/lib/validations/safe-input";
 
 const seo = {
@@ -18,6 +18,8 @@ export const b2bOverlaySchema = z.object({
   descriptionEn: plainText("Opis EN", 280, 0),
   formIntro: plainText("Wstęp przy formularzu", 280, 0),
   frameCaption: plainText("Podpis kadru", 40, 0),
+  imageSrc: optionalCmsImageSrcSchema.default(""),
+  imageAlt: plainText("Opis zdjęcia", 160, 0).default(""),
 });
 
 export const aboutOverlaySchema = z.object({
@@ -60,12 +62,12 @@ export const infoPageOverlaySchema = z.object({
   items: z
     .array(
       z.object({
-        title: plainText("Nagłówek", 120, 2),
-        body: plainText("Treść", 2000, 10),
+        title: plainText("Nagłówek", 160, 2),
+        body: plainText("Treść", 12000, 10),
       }),
     )
     .min(1, "Dodaj przynajmniej jedną sekcję.")
-    .max(16, "Maksimum 16 sekcji."),
+    .max(24, "Maksimum 24 sekcje."),
 });
 
 const schemas = {
@@ -75,6 +77,7 @@ const schemas = {
   faq: infoPageOverlaySchema,
   "dostawa-i-zwroty": infoPageOverlaySchema,
   "poradnik-pielegnacji": infoPageOverlaySchema,
+  regulamin: infoPageOverlaySchema,
 } as const;
 
 export function parseContentOverlay<K extends ContentPageKey>(key: K, input: unknown) {

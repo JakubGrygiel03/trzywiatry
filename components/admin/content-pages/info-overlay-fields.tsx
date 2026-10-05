@@ -8,9 +8,11 @@ import type { InfoPageOverlay } from "@/lib/cms/content-pages";
 export function InfoOverlayFields({
   value,
   onChange,
+  bodyRows = 4,
 }: {
   value: InfoPageOverlay;
   onChange: (next: InfoPageOverlay) => void;
+  bodyRows?: number;
 }) {
   function patch(partial: Partial<InfoPageOverlay>) {
     onChange({ ...value, ...partial });
@@ -49,7 +51,7 @@ export function InfoOverlayFields({
             <AdminField label="Treść" htmlFor={`info-item-body-${index}`}>
               <AdminTextarea
                 id={`info-item-body-${index}`}
-                rows={4}
+                rows={bodyRows}
                 value={item.body}
                 onChange={(e) => patchItem(index, { body: e.target.value })}
               />
