@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { hasSupabaseService } from "@/lib/data/supabase-state";
+import { optimizeUploadImage, replaceImageExt } from "@/lib/optimize-upload-image";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export const UPLOAD_BUCKET = "atelier-uploads";
@@ -66,18 +67,23 @@ export async function persistUploadedImage(opts: {
   localDir: string;
   urlPrefix: string;
 }): Promise<string> {
+  const optimized = await optimizeUploadImage(opts.bytes, opts.contentType);
+  const filename = replaceImageExt(opts.filename, optimized.ext);
+  const bytes = optimized.bytes;
+  const contentType = optimized.contentType;
+
   if (canUploadToCloud()) {
     return uploadPublicImage({
       folder: opts.folder,
-      filename: opts.filename,
-      bytes: opts.bytes,
-      contentType: opts.contentType,
+      filename,
+      bytes,
+      contentType,
     });
   }
   if (mustUseCloudStorage()) {
     throw new Error(CLOUD_REQUIRED);
   }
-  return writeLocalPublicFile(opts.localDir, opts.filename, opts.bytes, opts.urlPrefix);
+  return writeLocalPublicFile(opts.localDir, filename, bytes, opts.urlPrefix);
 }
 
 async function ensurePublicBucket() {

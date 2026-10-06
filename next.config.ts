@@ -31,7 +31,6 @@ const nextConfig: NextConfig = {
       "./.data/**",
       "./tmp-*/**",
       "./node_modules/pdf-to-img/**",
-      "./node_modules/@napi-rs/**",
     ],
   },
   experimental: {

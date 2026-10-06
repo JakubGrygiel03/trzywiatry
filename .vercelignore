@@ -1,5 +1,4 @@
 # Not needed in the Vercel upload — keeps Deployment Storage smaller.
-scripts
 .data
 tmp-*
 tmp-brand-extract
@@ -7,3 +6,5 @@ tmp-brand-extract
 *.pdf
 public/brand/pdf-pages
 public/brand/pdf-hi
+public/brand/photos/**/uploads
+public/brand/photos/home/banner

@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "node --use-system-ca ./node_modules/next/dist/bin/next dev",
     "p24:probe": "node --use-system-ca ./scripts/p24-probe.mjs",
+    "prebuild": "node scripts/optimize-public-images.mjs",
     "build": "next build",
+    "photos:optimize": "node scripts/optimize-public-images.mjs",
     "start": "next start",
     "lint": "eslint"
   },
@@ -30,6 +32,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-hook-form": "^7.87.0",
+    "sharp": "^0.35.4",
     "tailwind-merge": "^3.6.0",
     "zod": "^4.5.4",
     "zustand": "^5.0.15"
@@ -43,7 +46,6 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
     "pdf-to-img": "^7.0.0",
-    "sharp": "^0.35.4",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

@@ -1,7 +1,13 @@
 import "server-only";
 import { isDeletableLibraryUrl } from "@/lib/admin-media-delete";
 import { MAX_IMAGE_BYTES, MAX_PRODUCT_IMAGES } from "@/lib/admin-product-constants";
-import { listLocalPublicImages, listPublicImages, persistUploadedImage, randomImageName } from "@/lib/admin-storage";
+import {
+  listLocalPublicImages,
+  listPublicImages,
+  mustUseCloudStorage,
+  persistUploadedImage,
+  randomImageName,
+} from "@/lib/admin-storage";
 import { PRODUCT_IMAGE_OPTIONS } from "@/lib/constants";
 import { aboutGalleryWorks } from "@/lib/data/gallery";
 
@@ -55,16 +61,16 @@ export async function getAdminProductImageLibrary(): Promise<AdminImageOption[]>
     listPublicImages("home-banner"),
   ]);
 
-  const uploads = [
-    ...products,
-    ...cms,
-    ...gallery,
-    ...banners,
-    ...listLocalPublicImages(PRODUCT_UPLOAD_DIR, PRODUCT_UPLOAD_URL_PREFIX),
-    ...listLocalPublicImages("public/brand/photos/cms/uploads", "/brand/photos/cms/uploads/"),
-    ...listLocalPublicImages("public/brand/photos/gallery/uploads", "/brand/photos/gallery/uploads/"),
-    ...listLocalPublicImages("public/brand/photos/home/banner", "/brand/photos/home/banner/"),
-  ];
+  const localUploads = mustUseCloudStorage()
+    ? []
+    : [
+        ...listLocalPublicImages(PRODUCT_UPLOAD_DIR, PRODUCT_UPLOAD_URL_PREFIX),
+        ...listLocalPublicImages("public/brand/photos/cms/uploads", "/brand/photos/cms/uploads/"),
+        ...listLocalPublicImages("public/brand/photos/gallery/uploads", "/brand/photos/gallery/uploads/"),
+        ...listLocalPublicImages("public/brand/photos/home/banner", "/brand/photos/home/banner/"),
+      ];
+
+  const uploads = [...products, ...cms, ...gallery, ...banners, ...localUploads];
   uploads.sort((a, b) => b.label.localeCompare(a.label));
   const taggedUploads = uploads.map((item) => ({
     ...item,
