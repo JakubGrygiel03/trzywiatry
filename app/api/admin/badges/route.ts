@@ -1,14 +1,12 @@
-import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 import { getAdminBadges } from "@/lib/data/admin-metrics";
-import { ADMIN_COOKIE, isAdminCookieValue } from "@/lib/admin-session";
+import { rejectUnlessAdminApi } from "@/lib/admin-api-guard";
 
-export async function GET() {
-  const store = await cookies();
-  if (!isAdminCookieValue(store.get(ADMIN_COOKIE)?.value)) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+export async function GET(request: Request) {
+  const denied = await rejectUnlessAdminApi(request, "read");
+  if (denied) return denied;
 
-  return Response.json(await getAdminBadges(), {
+  return NextResponse.json(await getAdminBadges(), {
     headers: { "Cache-Control": "private, no-store" },
   });
 }

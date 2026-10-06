@@ -1,12 +1,9 @@
-import { cookies } from "next/headers";
 import { deleteUploadedImage } from "@/lib/admin-media-delete";
-import { ADMIN_COOKIE, isAdminCookieValue } from "@/lib/admin-session";
+import { rejectUnlessAdminApi } from "@/lib/admin-api-guard";
 
 export async function DELETE(request: Request) {
-  const store = await cookies();
-  if (!isAdminCookieValue(store.get(ADMIN_COOKIE)?.value)) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = await rejectUnlessAdminApi(request, "write");
+  if (denied) return denied;
 
   try {
     const body = (await request.json()) as { url?: unknown };

@@ -12,7 +12,7 @@ export function CmsImagePicker({
   onChange,
   folder = "cms",
   aspectClass = "aspect-[4/3]",
-  hint = "Wgraj z dysku albo wybierz z biblioteki.",
+  hint = "Jeden plik w bibliotece — sekcje tylko wskazują URL, bez kopii.",
 }: {
   value: string;
   onChange: (url: string) => void;

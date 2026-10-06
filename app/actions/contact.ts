@@ -1,6 +1,7 @@
 "use server";
 
 import { contactSchema, workshopBookingSchema } from "@/lib/validations/forms";
+import { RATE, rateLimitAction } from "@/lib/rate-limit";
 import { getWorkshopById, getWorkshopBySlug, remainingSeats } from "@/lib/data/queries";
 import { saveAtelierSnapshot, ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 import { getRuntimeSettings, runtimeStore } from "@/lib/data/runtime-store";
@@ -11,6 +12,9 @@ import { notifyStudioContact, notifyStudioWorkshop } from "@/lib/studio-notify";
 import { escapeHtml } from "@/lib/validations/safe-input";
 
 export async function submitContact(_: { ok: boolean; message: string }, formData: FormData) {
+  if (!(await rateLimitAction("contact", RATE.form.limit, RATE.form.windowMs))) {
+    return { ok: false, message: "Za dużo wiadomości z rzędu. Spróbuj za kilka minut." };
+  }
   await ensureAtelierHydrated();
   const parsed = contactSchema.safeParse({
     name: String(formData.get("name") ?? ""),
@@ -68,6 +72,9 @@ export async function submitContact(_: { ok: boolean; message: string }, formDat
 }
 
 export async function bookWorkshop(_: { ok: boolean; message: string }, formData: FormData) {
+  if (!(await rateLimitAction("workshop", RATE.form.limit, RATE.form.windowMs))) {
+    return { ok: false, message: "Za dużo rezerwacji z rzędu. Spróbuj za kilka minut." };
+  }
   await ensureAtelierHydrated();
   const parsed = workshopBookingSchema.safeParse({
     workshopId: formData.get("workshopId"),

@@ -4,13 +4,15 @@ import path from "node:path";
 import { UPLOAD_BUCKET } from "@/lib/admin-storage";
 import { createServiceClient } from "@/lib/supabase/service";
 
-const CLOUD_FOLDERS = ["products", "cms", "gallery", "home-banner"] as const;
+const CLOUD_FOLDERS = ["library", "products", "cms", "gallery", "home-banner", "blog"] as const;
 
 const LOCAL_PREFIXES = [
+  "/brand/photos/library/",
   "/brand/photos/products/uploads/",
   "/brand/photos/cms/uploads/",
   "/brand/photos/gallery/uploads/",
   "/brand/photos/home/banner/",
+  "/brand/photos/blog/uploads/",
 ] as const;
 
 function isSafeFilename(name: string) {

@@ -1,6 +1,7 @@
 "use server";
 
 import { b2bSchema } from "@/lib/validations/b2b";
+import { RATE, rateLimitAction } from "@/lib/rate-limit";
 import { saveAtelierSnapshot, ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 import { runtimeStore } from "@/lib/data/runtime-store";
 import { notifyStudioB2B } from "@/lib/studio-notify";
@@ -35,8 +36,11 @@ function readB2BForm(formData: FormData): B2BFormValues {
 }
 
 export async function submitB2BInquiry(_prev: B2BFormState, formData: FormData): Promise<B2BFormState> {
-  await ensureAtelierHydrated();
   const raw = readB2BForm(formData);
+  if (!(await rateLimitAction("b2b", RATE.form.limit, RATE.form.windowMs))) {
+    return { ok: false, message: "Za dużo zapytań. Spróbuj za kilka minut.", values: raw };
+  }
+  await ensureAtelierHydrated();
   const parsed = b2bSchema.safeParse(raw);
 
   if (!parsed.success) {

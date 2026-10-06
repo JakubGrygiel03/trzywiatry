@@ -7,4 +7,5 @@ tmp-brand-extract
 public/brand/pdf-pages
 public/brand/pdf-hi
 public/brand/photos/**/uploads
+public/brand/photos/library
 public/brand/photos/home/banner

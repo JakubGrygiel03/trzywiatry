@@ -8,6 +8,7 @@ import { Input, Label } from "@/components/ui/field";
 import { cn } from "@/lib/utils";
 
 const ERRORS: Record<string, string> = {
+  limit: "Za dużo prób logowania. Poczekaj kilka minut.",
   dane: "Uzupełnij e-mail i hasło.",
   haslo:
     "Nieprawidłowy e-mail lub hasło. Jeśli konto było właśnie zakładane — użyj „Nie pamiętasz hasła?” albo zarejestruj się ponownie tym samym e-mailem.",

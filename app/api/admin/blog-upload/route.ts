@@ -1,12 +1,9 @@
-import { cookies } from "next/headers";
 import { saveBlogImageUpload } from "@/lib/admin-blog-images";
-import { ADMIN_COOKIE, isAdminCookieValue } from "@/lib/admin-session";
+import { rejectUnlessAdminApi } from "@/lib/admin-api-guard";
 
 export async function POST(request: Request) {
-  const store = await cookies();
-  if (!isAdminCookieValue(store.get(ADMIN_COOKIE)?.value)) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = await rejectUnlessAdminApi(request, "upload");
+  if (denied) return denied;
 
   try {
     const formData = await request.formData();

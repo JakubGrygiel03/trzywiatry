@@ -60,5 +60,7 @@ scripts/analyze-woo-csv.mjs
 
 # CMS uploads stay in Supabase on production — do not commit local dumps
 /public/brand/photos/**/uploads/
+/public/brand/photos/library/*
+!/public/brand/photos/library/.gitkeep
 /public/brand/photos/home/banner/*
 !/public/brand/photos/home/banner/.gitkeep

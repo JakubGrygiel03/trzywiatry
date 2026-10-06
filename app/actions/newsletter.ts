@@ -1,6 +1,7 @@
 "use server";
 
 import { newsletterSchema } from "@/lib/validations/forms";
+import { RATE, rateLimitAction } from "@/lib/rate-limit";
 import { addSubscriber } from "@/lib/mailerlite";
 import { saveAtelierSnapshot, ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 import {
@@ -14,6 +15,9 @@ import { renderEmailTemplate, emailHighlightTile } from "@/lib/email/render";
 import { sendEmail } from "@/lib/resend";
 
 export async function subscribeNewsletter(_: { ok: boolean; message: string }, formData: FormData) {
+  if (!(await rateLimitAction("newsletter", RATE.form.limit, RATE.form.windowMs))) {
+    return { ok: false, message: "Za dużo prób. Poczekaj chwilę i spróbuj ponownie." };
+  }
   await ensureAtelierHydrated({ force: true });
   const parsed = newsletterSchema.safeParse({
     email: formData.get("email"),

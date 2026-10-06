@@ -2,12 +2,14 @@ import { NextResponse } from "next/server";
 import { verifyAdminCredentials } from "@/lib/admin-auth";
 import { ADMIN_COOKIE, adminCookieOptions, createAdminCookieValue } from "@/lib/admin-session";
 import { loginHandoff } from "@/lib/auth-handoff";
+import { RATE, rateLimitRequest } from "@/lib/rate-limit";
+import { isSameOrigin } from "@/lib/same-origin";
 import { adminLoginSchema } from "@/lib/validations/forms";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function redirectToLogin(request: Request, blad: "dane" | "haslo") {
+function redirectToLogin(request: Request, blad: "dane" | "haslo" | "limit") {
   const loginUrl = new URL("/konto/logowanie", request.url);
   loginUrl.searchParams.set("blad", blad);
   const response = NextResponse.redirect(loginUrl, 303);
@@ -16,6 +18,13 @@ function redirectToLogin(request: Request, blad: "dane" | "haslo") {
 }
 
 export async function POST(request: Request) {
+  if (!isSameOrigin(request)) {
+    return redirectToLogin(request, "dane");
+  }
+  if (!rateLimitRequest(request, "login", RATE.login.limit, RATE.login.windowMs)) {
+    return redirectToLogin(request, "limit");
+  }
+
   let formData: FormData;
   try {
     formData = await request.formData();

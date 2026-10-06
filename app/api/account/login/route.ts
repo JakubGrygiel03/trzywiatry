@@ -10,12 +10,14 @@ import {
   verifyCustomerCredentials,
 } from "@/lib/customer-auth";
 import { CUSTOMER_COOKIE, createCustomerSessionValue } from "@/lib/customer-session-token";
+import { RATE, rateLimitRequest } from "@/lib/rate-limit";
+import { isSameOrigin } from "@/lib/same-origin";
 import { customerLoginSchema } from "@/lib/validations/forms";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function redirectToLogin(request: Request, blad: "dane" | "haslo", email?: string) {
+function redirectToLogin(request: Request, blad: "dane" | "haslo" | "limit", email?: string) {
   const loginUrl = new URL("/konto/logowanie", request.url);
   loginUrl.searchParams.set("blad", blad);
   if (email) loginUrl.searchParams.set("email", email);
@@ -31,6 +33,13 @@ function completeAdminLogin(request: Request) {
 }
 
 export async function POST(request: Request) {
+  if (!isSameOrigin(request)) {
+    return redirectToLogin(request, "dane");
+  }
+  if (!rateLimitRequest(request, "login", RATE.login.limit, RATE.login.windowMs)) {
+    return redirectToLogin(request, "limit");
+  }
+
   let formData: FormData;
   try {
     formData = await request.formData();

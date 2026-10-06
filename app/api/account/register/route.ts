@@ -8,6 +8,8 @@ import {
   registerCustomer,
 } from "@/lib/customer-auth";
 import { CUSTOMER_COOKIE, createCustomerSessionValue } from "@/lib/customer-session-token";
+import { RATE, rateLimitRequest } from "@/lib/rate-limit";
+import { isSameOrigin } from "@/lib/same-origin";
 import { customerRegisterSchema } from "@/lib/validations/forms";
 
 export const runtime = "nodejs";
@@ -38,6 +40,13 @@ function sessionCookie(request: Request, user: { id: string; email: string; name
 }
 
 export async function POST(request: Request) {
+  if (!isSameOrigin(request)) {
+    return redirectToRegister(request, "dane");
+  }
+  if (!rateLimitRequest(request, "register", 5, RATE.login.windowMs)) {
+    return redirectToRegister(request, "limit");
+  }
+
   let formData: FormData;
   try {
     formData = await request.formData();

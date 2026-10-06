@@ -6,6 +6,7 @@ import { Input, Label } from "@/components/ui/field";
 const ERRORS: Record<string, string> = {
   dane: "Uzupełnij poprawny e-mail i hasło.",
   haslo: "Nieprawidłowy e-mail lub hasło.",
+  limit: "Za dużo prób logowania. Poczekaj kilka minut.",
 };
 
 export function AdminLoginForm({

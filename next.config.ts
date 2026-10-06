@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { SECURITY_HEADERS } from "./lib/security-headers";
 
 function supabaseImageHosts() {
   const hosts: { protocol: "https"; hostname: string; pathname?: string }[] = [
@@ -58,6 +59,10 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      {
+        source: "/:path*",
+        headers: SECURITY_HEADERS,
+      },
       {
         source: "/sw.js",
         headers: [

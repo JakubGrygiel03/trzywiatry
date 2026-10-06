@@ -1,13 +1,8 @@
 import "server-only";
 import { isDeletableLibraryUrl } from "@/lib/admin-media-delete";
 import { MAX_IMAGE_BYTES, MAX_PRODUCT_IMAGES } from "@/lib/admin-product-constants";
-import {
-  listLocalPublicImages,
-  listPublicImages,
-  mustUseCloudStorage,
-  persistUploadedImage,
-  randomImageName,
-} from "@/lib/admin-storage";
+import { LIBRARY_LOCAL_DIR, LIBRARY_URL_PREFIX, persistAdminImageFile } from "@/lib/admin-library";
+import { listLocalPublicImages, listPublicImages, mustUseCloudStorage } from "@/lib/admin-storage";
 import { PRODUCT_IMAGE_OPTIONS } from "@/lib/constants";
 import { aboutGalleryWorks } from "@/lib/data/gallery";
 
@@ -16,27 +11,6 @@ export { MAX_IMAGE_BYTES, MAX_PRODUCT_IMAGES };
 export const PRODUCT_UPLOAD_DIR = "public/brand/photos/products/uploads";
 export const PRODUCT_UPLOAD_URL_PREFIX = "/brand/photos/products/uploads/";
 export const PRODUCT_UPLOAD_FOLDER = "products";
-
-const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
-
-function extForMime(mime: string) {
-  if (mime === "image/jpeg") return "jpg";
-  if (mime === "image/png") return "png";
-  if (mime === "image/webp") return "webp";
-  if (mime === "image/gif") return "gif";
-  return "jpg";
-}
-
-function safeSlugPart(value: string) {
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/ł/g, "l")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "")
-    .slice(0, 40);
-}
 
 export type AdminImageOption = { url: string; label: string; deletable?: boolean };
 
@@ -54,23 +28,27 @@ function mergeLibrary(groups: AdminImageOption[][]): AdminImageOption[] {
 }
 
 export async function getAdminProductImageLibrary(): Promise<AdminImageOption[]> {
-  const [products, cms, gallery, banners] = await Promise.all([
+  const [library, products, cms, gallery, banners, blog] = await Promise.all([
+    listPublicImages("library"),
     listPublicImages(PRODUCT_UPLOAD_FOLDER),
     listPublicImages("cms"),
     listPublicImages("gallery"),
     listPublicImages("home-banner"),
+    listPublicImages("blog"),
   ]);
 
   const localUploads = mustUseCloudStorage()
     ? []
     : [
+        ...listLocalPublicImages(LIBRARY_LOCAL_DIR, LIBRARY_URL_PREFIX),
         ...listLocalPublicImages(PRODUCT_UPLOAD_DIR, PRODUCT_UPLOAD_URL_PREFIX),
         ...listLocalPublicImages("public/brand/photos/cms/uploads", "/brand/photos/cms/uploads/"),
         ...listLocalPublicImages("public/brand/photos/gallery/uploads", "/brand/photos/gallery/uploads/"),
         ...listLocalPublicImages("public/brand/photos/home/banner", "/brand/photos/home/banner/"),
+        ...listLocalPublicImages("public/brand/photos/blog/uploads", "/brand/photos/blog/uploads/"),
       ];
 
-  const uploads = [...products, ...cms, ...gallery, ...banners, ...localUploads];
+  const uploads = [...library, ...products, ...cms, ...gallery, ...banners, ...blog, ...localUploads];
   uploads.sort((a, b) => b.label.localeCompare(a.label));
   const taggedUploads = uploads.map((item) => ({
     ...item,
@@ -88,33 +66,13 @@ export async function getAdminProductImageLibrary(): Promise<AdminImageOption[]>
   return mergeLibrary([taggedUploads, presets]);
 }
 
-async function persistProductFile(file: File, slugPart: string): Promise<string> {
-  const name = randomImageName(slugPart, extForMime(file.type));
-  const buffer = Buffer.from(await file.arrayBuffer());
-  return persistUploadedImage({
-    folder: PRODUCT_UPLOAD_FOLDER,
-    filename: name,
-    bytes: buffer,
-    contentType: file.type,
-    localDir: PRODUCT_UPLOAD_DIR,
-    urlPrefix: PRODUCT_UPLOAD_URL_PREFIX,
-  });
-}
-
-/** Saves validated product photos to cloud storage (Vercel) or local /public in dev. */
-export async function saveProductImageUploads(files: File[], slug: string): Promise<string[]> {
+/** Product photos share the hashed library — picking the same file does not copy it. */
+export async function saveProductImageUploads(files: File[], _slug: string): Promise<string[]> {
   const saved: string[] = [];
-  const slugPart = safeSlugPart(slug) || "produkt";
 
   for (const file of files) {
     if (!(file instanceof File) || file.size === 0) continue;
-    if (file.size > MAX_IMAGE_BYTES) {
-      throw new Error(`Plik „${file.name}” jest za duży (max 5 MB).`);
-    }
-    if (!ALLOWED_MIME.has(file.type)) {
-      throw new Error(`Plik „${file.name}” ma niedozwolony format. Użyj JPG, PNG lub WebP.`);
-    }
-    saved.push(await persistProductFile(file, slugPart));
+    saved.push(await persistAdminImageFile(file, MAX_IMAGE_BYTES));
   }
 
   return saved;

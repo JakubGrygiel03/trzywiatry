@@ -12,6 +12,7 @@ import {
   slimShipXItem,
   type InpostPoint,
 } from "@/lib/inpost-points";
+import { RATE, rateLimitRequest } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -91,6 +92,10 @@ function geoWindow(mode: string, zoom: number) {
 const getOverview = unstable_cache(fetchOverview, ["inpost-city-overview"], { revalidate: 3600 });
 
 export async function GET(request: Request) {
+  if (!rateLimitRequest(request, "inpost", RATE.inpost.limit, RATE.inpost.windowMs)) {
+    return NextResponse.json({ items: [] }, { status: 429 });
+  }
+
   const requestUrl = new URL(request.url);
   const mode = (requestUrl.searchParams.get("mode") ?? "search").trim();
   if (mode === "overview") {
