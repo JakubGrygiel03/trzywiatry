@@ -1,0 +1,9 @@
+# Not needed in the Vercel upload — keeps Deployment Storage smaller.
+scripts
+.data
+tmp-*
+tmp-brand-extract
+.cursor
+*.pdf
+public/brand/pdf-pages
+public/brand/pdf-hi

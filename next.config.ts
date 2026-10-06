@@ -16,6 +16,24 @@ function supabaseImageHosts() {
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // sharp stays outside each lambda; Vercel provides it for OG/image optimize.
+  serverExternalPackages: ["sharp"],
+  // Photos are static CDN files — tracing them into every serverless fn
+  // multiplied Functions Storage to ~10 GB (134 MB × routes × old deploys).
+  outputFileTracingExcludes: {
+    "*": [
+      "./public/brand/photos/**",
+      "./public/brand/chmurki/**",
+      "./public/brand/wzory/**",
+      "./public/brand/patterns/**",
+      "./public/pwa/**",
+      "./scripts/**",
+      "./.data/**",
+      "./tmp-*/**",
+      "./node_modules/pdf-to-img/**",
+      "./node_modules/@napi-rs/**",
+    ],
+  },
   experimental: {
     optimizePackageImports: ["lucide-react", "framer-motion"],
   },
@@ -32,7 +50,12 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
-    return [{ source: "/mapa.xml", destination: "/sitemap.xml" }];
+    return [
+      { source: "/mapa.xml", destination: "/sitemap.xml" },
+      { source: "/api/pwa/icon-192", destination: "/pwa/icon-192.png" },
+      { source: "/api/pwa/icon-512", destination: "/pwa/icon-512.png" },
+      { source: "/api/pwa/maskable-icon", destination: "/pwa/maskable-icon.png" },
+    ];
   },
   async headers() {
     return [
@@ -45,6 +68,10 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/brand/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
+      {
+        source: "/pwa/:path*",
         headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
       },
     ];
