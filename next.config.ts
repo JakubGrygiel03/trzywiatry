@@ -49,6 +49,22 @@ const nextConfig: NextConfig = {
       ...supabaseImageHosts(),
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: "/",
+        has: [{ type: "host", value: "trzywiatry.vercel.app" }],
+        destination: "https://trzywiatry.pl",
+        permanent: true,
+      },
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "trzywiatry.vercel.app" }],
+        destination: "https://trzywiatry.pl/:path*",
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     return [
       { source: "/mapa.xml", destination: "/sitemap.xml" },
