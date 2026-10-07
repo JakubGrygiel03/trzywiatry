@@ -29,7 +29,7 @@ export function TrafficTopProducts({
                 {row.name}
               </Link>
               <span className="shrink-0 font-heading text-[11px] text-czarny/55">
-                {row.stats.clicks} klik · {row.stats.views} karty · {row.stats.carts} koszyk
+                {row.stats.clicks} klik · {row.stats.views} karty · {row.stats.carts} do koszyka
               </span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-czarny/6">

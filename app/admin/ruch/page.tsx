@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Eye, MousePointerClick, ShoppingBag, TrendingUp } from "lucide-react";
 import { clearTrafficStats } from "@/app/actions/admin-traffic";
 import { TrafficTopProducts } from "@/components/admin/traffic-top-products";
@@ -88,8 +89,16 @@ export default async function TrafficPage({
       {wyczyszczono ? <AdminAlert variant="success">Liczniki wyzerowane.</AdminAlert> : null}
 
       <AdminAlert>
-        Adres <span className="font-medium">trzywiatry.vercel.app</span> jest wyłączony: każde wejście ląduje na
-        trzywiatry.pl. Stary wynik w Google zniknie sam, zwykle w ciągu kilku dni.
+        „Do koszyka” to tylko kliknięcie przycisku w sklepie — ktoś schował naczynie do torby i mógł wyjść bez kasy.
+        To nie jest zamówienie i nie idzie do Przelewy24. Zakupy są w{" "}
+        <Link href="/admin/zamowienia" className="font-medium text-czerwony underline-offset-2 hover:underline">
+          Zamówieniach
+        </Link>{" "}
+        i na{" "}
+        <Link href="/admin/analityka" className="font-medium text-czerwony underline-offset-2 hover:underline">
+          Zarobkach
+        </Link>
+        .
       </AdminAlert>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -102,15 +111,18 @@ export default async function TrafficPage({
           icon={MousePointerClick}
         />
         <AdminStatCard
-          label="Do koszyka"
+          label="Kliknęli „do koszyka”"
           value={String(cartTotal)}
-          hint="Sygnał zainteresowania, nie sprzedaż"
+          hint="Nie zakup — kasa jest osobno"
           icon={ShoppingBag}
         />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <AdminPanel title="Najpopularniejsze produkty" description="Kolejność: koszyk ×5, klik ×3, otwarcie karty ×1.">
+        <AdminPanel
+          title="Najpopularniejsze produkty"
+          description="Ranking zainteresowania: dodanie do koszyka ×5, klik kafelka ×3, otwarcie karty ×1. To nie są opłacone zamówienia."
+        >
           <TrafficTopProducts rows={topProducts} />
         </AdminPanel>
         <AdminPanel title="Gdzie wchodzą" description="Odsłony podstron (nie unikalne osoby).">
