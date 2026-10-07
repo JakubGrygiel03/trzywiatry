@@ -3,7 +3,13 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { mergeOrderLists } from "@/lib/data/order-merge";
 import { runtimeStore } from "@/lib/data/runtime-store";
-import { ATELIER_STATE_KEYS, readAtelierState, writeAtelierState } from "@/lib/data/supabase-state";
+import {
+  ATELIER_STATE_KEYS,
+  orderRowKey,
+  readAtelierState,
+  readAtelierStatePrefix,
+  writeAtelierState,
+} from "@/lib/data/supabase-state";
 import type { StoredOrder } from "@/lib/types";
 
 const DATA_DIR = path.join(process.cwd(), ".data");
@@ -32,11 +38,23 @@ function writeDisk() {
   }
 }
 
+function asOrder(raw: unknown): StoredOrder | null {
+  if (!raw || typeof raw !== "object") return null;
+  const order = raw as StoredOrder;
+  return typeof order.orderNumber === "string" && order.orderNumber.trim() ? order : null;
+}
+
+async function loadOrderRows() {
+  const rows = await readAtelierStatePrefix("order_");
+  return rows.map((row) => asOrder(row.payload)).filter((order): order is StoredOrder => Boolean(order));
+}
+
 async function hydrate() {
   const remote = await readAtelierState<{ orders?: StoredOrder[] }>(ATELIER_STATE_KEYS.orders);
   runtimeStore.orders = mergeOrderLists([
     runtimeStore.orders,
     Array.isArray(remote?.orders) ? remote.orders : [],
+    await loadOrderRows(),
     loadPersistedOrders(),
   ]);
 }
@@ -50,8 +68,7 @@ export async function ensureOrdersHydrated(options?: { force?: boolean }) {
 }
 
 export function saveOrdersToDisk() {
-  writeDisk();
-  pendingSave = writeAtelierState(ATELIER_STATE_KEYS.orders, { orders: runtimeStore.orders });
+  void mergeRemoteThenWrite();
 }
 
 async function mergeRemoteThenWrite() {
@@ -59,8 +76,12 @@ async function mergeRemoteThenWrite() {
   runtimeStore.orders = mergeOrderLists([
     runtimeStore.orders,
     Array.isArray(remote?.orders) ? remote.orders : [],
+    await loadOrderRows(),
   ]);
   writeDisk();
+  await Promise.all(
+    runtimeStore.orders.map((order) => writeAtelierState(orderRowKey(order.orderNumber), order)),
+  );
   pendingSave = writeAtelierState(ATELIER_STATE_KEYS.orders, { orders: runtimeStore.orders });
   return pendingSave;
 }

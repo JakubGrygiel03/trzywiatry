@@ -36,7 +36,7 @@ export function recoveredP24Order(input: {
     city: "",
     shippingMethod: "odbior",
     notes:
-      "Odzyskane z Przelewy24: rekord zniknął przy zapisie serwera. Uzupełnij adres i pozycje z maila „Nowe zamówienie” z dnia płatności.",
+      "Odzyskane z Przelewy24 (osobna wpłata, nie TW-0001 / Wilczewska). Uzupełnij adres i pozycje z maila „Nowe zamówienie” z dnia płatności.",
     items: [],
     hasGiftWrapping: false,
     goodsInCents: input.amountInCents,

@@ -8,6 +8,11 @@ export const ATELIER_STATE_KEYS = {
   customers: "customers",
 } as const;
 
+export function orderRowKey(orderNumber: string) {
+  const slug = orderNumber.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+  return `order_${slug}`;
+}
+
 export function hasSupabaseService() {
   return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() && process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());
 }
@@ -39,5 +44,18 @@ export async function writeAtelierState(key: string, payload: unknown) {
     return true;
   } catch {
     return false;
+  }
+}
+
+/** One row per order so a stale list write cannot erase a paid TW-0002. */
+export async function readAtelierStatePrefix(prefix: string) {
+  const supabase = createServiceClient();
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase.from("atelier_state").select("key, payload").like("key", `${prefix}%`);
+    if (error || !Array.isArray(data)) return [];
+    return data.filter((row) => row.payload && typeof row.payload === "object");
+  } catch {
+    return [];
   }
 }

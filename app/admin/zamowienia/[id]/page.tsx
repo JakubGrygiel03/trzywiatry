@@ -89,6 +89,14 @@ export default async function AdminOrderDetailPage({
         }
       />
 
+      {order.payload?.recoveredFromP24 === 1 ? (
+        <AdminAlert>
+          To nie jest zamówienie Seleny Wilczewskiej (to jest TW-0001, 129 zł, bez P24). To TW-0002: BLIK 105 zł z 2
+          października, e-mail z Przelewy24 należy do Jędrzeja (test). Produkty i adres były w mailu pracowni „Nowe
+          zamówienie TW-0002” — dopisz je poniżej, zanim cokolwiek wyślesz.
+        </AdminAlert>
+      ) : null}
+
       {query.pozycje ? <AdminAlert variant="success">Zapisano pozycje i przeliczono sumę.</AdminAlert> : null}
       {query.wiadomosc === "1" ? <AdminAlert variant="success">Wysłano wiadomość do klienta.</AdminAlert> : null}
       {query.wiadomosc === "0" ? (

@@ -69,8 +69,8 @@ export default async function AdminOrdersPage({
       ) : null}
       {recovered.length > 0 ? (
         <AdminAlert>
-          {recovered.map((order) => order.orderNumber).join(", ")}: klient zapłacił w Przelewy24, ale sklep zgubił
-          dane dostawy przy zapisie. Uzupełnij imię, e-mail i wysyłkę z panelu P24.
+          {recovered.map((order) => order.orderNumber).join(", ")} to osobna płatność BLIK z Przelewy24 — nie zamówienie
+          Wilczewskiej. Adres i produkty weź z maila „Nowe zamówienie” z dnia wpłaty.
         </AdminAlert>
       ) : null}
 
