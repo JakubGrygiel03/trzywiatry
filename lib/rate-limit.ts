@@ -41,4 +41,5 @@ export const RATE = {
   form: { limit: 8, windowMs: 10 * 60_000 },
   upload: { limit: 20, windowMs: 10 * 60_000 },
   inpost: { limit: 60, windowMs: 60_000 },
+  track: { limit: 45, windowMs: 60_000 },
 } as const;

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Suspense } from "react";
 import { connection } from "next/server";
+import { TrafficBeacon } from "@/components/analytics/traffic-beacon";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { SiteSettingsProvider } from "@/components/cms/site-settings-provider";
 import { CookieConsent } from "@/components/layout/cookie-consent";
@@ -35,6 +36,7 @@ export default async function PublicLayout({ children }: { children: ReactNode }
         </div>
         <CartDrawer />
         <CookieConsent />
+        <TrafficBeacon />
         <Suspense fallback={null}>
           <ScrollToTopOnNavigate />
         </Suspense>

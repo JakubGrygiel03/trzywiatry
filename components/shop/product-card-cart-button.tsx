@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Check, ShoppingBag } from "lucide-react";
 import { getProductPhoto } from "@/lib/media";
 import type { Product } from "@/lib/types";
+import { trackShopEvent } from "@/lib/track-client";
 import { useCartStore } from "@/store/use-cart-store";
 import { cn } from "@/lib/utils";
 
@@ -51,6 +52,7 @@ export function ProductCardCartButton({ product }: { product: Product }) {
           stockQuantity: variant.stockQuantity,
         });
         if (!result.ok) return;
+        trackShopEvent("cart", { slug: product.slug, path: `/sklep/${product.slug}` });
         setAdded(true);
         window.clearTimeout(addedTimer.current);
         addedTimer.current = window.setTimeout(() => setAdded(false), 1400);

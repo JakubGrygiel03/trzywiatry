@@ -8,6 +8,7 @@ import { variantStockLabel } from "@/lib/data/queries";
 import { findVariant, variantCapacities, variantColors } from "@/lib/product-variants";
 import { getProductPhoto } from "@/lib/media";
 import type { Product } from "@/lib/types";
+import { trackShopEvent } from "@/lib/track-client";
 import { useCartStore } from "@/store/use-cart-store";
 import { cn } from "@/lib/utils";
 
@@ -48,6 +49,7 @@ export function AddToCart({ product }: { product: Product }) {
       stockQuantity: variant.stockQuantity,
     });
     setError(result.ok ? null : result.reason ?? "Nie udało się dodać do koszyka.");
+    if (result.ok) trackShopEvent("cart", { slug: product.slug, path: `/sklep/${product.slug}` });
   }
 
   return (

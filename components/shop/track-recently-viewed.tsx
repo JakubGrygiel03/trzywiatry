@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { getProductPhoto } from "@/lib/media";
 import type { Product } from "@/lib/types";
+import { trackShopEvent } from "@/lib/track-client";
 import { useRecentlyViewedStore } from "@/store/use-recently-viewed-store";
 
 /** Records a PDP visit into localStorage (WooCommerce-style recently viewed). */
@@ -18,6 +19,7 @@ export function TrackRecentlyViewed({ product }: { product: Product }) {
       priceInCents: product.priceInCents,
       image,
     });
+    trackShopEvent("product_view", { slug: product.slug, path: `/sklep/${product.slug}` });
   }, [product.id, product.slug, product.name, product.priceInCents, product.images, track]);
 
   return null;
