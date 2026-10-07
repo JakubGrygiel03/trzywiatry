@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
   // Checkout uses orderNumber; retries may append a suffix (TW-0004-m1x2y3).
   const baseNumber = orderNumberFromP24Session(sessionId);
   let order: StoredOrder | null =
-    getOrderByNumber(sessionId) ?? (baseNumber ? getOrderByNumber(baseNumber) : null);
+    getOrderByNumber(sessionId) ?? (baseNumber ? getOrderByNumber(baseNumber) : undefined) ?? null;
 
   if (!order && baseNumber) {
     const verified = await verifyP24Transaction({
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     if (!verified) {
       return NextResponse.json({ error: "verify failed" }, { status: 502 });
     }
-    const recovered = recoveredPaidOrder({
+    const recovered = recoveredP24Order({
       orderNumber: baseNumber,
       sessionId,
       amountInCents: Number(body.amount),
