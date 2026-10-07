@@ -13,6 +13,10 @@ function pickOrder(a: StoredOrder, b: StoredOrder) {
   const rankA = STATUS_RANK[a.status] ?? 0;
   const rankB = STATUS_RANK[b.status] ?? 0;
   if (rankA !== rankB) return rankA > rankB ? a : b;
+  const itemsA = a.items?.length ?? 0;
+  const itemsB = b.items?.length ?? 0;
+  if (itemsA === 0 && itemsB > 0) return b;
+  if (itemsB === 0 && itemsA > 0) return a;
   return a.updatedAt >= b.updatedAt ? a : b;
 }
 
