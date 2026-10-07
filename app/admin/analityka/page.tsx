@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdminDayBars } from "@/components/admin/ui/admin-day-bars";
 import { AdminPageHeader } from "@/components/admin/ui/admin-page-header";
 import { AdminPanel } from "@/components/admin/ui/admin-panel";
 import { AdminStatCard } from "@/components/admin/ui/admin-stat-card";
@@ -20,7 +21,6 @@ function formatDay(iso: string) {
 export default async function AnalyticsPage() {
   const snap = await getAnalyticsSnapshot();
   const products = getPublishedProducts();
-  const maxDay = Math.max(1, ...snap.daily.map((d) => d.totalInCents));
 
   const csv = [["sku", "nazwa", "cena_grosze", "stan"].join(",")]
     .concat(
@@ -116,21 +116,14 @@ export default async function AnalyticsPage() {
         </AdminPanel>
 
         <AdminPanel title="Ostatnie 14 dni" description="Słupki z opłaconych zamówień (dzień po dniu).">
-          <div className="flex h-40 items-end gap-1.5">
-            {snap.daily.map((day) => {
-              const h = Math.round((day.totalInCents / maxDay) * 100);
-              return (
-                <div key={day.date} className="flex min-w-0 flex-1 flex-col items-center gap-1">
-                  <div
-                    className="w-full rounded-t bg-czerwony/75 transition-all"
-                    style={{ height: `${Math.max(h, day.totalInCents ? 6 : 2)}%` }}
-                    title={`${day.label}: ${formatPLN(day.totalInCents)} (${day.orderCount})`}
-                  />
-                  <span className="truncate text-[9px] text-czarny/40">{day.label}</span>
-                </div>
-              );
-            })}
-          </div>
+          <AdminDayBars
+            days={snap.daily.map((day) => ({
+              key: day.date,
+              label: day.label,
+              value: day.totalInCents,
+              title: `${day.label}: ${formatPLN(day.totalInCents)} (${day.orderCount})`,
+            }))}
+          />
         </AdminPanel>
       </div>
 

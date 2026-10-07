@@ -2,6 +2,7 @@ import { Eye, MousePointerClick, ShoppingBag, TrendingUp } from "lucide-react";
 import { clearTrafficStats } from "@/app/actions/admin-traffic";
 import { TrafficTopProducts } from "@/components/admin/traffic-top-products";
 import { AdminAlert } from "@/components/admin/ui/admin-alert";
+import { AdminDayBars } from "@/components/admin/ui/admin-day-bars";
 import { AdminPageHeader } from "@/components/admin/ui/admin-page-header";
 import { AdminPanel } from "@/components/admin/ui/admin-panel";
 import { AdminStatCard } from "@/components/admin/ui/admin-stat-card";
@@ -49,7 +50,6 @@ export default async function TrafficPage({
   const today = snap.days[dayKey()] ?? 0;
   const week = lastDays(snap.days, 7).reduce((sum, day) => sum + day.value, 0);
   const chart = lastDays(snap.days, 14);
-  const maxDay = Math.max(1, ...chart.map((day) => day.value));
 
   const productEntries = Object.entries(snap.products);
   const clickTotal = productEntries.reduce((sum, [, row]) => sum + row.clicks, 0);
@@ -130,21 +130,7 @@ export default async function TrafficPage({
       </div>
 
       <AdminPanel title="Ostatnie 14 dni" description="Odsłony dzień po dniu.">
-        <div className="flex h-40 items-end gap-1.5">
-          {chart.map((day) => {
-            const h = Math.round((day.value / maxDay) * 100);
-            return (
-              <div key={day.key} className="flex min-w-0 flex-1 flex-col items-center gap-1">
-                <div
-                  className="w-full rounded-t bg-czerwony/75"
-                  style={{ height: `${Math.max(h, day.value ? 6 : 2)}%` }}
-                  title={`${day.label}: ${day.value}`}
-                />
-                <span className="truncate text-[9px] text-czarny/40">{day.label}</span>
-              </div>
-            );
-          })}
-        </div>
+        <AdminDayBars days={chart} />
       </AdminPanel>
     </div>
   );
