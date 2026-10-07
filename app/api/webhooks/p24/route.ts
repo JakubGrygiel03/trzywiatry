@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ensureOrdersHydrated, flushOrdersSave } from "@/lib/data/order-persist";
 import { flushAtelierSave } from "@/lib/data/atelier-persist";
-import { getOrderByNumber, updateOrderStatusInStore } from "@/lib/data/runtime-store";
+import { orderNumberFromP24Session } from "@/lib/data/order-merge";
+import { addRuntimeOrder, getOrderByNumber, updateOrderStatusInStore } from "@/lib/data/runtime-store";
+import { recoveredP24Order } from "@/lib/orders/p24-recovered-order";
 import { p24NotificationValid, verifyP24Transaction, type P24Notification } from "@/lib/p24";
 import { p24MethodLabel, isTraditionalTransfer } from "@/lib/p24-methods";
 import { notifyCustomerOrderStatus } from "@/lib/resend";
 import { notifyStudioOrderPaid } from "@/lib/studio-notify";
+import type { StoredOrder } from "@/lib/types";
 
 async function readNotification(request: NextRequest): Promise<P24Notification | null> {
   const json = (await request.clone().json().catch(() => null)) as P24Notification | null;
@@ -50,12 +53,33 @@ export async function POST(request: NextRequest) {
 
   await ensureOrdersHydrated({ force: true });
   // Checkout uses orderNumber; retries may append a suffix (TW-0004-m1x2y3).
-  const order =
-    getOrderByNumber(sessionId) ??
-    (() => {
-      const base = sessionId.match(/^(TW-\d+)/i)?.[1];
-      return base ? getOrderByNumber(base) : null;
-    })();
+  const baseNumber = orderNumberFromP24Session(sessionId);
+  let order: StoredOrder | null =
+    getOrderByNumber(sessionId) ?? (baseNumber ? getOrderByNumber(baseNumber) : null);
+
+  if (!order && baseNumber) {
+    const verified = await verifyP24Transaction({
+      sessionId,
+      orderId: Number(body.orderId),
+      amount: Number(body.amount),
+    });
+    if (!verified) {
+      return NextResponse.json({ error: "verify failed" }, { status: 502 });
+    }
+    const recovered = recoveredPaidOrder({
+      orderNumber: baseNumber,
+      sessionId,
+      amountInCents: Number(body.amount),
+      p24OrderId: String(body.orderId),
+      methodId: Number(body.methodId ?? 0) || undefined,
+    });
+    addRuntimeOrder(recovered);
+    await flushOrdersSave();
+    await flushAtelierSave();
+    await notifyStudioOrderPaid(recovered);
+    return NextResponse.json({ ok: true, received: true, recovered: true });
+  }
+
   if (!order) {
     return NextResponse.json({ error: "unknown session" }, { status: 404 });
   }

@@ -145,7 +145,7 @@ export async function createCheckoutSession(
   }
   const discount = discountResult.amountCents;
   const total = goods + shippingCost + giftCost - discount;
-  await ensureOrdersHydrated();
+  await ensureOrdersHydrated({ force: true });
   const orderNumber = nextOrderNumber();
   const now = new Date().toISOString();
   const customer = await getCustomerSession();

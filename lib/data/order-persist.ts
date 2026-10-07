@@ -1,6 +1,7 @@
 import "server-only";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { mergeOrderLists } from "@/lib/data/order-merge";
 import { runtimeStore } from "@/lib/data/runtime-store";
 import { ATELIER_STATE_KEYS, readAtelierState, writeAtelierState } from "@/lib/data/supabase-state";
 import type { StoredOrder } from "@/lib/types";
@@ -33,14 +34,11 @@ function writeDisk() {
 
 async function hydrate() {
   const remote = await readAtelierState<{ orders?: StoredOrder[] }>(ATELIER_STATE_KEYS.orders);
-  if (Array.isArray(remote?.orders) && remote.orders.length > 0) {
-    runtimeStore.orders = remote.orders;
-    return;
-  }
-  const disk = loadPersistedOrders();
-  if (runtimeStore.orders.length === 0 && disk.length > 0) {
-    runtimeStore.orders = disk;
-  }
+  runtimeStore.orders = mergeOrderLists([
+    runtimeStore.orders,
+    Array.isArray(remote?.orders) ? remote.orders : [],
+    loadPersistedOrders(),
+  ]);
 }
 
 export async function ensureOrdersHydrated(options?: { force?: boolean }) {
@@ -56,8 +54,17 @@ export function saveOrdersToDisk() {
   pendingSave = writeAtelierState(ATELIER_STATE_KEYS.orders, { orders: runtimeStore.orders });
 }
 
-export async function flushOrdersSave() {
+async function mergeRemoteThenWrite() {
+  const remote = await readAtelierState<{ orders?: StoredOrder[] }>(ATELIER_STATE_KEYS.orders);
+  runtimeStore.orders = mergeOrderLists([
+    runtimeStore.orders,
+    Array.isArray(remote?.orders) ? remote.orders : [],
+  ]);
   writeDisk();
   pendingSave = writeAtelierState(ATELIER_STATE_KEYS.orders, { orders: runtimeStore.orders });
   return pendingSave;
+}
+
+export async function flushOrdersSave() {
+  return mergeRemoteThenWrite();
 }

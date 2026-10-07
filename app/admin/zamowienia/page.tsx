@@ -31,6 +31,7 @@ export default async function AdminOrdersPage({
   await ensureOrdersHydrated({ force: true });
   const q = query.q?.trim() ?? "";
   const period = monthWindow();
+  const recovered = runtimeStore.orders.filter((order) => order.payload?.recoveredFromP24 === 1);
   const orders = filterOrders(
     [...runtimeStore.orders]
       .filter((order) => !isAbandonedCheckout(order))
@@ -65,6 +66,12 @@ export default async function AdminOrdersPage({
       ) : null}
       {query.raport === "0" ? (
         <AdminAlert variant="error">Raport nie wyszedł. {query.powod ?? "Sprawdź SMTP_PASS."}</AdminAlert>
+      ) : null}
+      {recovered.length > 0 ? (
+        <AdminAlert>
+          {recovered.map((order) => order.orderNumber).join(", ")}: klient zapłacił w Przelewy24, ale sklep zgubił
+          dane dostawy przy zapisie. Uzupełnij imię, e-mail i wysyłkę z panelu P24.
+        </AdminAlert>
       ) : null}
 
       <div className="mb-4 flex flex-col gap-3 rounded-xl border border-czarny/8 bg-bialy p-4 sm:flex-row sm:items-end sm:justify-between">
