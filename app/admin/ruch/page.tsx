@@ -129,7 +129,7 @@ export default async function TrafficPage({
         </AdminPanel>
       </div>
 
-      <AdminPanel title="Ostatnie 14 dni" description="Odsłony dzień po dniu.">
+      <AdminPanel title="Ostatnie 14 dni" description="Liczba nad słupkiem to odsłony tego dnia.">
         <AdminDayBars days={chart} />
       </AdminPanel>
     </div>

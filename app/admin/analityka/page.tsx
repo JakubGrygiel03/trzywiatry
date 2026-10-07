@@ -115,12 +115,13 @@ export default async function AnalyticsPage() {
           )}
         </AdminPanel>
 
-        <AdminPanel title="Ostatnie 14 dni" description="Słupki z opłaconych zamówień (dzień po dniu).">
+        <AdminPanel title="Ostatnie 14 dni" description="Kwota nad słupkiem to opłacone zamówienia z tego dnia.">
           <AdminDayBars
             days={snap.daily.map((day) => ({
               key: day.date,
               label: day.label,
               value: day.totalInCents,
+              caption: day.totalInCents > 0 ? formatPLN(day.totalInCents) : "0",
               title: `${day.label}: ${formatPLN(day.totalInCents)} (${day.orderCount})`,
             }))}
           />
