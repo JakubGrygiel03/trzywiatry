@@ -1,7 +1,8 @@
 "use client";
 
 import { Bell } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 
 function urlBase64ToUint8Array(base64: string) {
   const padding = "=".repeat((4 - (base64.length % 4)) % 4);
@@ -12,24 +13,47 @@ function urlBase64ToUint8Array(base64: string) {
 }
 
 export function AdminPushToggle({ vapidPublicKey }: { vapidPublicKey: string }) {
-  const [message, setMessage] = useState("");
+  const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!vapidPublicKey || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+    let cancelled = false;
+    void navigator.serviceWorker.ready
+      .then((ready) => ready.pushManager.getSubscription())
+      .then((subscription) => {
+        if (!cancelled) setEnabled(Boolean(subscription));
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [vapidPublicKey]);
+
+  useEffect(() => {
+    if (!error) return;
+    const timer = window.setTimeout(() => setError(""), 4000);
+    return () => window.clearTimeout(timer);
+  }, [error]);
 
   async function enable() {
-    setMessage("");
+    if (enabled || busy) return;
+    setError("");
     setBusy(true);
     try {
       if (!vapidPublicKey) {
-        setMessage("Brak kluczy VAPID na serwerze.");
+        setError("Brak kluczy na serwerze.");
         return;
       }
       if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
-        setMessage("Na iPhonie dodaj stronę do ekranu początkowego i włącz powiadomienia z tej ikony.");
+        setError("Dodaj stronę do ekranu początkowego.");
         return;
       }
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
-        setMessage("Powiadomienia są wyłączone w ustawieniach przeglądarki.");
+        setError("Zgoda jest wyłączona w przeglądarce.");
         return;
       }
       const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
@@ -45,31 +69,46 @@ export function AdminPushToggle({ vapidPublicKey }: { vapidPublicKey: string }) 
         credentials: "same-origin",
         body: JSON.stringify(subscription.toJSON()),
       });
-      const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-      setMessage(
-        response.ok
-          ? "Powiadomienia są włączone na tym telefonie."
-          : payload?.error || "Nie udało się włączyć powiadomień.",
-      );
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+        setError(payload?.error || "Nie udało się włączyć.");
+        return;
+      }
+      setEnabled(true);
     } catch {
-      setMessage("Nie udało się włączyć powiadomień. Odśwież panel i spróbuj jeszcze raz.");
+      setError("Odśwież panel i spróbuj jeszcze raz.");
     } finally {
       setBusy(false);
     }
   }
 
+  const label = enabled ? "Powiadomienia włączone na tym telefonie" : "Włącz powiadomienia na tym telefonie";
+
   return (
-    <div className="flex flex-col items-end gap-1">
+    <div className="relative">
       <button
         type="button"
         onClick={() => void enable()}
-        disabled={busy}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-czarny/10 bg-bialy px-3 py-1.5 text-xs font-medium text-czarny/75 transition hover:border-czerwony/30 hover:text-czerwony disabled:opacity-50"
+        disabled={busy || enabled}
+        title={label}
+        aria-label={label}
+        aria-pressed={enabled}
+        className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-czarny/10 bg-bialy text-czarny/75 transition hover:border-czerwony/30 hover:text-czerwony disabled:opacity-80"
       >
-        <Bell className="h-3.5 w-3.5" />
-        {busy ? "Włączam…" : "Powiadomienia"}
+        <Bell className="h-4 w-4" />
+        <span
+          className={cn(
+            "absolute right-1.5 top-1.5 h-2 w-2 rounded-full ring-2 ring-bialy",
+            enabled ? "bg-emerald-600" : "bg-czerwony",
+          )}
+          aria-hidden
+        />
       </button>
-      {message ? <p className="max-w-[14rem] text-right text-[11px] leading-snug text-czarny/50">{message}</p> : null}
+      {error ? (
+        <p className="absolute right-0 top-full z-40 mt-1 w-max max-w-[12rem] rounded-md bg-czarny px-2 py-1 text-[11px] leading-snug text-bialy">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }
