@@ -1,3 +1,4 @@
+import { ClayCompare } from "@/components/home/clay-compare";
 import { FeaturedDrops } from "@/components/home/featured-drops";
 import { GlazeLines } from "@/components/home/glaze-lines";
 import { Hero } from "@/components/home/hero";
@@ -50,6 +51,8 @@ export function HomeSectionStack({
             return <FeaturedDrops key={section.id} payload={section.payload} />;
           case "glaze":
             return <GlazeLines key={section.id} payload={section.payload} />;
+          case "compare":
+            return <ClayCompare key={section.id} payload={section.payload} />;
           case "workshop":
             return nextWorkshop ? (
               <WorkshopTeaser key={section.id} workshop={nextWorkshop} payload={section.payload} />

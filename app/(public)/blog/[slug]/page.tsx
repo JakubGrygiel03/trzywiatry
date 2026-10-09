@@ -117,7 +117,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           <SurfaceTile>
             <SurfaceTileHeader eyebrow="Nawigacja" title="Szukaj" />
             <SurfaceTileBody>
-              <form action="/blog" className="flex gap-2">
+              <form action="/blog" method="get" className="flex gap-2">
                 <input
                   name="q"
                   type="search"

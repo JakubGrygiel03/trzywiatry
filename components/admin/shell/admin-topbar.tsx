@@ -2,15 +2,22 @@
 
 import Link from "next/link";
 import { ExternalLink, Menu, Search } from "lucide-react";
+import { AdminPushToggle } from "@/components/admin/admin-push-toggle";
 import type { AdminBadges } from "@/components/admin/shell/admin-nav-config";
 
 type AdminTopbarProps = {
   badges: AdminBadges;
   maintenanceMode?: boolean;
+  vapidPublicKey?: string;
   onMenuOpen: () => void;
 };
 
-export function AdminTopbar({ badges, maintenanceMode = false, onMenuOpen }: AdminTopbarProps) {
+export function AdminTopbar({
+  badges,
+  maintenanceMode = false,
+  vapidPublicKey = "",
+  onMenuOpen,
+}: AdminTopbarProps) {
   const alerts = badges.lowStock + badges.orders;
 
   return (
@@ -30,6 +37,7 @@ export function AdminTopbar({ badges, maintenanceMode = false, onMenuOpen }: Adm
       </div>
 
       <div className="ml-auto flex items-center gap-2">
+        <AdminPushToggle vapidPublicKey={vapidPublicKey} />
         {maintenanceMode ? (
           <span className="hidden rounded-md bg-czerwony/12 px-2.5 py-1 text-[11px] font-medium text-czerwony sm:inline">
             Sklep zamknięty

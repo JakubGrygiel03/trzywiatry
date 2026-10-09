@@ -58,6 +58,12 @@ export type Product = {
   variants: ProductVariant[];
 };
 
+export type PushSubscriptionRow = {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+};
+
 export type HeroSlot = {
   productId: string;
   image: string;
@@ -110,6 +116,8 @@ export type StudioSettings = {
   studioInstagram?: string;
   studioFacebook?: string;
   studioOwner?: string;
+  /** One-time newsletter / campaign percent of goods (5–30). */
+  newsletterDiscountPercent: number;
 };
 
 export type Workshop = {
@@ -136,6 +144,14 @@ export type BlogBlock =
   | { type: "formula"; text: string }
   | ({ type: "image" } & BlogBlockImage)
   | { type: "image-row"; images: [BlogBlockImage, BlogBlockImage] }
+  | {
+      type: "compare";
+      title: string;
+      before: BlogBlockImage;
+      after: BlogBlockImage;
+      beforeLabel?: string;
+      afterLabel?: string;
+    }
   | { type: "link"; href: string; label: string; prefix?: string };
 
 export type BlogPost = {
@@ -203,7 +219,7 @@ export type NewsletterSubscriber = {
   consentAt?: string;
 };
 
-/** One-time −15% code minted on newsletter signup (format TW-XXXXXX). */
+/** One-time newsletter code minted on signup (format TW-XXXXXX). */
 export type NewsletterCoupon = {
   id: string;
   code: string;

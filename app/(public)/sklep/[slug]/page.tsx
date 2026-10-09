@@ -11,7 +11,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { Badge, Container } from "@/components/ui/badge";
 import { DOMAIN_LABELS } from "@/lib/constants";
 import { getCollections, getProductBySlug, isAliasedProductSlug, resolveProductSlug, variantStockLabel } from "@/lib/data/queries";
-import { getProductUpsells, getUpsellCopy } from "@/lib/data/recommendations";
+import { getCuratedUpsells, getProductUpsells, getUpsellCopy } from "@/lib/data/recommendations";
 import { getProductPhoto } from "@/lib/media";
 import { splitProductCopy } from "@/lib/product-copy";
 import { breadcrumbJsonLd, noIndexRobots, pageMetadata, productJsonLd } from "@/lib/seo";
@@ -45,7 +45,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const stock = product.variants.reduce((sum, variant) => sum + variant.stockQuantity, 0);
   const status = variantStockLabel(stock, product.lowStockThreshold);
   const collection = getCollections().find((item) => item.id === product.collectionId);
-  const upsells = getProductUpsells(product, 4);
+  const curated = getCuratedUpsells(product, 2);
+  const autoUpsells = getProductUpsells(product, 4, { excludeIds: product.relatedIds });
   const upsellCopy = getUpsellCopy(product);
   const { short, long } = splitProductCopy(product);
 
@@ -108,15 +109,15 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </div>
         </PdpVariantProvider>
 
-        {upsells.length > 0 ? (
-          <>
-            <UpsellRail
-              suggestions={upsells.slice(0, 2)}
-              title="Często dobierane razem"
-              subtitle={upsellCopy.rail}
-            />
-            <CrossSell suggestions={upsells} title={upsellCopy.title} subtitle={upsellCopy.subtitle} />
-          </>
+        {curated.length > 0 ? (
+          <UpsellRail
+            suggestions={curated}
+            title="Często dobierane razem"
+            subtitle="Pary, które sam ustawiłeś przy tym naczyniu."
+          />
+        ) : null}
+        {autoUpsells.length > 0 ? (
+          <CrossSell suggestions={autoUpsells} title={upsellCopy.title} subtitle={upsellCopy.subtitle} />
         ) : null}
         <RecentlyViewed excludeId={product.id} />
       </Container>

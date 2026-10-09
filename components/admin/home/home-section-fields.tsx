@@ -2,6 +2,7 @@
 
 import { CtaFields } from "@/components/admin/home/home-field-bits";
 import { HomeBannerFields } from "@/components/admin/home/home-banner-fields";
+import { HomeCompareFields } from "@/components/admin/home/home-compare-fields";
 import { HomeGlazeFields } from "@/components/admin/home/home-glaze-fields";
 import { HomeHeroFields } from "@/components/admin/home/home-hero-fields";
 import { HomePillarsFields } from "@/components/admin/home/home-pillars-fields";
@@ -25,6 +26,7 @@ export function HomeSectionFields({
   if (section.type === "pillars") return <HomePillarsFields section={section} onChange={onChange} />;
   if (section.type === "featured") return <FeaturedFields section={section} onChange={onChange} />;
   if (section.type === "glaze") return <HomeGlazeFields section={section} onChange={onChange} />;
+  if (section.type === "compare") return <HomeCompareFields section={section} onChange={onChange} />;
   if (section.type === "workshop") return <WorkshopFields section={section} onChange={onChange} />;
   return <NewsletterFields section={section} onChange={onChange} />;
 }

@@ -39,6 +39,14 @@ export const blogBlockSchema = z.discriminatedUnion("type", [
     type: z.literal("image-row"),
     images: z.tuple([blogImageSchema, blogImageSchema]),
   }),
+  z.object({
+    type: z.literal("compare"),
+    title: z.string().min(1, "Podaj tytuł porównania"),
+    before: blogImageSchema,
+    after: blogImageSchema,
+    beforeLabel: z.string().optional(),
+    afterLabel: z.string().optional(),
+  }),
 ]);
 
 export const blogPostSchema = z.object({

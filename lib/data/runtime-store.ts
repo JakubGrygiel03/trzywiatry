@@ -4,6 +4,7 @@ import { collections as seedCollections } from "@/lib/data/collections";
 import { blogPosts as seedBlogPosts } from "@/lib/data/posts";
 import { products as seedProducts } from "@/lib/data/products";
 import { defaultStudioSettings } from "@/lib/data/settings";
+import { clampNewsletterDiscountPercent } from "@/lib/discount";
 import { workshops as seedWorkshops } from "@/lib/data/workshops";
 import { defaultProductCategories, type ProductCategoryDef } from "@/lib/product-categories";
 import type {
@@ -14,6 +15,7 @@ import type {
   NewsletterCoupon,
   NewsletterSubscriber,
   OrderStatus,
+  PushSubscriptionRow,
   Product,
   ShopCoupon,
   SlugRedirect,
@@ -44,7 +46,7 @@ type RuntimeStore = {
   orders: StoredOrder[];
   bookings: Inquiry[];
   newsletter: NewsletterSubscriber[];
-  /** Unique one-time −15% codes issued on newsletter signup. */
+  /** Unique one-time newsletter codes issued on signup. */
   newsletterCoupons: NewsletterCoupon[];
   b2b: Inquiry[];
   contacts: Inquiry[];
@@ -67,6 +69,7 @@ type RuntimeStore = {
   couponRedemptions?: CouponRedemption[];
   slugRedirects?: SlugRedirect[];
   customerNotes?: CustomerNote[];
+  pushSubscriptions?: PushSubscriptionRow[];
 };
 
 const globalStore = globalThis as typeof globalThis & { __twStore?: RuntimeStore };
@@ -92,6 +95,7 @@ function createStore(): RuntimeStore {
     couponRedemptions: [],
     slugRedirects: [],
     customerNotes: [],
+    pushSubscriptions: [],
   };
 }
 
@@ -300,7 +304,11 @@ export function nextOrderNumber() {
 }
 
 export function getRuntimeSettings(): StudioSettings {
-  return { ...defaultStudioSettings, ...(runtimeStore.settings ?? {}) };
+  const merged = { ...defaultStudioSettings, ...(runtimeStore.settings ?? {}) };
+  return {
+    ...merged,
+    newsletterDiscountPercent: clampNewsletterDiscountPercent(merged.newsletterDiscountPercent),
+  };
 }
 
 /** Keys patched in this isolate since the last atelier snapshot write. */
@@ -740,4 +748,25 @@ export function setOrderP24SessionInStore(id: string, p24SessionId: string): Sto
   };
   runtimeStore.orders[index] = next;
   return next;
+}
+
+function pushRows() {
+  if (!Array.isArray(runtimeStore.pushSubscriptions)) runtimeStore.pushSubscriptions = [];
+  return runtimeStore.pushSubscriptions;
+}
+
+export function listPushSubscriptions() {
+  return [...pushRows()];
+}
+
+export function upsertPushSubscription(row: PushSubscriptionRow) {
+  const rows = pushRows().filter((item) => item.endpoint !== row.endpoint);
+  rows.push(row);
+  runtimeStore.pushSubscriptions = rows;
+  persist();
+}
+
+export function removePushSubscription(endpoint: string) {
+  runtimeStore.pushSubscriptions = pushRows().filter((item) => item.endpoint !== endpoint);
+  persist();
 }

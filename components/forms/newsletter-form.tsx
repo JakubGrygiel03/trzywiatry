@@ -11,10 +11,12 @@ const initial = { ok: false, message: "" };
 
 export function NewsletterForm({
   tone = "light",
-  buttonLabel = "Odbierz −15%",
+  buttonLabel = "Odbierz rabat",
+  discountLabel = "−10%",
 }: {
   tone?: "light" | "dark";
   buttonLabel?: string;
+  discountLabel?: string;
 }) {
   const [state, action, pending] = useActionState(subscribeNewsletter, initial);
   const [consent, setConsent] = useState(false);
@@ -74,8 +76,8 @@ export function NewsletterForm({
           className="mt-0.5 accent-czerwony"
         />
         <span>
-          Chcę dostawać newsletter Trzy Wiatry (nowości i promocje) na podany adres i jednorazowy kod −15%. Zgodę mogę
-          wycofać w każdej chwili.
+          Chcę dostawać newsletter Trzy Wiatry (nowości i promocje) na podany adres i jednorazowy kod {discountLabel}.
+          Zgodę mogę wycofać w każdej chwili.
         </span>
       </label>
       {consentError || !consent ? (

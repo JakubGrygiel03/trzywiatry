@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { previewDiscountCode } from "@/app/actions/discount";
 import { CheckoutField } from "@/components/checkout/checkout-field";
+import { useSiteSettings } from "@/components/cms/site-settings-provider";
 import { Button } from "@/components/ui/button";
-import { discountAmountFromGoods } from "@/lib/discount";
+import { discountAmountFromGoods, formatNewsletterDiscount } from "@/lib/discount";
 import { formatPLN } from "@/lib/format";
 
 export type AppliedDiscount = {
@@ -23,17 +24,18 @@ export function CheckoutDiscount({
   applied: AppliedDiscount | null;
   onApplied: (value: AppliedDiscount | null) => void;
 }) {
+  const { newsletterDiscountPercent } = useSiteSettings();
   const [draft, setDraft] = useState(applied?.code ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!applied) return;
-    const next = discountAmountFromGoods(goodsCents);
+    const next = discountAmountFromGoods(goodsCents, newsletterDiscountPercent);
     if (next !== applied.amountCents) {
       onApplied({ code: applied.code, amountCents: next });
     }
-  }, [applied, goodsCents, onApplied]);
+  }, [applied, goodsCents, newsletterDiscountPercent, onApplied]);
 
   async function apply() {
     setBusy(true);
@@ -93,7 +95,8 @@ export function CheckoutDiscount({
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-krem px-4 py-3">
           <p className="text-sm leading-relaxed text-czarny/80">
             Kod <span className="font-heading tracking-[0.08em] text-czerwony">{applied.code}</span> działa.
-            −15% ({formatPLN(applied.amountCents)}) zejdzie z produktów.
+            {formatNewsletterDiscount(newsletterDiscountPercent)} ({formatPLN(applied.amountCents)}) zejdzie z
+            produktów.
           </p>
           <button
             type="button"

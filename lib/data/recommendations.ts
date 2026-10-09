@@ -113,10 +113,34 @@ function scorePair(seed: Product, candidate: Product): number {
   return score;
 }
 
-/** Related products for a PDP — curated IDs win, then complements & collection. */
-export function getProductUpsells(product: Product, limit = 4): UpsellSuggestion[] {
+/** Admin-picked pairs for „Często dobierane razem” — never mixed with auto suggestions. */
+export function getCuratedUpsells(product: Product, limit = 2): UpsellSuggestion[] {
+  const ids = product.relatedIds ?? [];
+  if (ids.length === 0) return [];
+  return ids
+    .map((id) => byId(id))
+    .filter((candidate): candidate is Product => {
+      if (!candidate || !candidate.isPublished) return false;
+      return hasStock(candidate);
+    })
+    .slice(0, limit)
+    .map((candidate) => ({
+      product: candidate,
+      score: 100,
+      reason: "Dobierz do pary",
+    }));
+}
+
+/** Algorithmic complements for „Dobierz zestaw…” — skips admin-related IDs so the rails don’t duplicate. */
+export function getProductUpsells(
+  product: Product,
+  limit = 4,
+  options?: { excludeIds?: string[] },
+): UpsellSuggestion[] {
+  const exclude = new Set(options?.excludeIds ?? product.relatedIds ?? []);
   return published()
     .map((candidate) => {
+      if (exclude.has(candidate.id)) return null;
       const score = scorePair(product, candidate);
       return score > 0
         ? { product: candidate, score, reason: reasonFor(product, candidate) }

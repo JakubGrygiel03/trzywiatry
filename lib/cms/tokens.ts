@@ -20,6 +20,7 @@ export const CMS_TOKEN_LABELS: Record<string, string> = {
   confirmButton: "przycisk potwierdzenia konta",
   confirmUrl: "link potwierdzenia konta",
   freeShipping: "próg darmowej dostawy",
+  discount: "rabat newslettera (−10%)",
 };
 
 export function tokenChip(key: string): CmsToken {
@@ -62,7 +63,7 @@ export function scrubPublicPromoCopy(text: string, promoCode?: string) {
     const escaped = escapeRegExp(code);
     // Drop “· KOD WIOSNA” / “KOD: WIOSNA” segments entirely from banners.
     out = out.replace(new RegExp(`\\s*[·•|]\\s*[Kk]od\\s*:?\\s*${escaped}\\b`, "gi"), "");
-    out = out.replace(new RegExp(`\\b[Kk]od\\s*:?\\s*${escaped}\\b`, "gi"), "Newsletter: −15%");
+    out = out.replace(new RegExp(`\\b[Kk]od\\s*:?\\s*${escaped}\\b`, "gi"), "Newsletter: rabat");
     out = out.replace(new RegExp(`\\b${escaped}\\b`, "gi"), "rabatowy");
   }
   return out.replace(/\s*[·•]\s*[·•]/g, " · ").replace(/\s{2,}/g, " ").trim();

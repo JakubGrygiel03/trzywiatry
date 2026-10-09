@@ -11,6 +11,7 @@ import {
   getRuntimeWorkshops,
   runtimeStore,
 } from "@/lib/data/runtime-store";
+import { filterPostsByQuery } from "@/lib/blog-search";
 import { getProductPhoto, isUsableProductPhoto } from "@/lib/media";
 import { productInLane, type ShopLaneId } from "@/lib/shop-lanes";
 import type { HeroSlot, Product, ProductDomain } from "@/lib/types";
@@ -309,6 +310,10 @@ export function getPublishedPosts() {
     .filter((post) => post.status === "published")
     .slice()
     .sort((a, b) => +new Date(b.publishedAt) - +new Date(a.publishedAt));
+}
+
+export function searchPublishedPosts(query: string) {
+  return filterPostsByQuery(getPublishedPosts(), query);
 }
 
 export function getPostBySlug(slug: string) {

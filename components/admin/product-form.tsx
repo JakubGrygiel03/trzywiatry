@@ -175,8 +175,8 @@ export function ProductForm({
 
           {catalog.length > 0 ? (
             <AdminFormSection
-              title="Produkty pokrewne"
-              description="Pokazują się jako „często dobierane” — np. forma ucha przy formie czarki."
+              title="Często dobierane razem"
+              description="Tylko ta belka na karcie produktu. Podpowiedzi „Dobierz zestaw…” liczą się osobno i nie powtórzą tych samych naczyń."
             >
               <RelatedProductsField
                 catalog={catalog}

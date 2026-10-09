@@ -7,6 +7,7 @@ import {
   ChevronDown,
   ChevronUp,
   Columns2,
+  FlipHorizontal,
   FunctionSquare,
   GripVertical,
   Heading2,
@@ -34,6 +35,7 @@ const BLOCK_LABELS: Record<BlogBlockInput["type"], string> = {
   formula: "Wzór / kod",
   link: "Link",
   "image-row": "Dwa zdjęcia",
+  compare: "Przed / po",
 };
 
 function newBlock(type: BlogBlockInput["type"]): BlockItem {
@@ -55,6 +57,18 @@ function newBlock(type: BlogBlockInput["type"]): BlockItem {
       return {
         id,
         block: { type: "image-row", images: [{ src: "", alt: "" }, { src: "", alt: "" }] },
+      };
+    case "compare":
+      return {
+        id,
+        block: {
+          type: "compare",
+          title: "Skurcz gliny",
+          before: { src: "", alt: "Przed wypałem" },
+          after: { src: "", alt: "Po wypale" },
+          beforeLabel: "Przed wypałem",
+          afterLabel: "Po wypale",
+        },
       };
   }
 }
@@ -127,6 +141,26 @@ export function BlogBlockEditor({
             ...item,
             block: { ...item.block, src: url, alt: item.block.alt || file.name.replace(/\.[^.]+$/, "") },
           };
+        });
+        onChange?.(next.map((item) => item.block));
+        return next;
+      });
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Nie udało się wgrać zdjęcia.");
+    } finally {
+      setUploadingId(null);
+    }
+  }
+
+  async function uploadCompareImage(id: string, side: "before" | "after", file: File) {
+    setUploadingId(`${id}-${side}`);
+    try {
+      const url = await uploadImage(file);
+      setItems((prev) => {
+        const next = prev.map((item) => {
+          if (item.id !== id || item.block.type !== "compare") return item;
+          const photo = { ...item.block[side], src: url, alt: item.block[side].alt || file.name.replace(/\.[^.]+$/, "") };
+          return { ...item, block: { ...item.block, [side]: photo } };
         });
         onChange?.(next.map((item) => item.block));
         return next;
@@ -313,6 +347,49 @@ export function BlogBlockEditor({
             />
           ) : null}
 
+          {item.block.type === "compare"
+            ? (() => {
+                const block = item.block;
+                return (
+            <div className="space-y-3">
+              <AdminField label="Tytuł porównania">
+                <AdminInput
+                  value={block.title}
+                  onChange={(e) => updateBlock(item.id, { ...block, title: e.target.value })}
+                />
+              </AdminField>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {(["before", "after"] as const).map((side) => (
+                  <div key={side} className="space-y-2">
+                    <AdminInput
+                      value={side === "before" ? block.beforeLabel ?? "" : block.afterLabel ?? ""}
+                      onChange={(e) =>
+                        updateBlock(item.id, {
+                          ...block,
+                          ...(side === "before" ? { beforeLabel: e.target.value } : { afterLabel: e.target.value }),
+                        })
+                      }
+                      placeholder={side === "before" ? "Przed wypałem" : "Po wypale"}
+                    />
+                    <ImageRowSlot
+                      image={block[side]}
+                      uploading={uploadingId === `${item.id}-${side}`}
+                      onUpload={(file) => void uploadCompareImage(item.id, side, file)}
+                      onAltChange={(alt) =>
+                        updateBlock(item.id, {
+                          ...block,
+                          [side]: { ...block[side], alt },
+                        })
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+                );
+              })()
+            : null}
+
           {item.block.type === "image-row" ? (
             <div className="grid gap-4 sm:grid-cols-2">
               {([0, 1] as const).map((slot) => {
@@ -351,6 +428,7 @@ export function BlogBlockEditor({
         <AddBlockButton icon={Heading2} label="Nagłówek" onClick={() => commit([...items, newBlock("heading")])} />
         <AddBlockButton icon={ImagePlus} label="Zdjęcie" onClick={() => commit([...items, newBlock("image")])} />
         <AddBlockButton icon={Columns2} label="Dwa zdjęcia" onClick={() => commit([...items, newBlock("image-row")])} />
+        <AddBlockButton icon={FlipHorizontal} label="Przed / po" onClick={() => commit([...items, newBlock("compare")])} />
         <AddBlockButton icon={List} label="Lista" onClick={() => commit([...items, newBlock("list")])} />
         <AddBlockButton icon={FunctionSquare} label="Wzór" onClick={() => commit([...items, newBlock("formula")])} />
         <AddBlockButton icon={Link2} label="Link" onClick={() => commit([...items, newBlock("link")])} />

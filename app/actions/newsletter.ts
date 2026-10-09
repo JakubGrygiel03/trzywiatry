@@ -13,6 +13,8 @@ import {
 import { rememberNewsletterEmail } from "@/lib/newsletter-subscribers";
 import { renderEmailTemplate, emailHighlightTile } from "@/lib/email/render";
 import { sendEmail } from "@/lib/resend";
+import { getRuntimeSettings } from "@/lib/data/runtime-store";
+import { formatNewsletterDiscount } from "@/lib/discount";
 
 export async function subscribeNewsletter(_: { ok: boolean; message: string }, formData: FormData) {
   if (!(await rateLimitAction("newsletter", RATE.form.limit, RATE.form.windowMs))) {
@@ -57,6 +59,7 @@ export async function subscribeNewsletter(_: { ok: boolean; message: string }, f
 
   const welcome = renderEmailTemplate("newsletter_welcome", {
     code: coupon.code,
+    discount: formatNewsletterDiscount(getRuntimeSettings().newsletterDiscountPercent),
     highlightBlock: emailHighlightTile("Twój jednorazowy kod", coupon.code),
   });
   const mailed = await sendEmail({

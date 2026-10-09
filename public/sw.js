@@ -1,4 +1,4 @@
-const CACHE_NAME = "trzywiatry-shell-v9";
+const CACHE_NAME = "trzywiatry-shell-v10";
 const APP_SHELL = ["/", "/sklep", "/manifest.webmanifest"];
 
 function shouldBypass(request) {
@@ -58,5 +58,43 @@ self.addEventListener("fetch", (event) => {
           return response;
         }),
     ),
+  );
+});
+
+self.addEventListener("push", (event) => {
+  let payload = {
+    title: "Trzy Wiatry",
+    body: "Nowe zdarzenie w pracowni.",
+    url: "/admin",
+  };
+  try {
+    const data = event.data ? event.data.json() : null;
+    if (data && typeof data === "object") payload = { ...payload, ...data };
+  } catch {
+    payload.body = event.data ? event.data.text() : payload.body;
+  }
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
+      icon: "/pwa/icon-192.png",
+      badge: "/pwa/icon-192.png",
+      tag: payload.id || payload.url || "atelier",
+      renotify: true,
+      data: { url: payload.url || "/admin" },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = event.notification.data?.url || "/admin";
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if ("focus" in client && client.url.includes("/admin")) return client.focus();
+      }
+      if (self.clients.openWindow) return self.clients.openWindow(target);
+      return undefined;
+    }),
   );
 });

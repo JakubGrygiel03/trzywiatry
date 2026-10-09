@@ -3,7 +3,7 @@ import "server-only";
 import { isMintedNewsletterCode, normalizeCouponCode } from "@/lib/coupon-code";
 import { discountAmountFromGoods } from "@/lib/discount";
 import { isSignedNewsletterCode, mintSignedNewsletterCode } from "@/lib/newsletter-code-sign";
-import { runtimeStore } from "@/lib/data/runtime-store";
+import { getRuntimeSettings, runtimeStore } from "@/lib/data/runtime-store";
 import { rememberNewsletterEmail } from "@/lib/newsletter-subscribers";
 import { resolveShopCouponDiscount } from "@/lib/shop-coupons";
 import type { NewsletterCoupon } from "@/lib/types";
@@ -75,7 +75,7 @@ export function findCouponByCode(code: string) {
   return coupons().find((coupon) => coupon.code === key || coupon.code.replace(/-/g, "") === compact);
 }
 
-/** Keep the −15% code tied to the corrected address. */
+/** Keep the newsletter code tied to the corrected address. */
 export function rebindNewsletterCouponEmail(from: string, to: string) {
   const coupon = findCouponByEmail(from);
   if (!coupon) return;
@@ -253,7 +253,12 @@ export function resolveCheckoutDiscount(
     if (unique.reservedOrderId) {
       return { ok: false, message: "Ten kod rabatowy jest już używany przy innym zamówieniu." };
     }
-    return { ok: true, amountCents: discountAmountFromGoods(goodsCents), code: unique.code, unique: true };
+    return {
+      ok: true,
+      amountCents: discountAmountFromGoods(goodsCents, getRuntimeSettings().newsletterDiscountPercent),
+      code: unique.code,
+      unique: true,
+    };
   }
 
   const shop = resolveShopCouponDiscount(typed, goodsCents, customerEmail);
@@ -261,7 +266,12 @@ export function resolveCheckoutDiscount(
 
   const campaign = (campaignPromo ?? "").trim().toUpperCase();
   if (campaign && code === campaign) {
-    return { ok: true, amountCents: discountAmountFromGoods(goodsCents), code: campaign, unique: false };
+    return {
+      ok: true,
+      amountCents: discountAmountFromGoods(goodsCents, getRuntimeSettings().newsletterDiscountPercent),
+      code: campaign,
+      unique: false,
+    };
   }
 
   if (isMintedNewsletterCode(code) && !customerEmail?.trim()) {

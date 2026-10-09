@@ -1,12 +1,15 @@
 import { Mail } from "lucide-react";
 import { connection } from "next/server";
 import { NewsletterBroadcastForm } from "@/components/admin/newsletter-broadcast-form";
+import { NewsletterDiscountForm } from "@/components/admin/newsletter-discount-form";
 import { NewsletterExportButton } from "@/components/admin/newsletter-export-button";
 import { NewsletterSubscriberRow } from "@/components/admin/newsletter-subscriber-row";
 import { AdminAlert } from "@/components/admin/ui/admin-alert";
 import { AdminEmptyState } from "@/components/admin/ui/admin-empty-state";
 import { AdminPageHeader } from "@/components/admin/ui/admin-page-header";
 import { ensureAtelierHydrated } from "@/lib/data/atelier-persist";
+import { getSettings } from "@/lib/data/queries";
+import { formatNewsletterDiscount } from "@/lib/discount";
 import { listConsentingNewsletterSubscribers, listNewsletterSubscribers } from "@/lib/newsletter-subscribers";
 
 export const dynamic = "force-dynamic";
@@ -25,19 +28,20 @@ function formatStamp(iso: string) {
 export default async function AdminNewsletterPage({
   searchParams,
 }: {
-  searchParams: Promise<{ usunieto?: string; wyslano?: string; blad?: string }>;
+  searchParams: Promise<{ usunieto?: string; wyslano?: string; blad?: string; rabat?: string }>;
 }) {
   await connection();
   await ensureAtelierHydrated({ force: true });
   const subscribers = listNewsletterSubscribers();
   const consentingCount = listConsentingNewsletterSubscribers().length;
-  const { usunieto, wyslano, blad } = await searchParams;
+  const settings = getSettings();
+  const { usunieto, wyslano, blad, rabat } = await searchParams;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <AdminPageHeader
         title="Newsletter"
-        description="Edytujesz literówkę, odhaczasz zgodę albo piszesz list. Bez zgody adres nie dostaje wysyłek ani kodu −15%."
+        description={`Edytujesz literówkę, odhaczasz zgodę albo piszesz list. Kod z zapisu to teraz ${formatNewsletterDiscount(settings.newsletterDiscountPercent)}.`}
         actions={
           subscribers.length > 0 ? (
             <NewsletterExportButton
@@ -55,7 +59,14 @@ export default async function AdminNewsletterPage({
           Wysłano {wyslano} {wyslano === "1" ? "wiadomość" : "wiadomości"}.
         </AdminAlert>
       ) : null}
+      {rabat ? (
+        <AdminAlert variant="success">
+          Zapisano rabat {formatNewsletterDiscount(settings.newsletterDiscountPercent)}. Nowe kody i kasa biorą tę stawkę.
+        </AdminAlert>
+      ) : null}
       {blad ? <AdminAlert variant="error">{blad}</AdminAlert> : null}
+
+      <NewsletterDiscountForm percent={settings.newsletterDiscountPercent} />
 
       {subscribers.length > 0 ? (
         <NewsletterBroadcastForm

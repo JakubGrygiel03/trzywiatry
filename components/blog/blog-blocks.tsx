@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { BeforeAfterSlider } from "@/components/visual/before-after-slider";
 import type { BlogBlock } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -123,6 +124,19 @@ export function BlogBlocks({ blocks }: { blocks: BlogBlock[] }) {
                     ) : null}
                   </figure>
                 ))}
+              </div>
+            );
+          case "compare":
+            if (!block.before.src || !block.after.src) return null;
+            return (
+              <div key={index} className="py-1">
+                <BeforeAfterSlider
+                  before={block.before.src}
+                  after={block.after.src}
+                  title={block.title}
+                  beforeLabel={block.beforeLabel || "Przed"}
+                  afterLabel={block.afterLabel || "Po"}
+                />
               </div>
             );
           default:

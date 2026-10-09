@@ -21,7 +21,9 @@ export function RelatedProductsField({
   return (
     <div className="space-y-2">
       <input type="hidden" name="relatedIdsJson" value={JSON.stringify(ids)} />
-      <p className="text-xs text-czarny/50">np. forma ucha przy formie czarki. Max 6.</p>
+      <p className="text-xs text-czarny/50">
+        Pokazują się w „Często dobierane razem”. Automatyczne podpowiedzi pod spodem ich nie dublują. Max 6.
+      </p>
       <ul className="max-h-56 space-y-1 overflow-y-auto rounded-lg border border-czarny/10 bg-bialy p-2">
         {options.map((item) => (
           <li key={item.id}>

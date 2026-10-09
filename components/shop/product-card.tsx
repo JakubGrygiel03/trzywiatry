@@ -39,13 +39,13 @@ export function ProductCard({
   return (
     <article
       className={cn(
-        "group relative space-y-2 p-2.5",
+        "group relative flex h-full flex-col space-y-2 p-2.5",
         ground,
         frame.card,
       )}
     >
-      <ProductNavigateLink href={`/sklep/${product.slug}`} className="block space-y-2">
-        <div className={cn("relative aspect-square overflow-hidden bg-krem", frame.photo)}>
+      <ProductNavigateLink href={`/sklep/${product.slug}`} className="flex min-h-0 flex-1 flex-col space-y-2">
+        <div className={cn("relative aspect-square w-full shrink-0 overflow-hidden bg-krem", frame.photo)}>
           {photo ? (
             <Image
               src={photo}
@@ -72,16 +72,20 @@ export function ProductCard({
             </div>
           ) : null}
         </div>
-        <div className="space-y-1 px-0.5">
+        <div className="flex flex-1 flex-col space-y-1 px-0.5">
           <p className="text-xs tracking-wide text-szary">{categoryLabel}</p>
-          <h3 className="font-heading text-sm uppercase tracking-[0.08em] text-czarny">{product.name}</h3>
-          {colors.length > 1 ? (
-            <p className="text-xs text-szary">{colors.length} kolory</p>
-          ) : null}
-          <PriceBubble>{formatPLN(product.priceInCents)}</PriceBubble>
+          <h3 className="line-clamp-2 min-h-[2.5rem] font-heading text-sm uppercase tracking-[0.08em] text-czarny">
+            {product.name}
+          </h3>
+          <p className="min-h-4 text-xs text-szary">{colors.length > 1 ? `${colors.length} kolory` : "\u00a0"}</p>
+          <div className="mt-auto pt-1">
+            <PriceBubble>{formatPLN(product.priceInCents)}</PriceBubble>
+          </div>
         </div>
       </ProductNavigateLink>
-      {status !== "sold_out" ? <ProductCardCartButton product={product} /> : null}
+      <div className="mt-auto min-h-9">
+        {status !== "sold_out" ? <ProductCardCartButton product={product} /> : null}
+      </div>
     </article>
   );
 }

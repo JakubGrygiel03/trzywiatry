@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Container } from "@/components/ui/badge";
 import { SurfaceTile, SurfaceTileBody } from "@/components/ui/surface-tile";
-import { getPublishedPosts } from "@/lib/data/queries";
+import { searchPublishedPosts } from "@/lib/data/queries";
 import { pageMetadata } from "@/lib/seo";
 import type { Metadata } from "next";
 
@@ -20,8 +20,14 @@ function formatPostDate(iso: string) {
   }).format(new Date(iso));
 }
 
-export default function BlogPage() {
-  const posts = getPublishedPosts();
+export default async function BlogPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
+  const query = q?.trim() ?? "";
+  const posts = searchPublishedPosts(query);
 
   return (
     <div className="py-8 md:py-10">
@@ -37,9 +43,34 @@ export default function BlogPage() {
             <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-czarny/60">
               Notatki o nazwie, glinie i rzeczach, które powstają powoli.
             </p>
+            <form action="/blog" className="mt-5 flex max-w-md gap-2">
+              <input
+                name="q"
+                type="search"
+                defaultValue={query}
+                placeholder="Szukaj we wpisach…"
+                className="h-10 min-w-0 flex-1 rounded-full border border-czarny/12 bg-krem/30 px-4 text-sm outline-none focus:border-czerwony"
+              />
+              <button
+                type="submit"
+                className="h-10 shrink-0 rounded-full bg-czerwony px-4 font-heading text-[10px] uppercase tracking-[0.14em] text-bialy"
+              >
+                Szukaj
+              </button>
+            </form>
+            {query ? (
+              <p className="mt-3 text-sm text-czarny/50">
+                {posts.length === 0
+                  ? `Nic nie pasuje do „${query}”.`
+                  : `Znaleziono ${posts.length} ${posts.length === 1 ? "wpis" : "wpisów"} dla „${query}”.`}
+              </p>
+            ) : null}
           </SurfaceTileBody>
         </SurfaceTile>
 
+        {posts.length === 0 ? (
+          <p className="text-sm text-czarny/50">Spróbuj innego hasła albo wróć do pełnej listy.</p>
+        ) : (
         <div className="grid grid-cols-1 gap-4 md:gap-5 lg:grid-cols-2">
           {posts.map((post, index) => (
             <Link key={post.id} href={`/blog/${post.slug}`} className="group block min-w-0">
@@ -72,6 +103,7 @@ export default function BlogPage() {
             </Link>
           ))}
         </div>
+        )}
       </Container>
     </div>
   );

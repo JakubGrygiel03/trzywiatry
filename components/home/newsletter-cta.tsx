@@ -4,6 +4,7 @@ import { Container } from "@/components/ui/badge";
 import type { NewsletterPayload } from "@/lib/cms/home-layout";
 import { getSettings } from "@/lib/data/queries";
 import { interpolatePublicStudioCopy } from "@/lib/data/settings";
+import { formatNewsletterDiscount } from "@/lib/discount";
 
 export function NewsletterCta({ payload }: { payload?: NewsletterPayload }) {
   const settings = getSettings();
@@ -40,7 +41,7 @@ export function NewsletterCta({ payload }: { payload?: NewsletterPayload }) {
                 <div className="max-w-xl space-y-1.5">
                   <p className="font-heading text-[11px] uppercase tracking-[0.2em] text-bialy/70">{copy.eyebrow}</p>
                   <h2 className="font-heading text-xl uppercase leading-snug tracking-[0.06em] text-bialy md:text-2xl">
-                    {copy.title}
+                    {interpolatePublicStudioCopy(copy.title, settings)}
                   </h2>
                   <p className="text-sm leading-relaxed text-bialy md:text-base">
                     {interpolatePublicStudioCopy(copy.body, settings)}
@@ -50,7 +51,11 @@ export function NewsletterCta({ payload }: { payload?: NewsletterPayload }) {
                   <p className="mb-2 font-heading text-[11px] uppercase tracking-[0.16em] text-czerwony">
                     {copy.formLabel}
                   </p>
-                  <NewsletterForm tone="light" buttonLabel={copy.buttonLabel} />
+                  <NewsletterForm
+                    tone="light"
+                    buttonLabel={interpolatePublicStudioCopy(copy.buttonLabel, settings)}
+                    discountLabel={formatNewsletterDiscount(settings.newsletterDiscountPercent)}
+                  />
                 </div>
               </div>
             </div>

@@ -1,10 +1,11 @@
 import { interpolateComponentCopy } from "@/lib/cms/site-components";
 import { scrubPublicPromoCopy } from "@/lib/cms/tokens";
+import { applyDiscountCopy, DEFAULT_NEWSLETTER_DISCOUNT_PERCENT } from "@/lib/discount";
 import type { StudioSettings } from "@/lib/types";
 
 export const defaultStudioSettings: StudioSettings = {
   announcementType: "promo",
-  announcementText: "Darmowa dostawa od {freeShipping}  ·  Newsletter: −15%",
+  announcementText: "Darmowa dostawa od {freeShipping}  ·  Newsletter: {discount}",
   promoCode: "WIOSNA",
   /** Align with shop regulamin §5 — free shipping above 300 PLN in Poland. */
   freeShippingThresholdCents: 30000,
@@ -19,11 +20,12 @@ export const defaultStudioSettings: StudioSettings = {
   shopLanePracowniaEnabled: true,
   newsletterEnabled: true,
   newsletterEyebrow: "Newsletter",
-  newsletterTitle: "−15% na pierwsze naczynie",
+  newsletterTitle: "{discount} na pierwsze naczynie",
   newsletterBody:
     "Kod rabatowy przychodzi mailem. Zero spamu — nowe wypusty, kolekcje i przerwy twórcze.",
   newsletterFormLabel: "Podaj e-mail",
-  newsletterButtonLabel: "Odbierz −15%",
+  newsletterButtonLabel: "Odbierz {discount}",
+  newsletterDiscountPercent: DEFAULT_NEWSLETTER_DISCOUNT_PERCENT,
   launchNoticeEnabled: false,
   maintenanceMode: false,
   maintenancePreviewToken: "",
@@ -41,6 +43,7 @@ export function interpolateStudioCopy(text: string, settings: StudioSettings) {
   return interpolateComponentCopy(text, {
     code: settings.promoCode,
     freeShippingThresholdCents: settings.freeShippingThresholdCents,
+    discountPercent: settings.newsletterDiscountPercent,
   });
 }
 
@@ -48,6 +51,7 @@ export function interpolateStudioCopy(text: string, settings: StudioSettings) {
 export function interpolatePublicStudioCopy(text: string, settings: StudioSettings) {
   const withShipping = interpolateComponentCopy(text, {
     freeShippingThresholdCents: settings.freeShippingThresholdCents,
+    discountPercent: settings.newsletterDiscountPercent,
   });
-  return scrubPublicPromoCopy(withShipping, settings.promoCode);
+  return applyDiscountCopy(scrubPublicPromoCopy(withShipping, settings.promoCode), settings.newsletterDiscountPercent);
 }

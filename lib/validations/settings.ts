@@ -2,6 +2,12 @@ import { z } from "zod";
 import { revealsPromoOnStorefront } from "@/lib/cms/tokens";
 import { isoDateSchema, plainText, promoCodeSchema } from "@/lib/validations/safe-input";
 
+export const newsletterDiscountPercentSchema = z.coerce
+  .number()
+  .int("Rabat newslettera musi być liczbą całkowitą.")
+  .min(5, "Rabat newslettera: minimum 5%.")
+  .max(30, "Rabat newslettera: maksimum 30%.");
+
 export const newsletterCmsSchema = z.object({
   newsletterEnabled: z.boolean(),
   newsletterEyebrow: plainText("Etykieta newslettera", 40),
@@ -30,13 +36,14 @@ export const studioSettingsFormSchema = z
     shopLanePracowniaEnabled: z.boolean(),
     launchNoticeEnabled: z.boolean(),
     maintenanceMode: z.boolean(),
+    newsletterDiscountPercent: newsletterDiscountPercentSchema.optional(),
   })
   .superRefine((data, ctx) => {
     if (revealsPromoOnStorefront(data.announcementText, data.promoCode)) {
       ctx.addIssue({
         code: "custom",
         path: ["announcementText"],
-        message: "Nie pokazuj kodu na pasku — klient dostaje go mailem. Zostaw −15% bez nazwy hasła.",
+        message: "Nie pokazuj kodu na pasku — klient dostaje go mailem. Zostaw {discount} bez nazwy hasła.",
       });
     }
     if (data.vacationStart && data.vacationEnd && data.vacationEnd < data.vacationStart) {

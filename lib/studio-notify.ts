@@ -1,4 +1,5 @@
 import { ORDER_STATUS_LABELS } from "@/lib/constants";
+import { notifyAdminPush } from "@/lib/push";
 import { getRuntimeSettings } from "@/lib/data/runtime-store";
 import { wrapEmail } from "@/lib/email/render";
 import { formatPLN } from "@/lib/format";
@@ -21,7 +22,18 @@ export function studioNotifyInboxes() {
   return [...new Set(raw.split(",").map((item) => item.trim().toLowerCase()).filter(Boolean))];
 }
 
-export async function notifyStudio(input: { subject: string; html: string; replyTo?: string }) {
+export async function notifyStudio(input: {
+  subject: string;
+  html: string;
+  replyTo?: string;
+  pushUrl?: string;
+  pushBody?: string;
+}) {
+  void notifyAdminPush({
+    title: input.subject,
+    body: input.pushBody ?? input.subject,
+    url: input.pushUrl ?? "/admin",
+  });
   const inboxes = studioNotifyInboxes();
   if (inboxes.length === 0) {
     return { ok: false as const, demo: true as const, error: "missing-studio-inbox" };
@@ -100,6 +112,8 @@ export async function notifyStudioNewOrder(order: StoredOrder) {
   return notifyStudio({
     subject: `Nowe zamówienie ${order.orderNumber}${giftSubject} · ${formatPLN(order.totalAmountInCents)}`,
     replyTo: order.customerEmail,
+    pushUrl: `/admin/zamowienia/${order.id}`,
+    pushBody: `${order.customerName} · ${formatPLN(order.totalAmountInCents)}`,
     html: wrapEmail(`
       <h1 style="margin:0 0 6px;font-size:24px;line-height:1.2">Nowe zamówienie</h1>
       <p style="margin:0 0 18px;font-size:14px;color:#666">${escapeHtml(order.orderNumber)} · ${ORDER_STATUS_LABELS[order.status]}</p>
@@ -148,6 +162,8 @@ export async function notifyStudioOrderPaid(order: StoredOrder) {
   return notifyStudio({
     subject: `Opłacone ${order.orderNumber}${giftSubject} · ${formatPLN(order.totalAmountInCents)}`,
     replyTo: order.customerEmail,
+    pushUrl: `/admin/zamowienia/${order.id}`,
+    pushBody: `${order.customerName} · ${formatPLN(order.totalAmountInCents)}`,
     html: wrapEmail(`
       <h1 style="margin:0 0 6px;font-size:24px;line-height:1.2">Płatność weszła</h1>
       <p style="margin:0 0 18px;font-size:14px;color:#666">${escapeHtml(order.orderNumber)}</p>
@@ -176,6 +192,8 @@ export async function notifyStudioContact(input: {
   return notifyStudio({
     subject: `Kontakt · ${input.name}`,
     replyTo: input.email,
+    pushUrl: "/admin",
+    pushBody: input.message.slice(0, 120),
     html: wrapEmail(`
       <h1 style="margin:0 0 18px;font-size:24px;line-height:1.2">Wiadomość z formularza</h1>
       ${emailTable(
@@ -199,6 +217,8 @@ export async function notifyStudioB2B(input: B2BInput) {
   return notifyStudio({
     subject: `Zapytanie B2B · ${input.companyName}`,
     replyTo: input.email,
+    pushUrl: "/admin/b2b",
+    pushBody: `${input.contactPerson} · ${input.estimatedQuantity}`,
     html: wrapEmail(`
       <h1 style="margin:0 0 6px;font-size:24px;line-height:1.2">Zapytanie HoReCa / B2B</h1>
       <p style="margin:0 0 18px;font-size:14px;color:#666">Nowe zapytanie ofertowe ze strony sklepu</p>
@@ -230,6 +250,8 @@ export async function notifyStudioWorkshop(input: {
   return notifyStudio({
     subject: `Warsztat · ${input.workshopTitle} · ${input.seatsCount} os.`,
     replyTo: input.attendeeEmail,
+    pushUrl: "/admin/warsztaty",
+    pushBody: `${input.attendeeName} · ${input.seatsCount} os.`,
     html: wrapEmail(`
       <h1 style="margin:0 0 6px;font-size:24px;line-height:1.2">Rezerwacja warsztatu</h1>
       <p style="margin:0 0 18px;font-size:14px;color:#666">To jeszcze nie jest opłacony bilet — potwierdźcie płatność z klientem.</p>

@@ -144,6 +144,27 @@ export const homeSectionSchema = z.discriminatedUnion("type", [
     }),
   }),
   sectionBase.extend({
+    type: z.literal("compare"),
+    payload: z.object({
+      eyebrow: plainText("Etykieta porównania", 60),
+      title: plainText("Tytuł porównania", 80, 1),
+      description: plainText("Opis porównania", 320),
+      pairs: z
+        .array(
+          z.object({
+            id: z.string().min(1),
+            title: plainText("Tytuł pary", 80, 1),
+            before: optionalCmsImageSrcSchema,
+            after: optionalCmsImageSrcSchema,
+            beforeLabel: plainText("Etykieta przed", 40, 1),
+            afterLabel: plainText("Etykieta po", 40, 1),
+          }),
+        )
+        .min(1, "Dodaj przynajmniej jedną parę zdjęć.")
+        .max(4, "Maksimum 4 porównania na stronie głównej."),
+    }),
+  }),
+  sectionBase.extend({
     type: z.literal("workshop"),
     payload: z.object({
       eyebrow: plainText("Etykieta warsztatu", 60),

@@ -471,3 +471,49 @@ export async function updateProductBestseller(formData: FormData) {
 export async function createProductDraft(formData: FormData) {
   return createProduct(formData);
 }
+
+export async function bulkUpdateProducts(formData: FormData) {
+  await assertAdminSession();
+  await ensureAtelierHydrated({ force: true });
+  const ids = formData.getAll("ids").map((value) => String(value).trim()).filter(Boolean);
+  const category = String(formData.get("category") ?? "").trim();
+  const publishRaw = String(formData.get("publish") ?? "");
+  const back = new URLSearchParams();
+  const q = String(formData.get("q") ?? "").trim();
+  const kategoria = String(formData.get("kategoria") ?? "").trim();
+  if (q) back.set("q", q);
+  if (kategoria) back.set("kategoria", kategoria);
+
+  function fail(message: string): never {
+    back.set("blad", message);
+    redirect(withCmsTick(`/admin/produkty?${back}`));
+  }
+
+  if (ids.length === 0) fail("Zaznacz przynajmniej jeden produkt.");
+  if (!category && publishRaw !== "1" && publishRaw !== "0") {
+    fail("Wybierz kategorię albo status publikacji.");
+  }
+
+  const defs = getProductCategories();
+  const catDef = category ? defs.find((row) => row.id === category) : undefined;
+  if (category && !catDef) fail("Nieznana kategoria.");
+
+  for (const id of ids) {
+    const existing = getProductById(id);
+    if (!existing) continue;
+    const next: Product = { ...existing };
+    if (catDef) {
+      next.category = catDef.id;
+      next.domain = catDef.domain;
+      next.shopLane = laneForDomain(catDef.domain);
+    }
+    if (publishRaw === "1") next.isPublished = true;
+    if (publishRaw === "0") next.isPublished = false;
+    upsertRuntimeProduct(next);
+    revalidateShop(next.slug, next.id);
+  }
+
+  await flushAtelierSave();
+  back.set("masowo", String(ids.length));
+  redirect(withCmsTick(`/admin/produkty?${back}`));
+}

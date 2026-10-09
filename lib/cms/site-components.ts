@@ -1,3 +1,4 @@
+import { formatNewsletterDiscount } from "@/lib/discount";
 import { formatPLN } from "@/lib/format";
 import type { StudioSettings } from "@/lib/types";
 
@@ -22,15 +23,19 @@ export type SiteComponentRow = {
   payload: Record<string, unknown>;
 };
 
-/** Tokens in CMS copy: {code} and {freeShipping} follow the admin fields. */
+/** Tokens in CMS copy: {code}, {freeShipping} and {discount} follow the admin fields. */
 export function interpolateComponentCopy(
   text: string,
-  vars: { code?: string; freeShippingThresholdCents?: number },
+  vars: { code?: string; freeShippingThresholdCents?: number; discountPercent?: number },
 ) {
   const code = (vars.code ?? "").trim();
   const shipping =
     vars.freeShippingThresholdCents != null ? formatPLN(vars.freeShippingThresholdCents) : "";
-  return text.replaceAll("{code}", code).replaceAll("{freeShipping}", shipping);
+  const discount = formatNewsletterDiscount(vars.discountPercent);
+  return text
+    .replaceAll("{code}", code)
+    .replaceAll("{freeShipping}", shipping)
+    .replaceAll("{discount}", discount);
 }
 
 export function flattenSiteComponents(

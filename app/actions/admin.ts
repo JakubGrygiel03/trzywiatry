@@ -256,7 +256,7 @@ export async function saveStudioSettings(formData: FormData) {
       data.announcementText ||
       (data.announcementType === "vacation"
         ? "Piec musiał ochłonąć"
-        : "Darmowa dostawa od {freeShipping}  ·  Newsletter: −15%"),
+        : "Darmowa dostawa od {freeShipping}  ·  Newsletter: {discount}"),
     promoCode: data.promoCode || undefined,
     vacationStartDate: data.vacationStart || undefined,
     vacationEndDate: data.vacationEnd || undefined,
@@ -287,6 +287,9 @@ export async function saveStudioSettings(formData: FormData) {
     studioInstagram: optionalStudioUrl(formData, "studioInstagram"),
     studioFacebook: optionalStudioUrl(formData, "studioFacebook"),
     studioOwner: optionalStudioText(formData, "studioOwner", 80),
+    ...(data.newsletterDiscountPercent != null
+      ? { newsletterDiscountPercent: data.newsletterDiscountPercent }
+      : {}),
   });
 
   await flushAtelierSave();

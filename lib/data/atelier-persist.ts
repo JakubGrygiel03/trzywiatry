@@ -25,6 +25,7 @@ import type {
   ShopCoupon,
   SlugRedirect,
   NewsletterSubscriber,
+  PushSubscriptionRow,
   StudioSettings,
   Workshop,
 } from "@/lib/types";
@@ -54,6 +55,7 @@ export type AtelierSnapshot = {
   couponRedemptions?: CouponRedemption[];
   slugRedirects?: SlugRedirect[];
   customerNotes?: CustomerNote[];
+  pushSubscriptions?: PushSubscriptionRow[];
 };
 
 let hydratePromise: Promise<void> | null = null;
@@ -111,6 +113,7 @@ function applySnapshot(snap: AtelierSnapshot) {
   if (Array.isArray(snap.couponRedemptions)) runtimeStore.couponRedemptions = snap.couponRedemptions;
   if (Array.isArray(snap.slugRedirects)) runtimeStore.slugRedirects = snap.slugRedirects;
   if (Array.isArray(snap.customerNotes)) runtimeStore.customerNotes = snap.customerNotes;
+  if (Array.isArray(snap.pushSubscriptions)) runtimeStore.pushSubscriptions = snap.pushSubscriptions;
   if (snap.seedSignature) setCatalogSeedSignature(snap.seedSignature);
 }
 
@@ -158,6 +161,7 @@ function captureSnapshot(remote?: AtelierSnapshot): AtelierSnapshot {
     couponRedemptions: runtimeStore.couponRedemptions,
     slugRedirects: runtimeStore.slugRedirects,
     customerNotes: runtimeStore.customerNotes,
+    pushSubscriptions: runtimeStore.pushSubscriptions,
   };
 }
 

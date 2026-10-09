@@ -9,6 +9,7 @@ export const HOME_SECTION_TYPES = [
   "pillars",
   "featured",
   "glaze",
+  "compare",
   "workshop",
   "newsletter",
 ] as const;
@@ -107,12 +108,29 @@ export type NewsletterPayload = {
   buttonLabel: string;
 };
 
+export type ComparePair = {
+  id: string;
+  title: string;
+  before: string;
+  after: string;
+  beforeLabel: string;
+  afterLabel: string;
+};
+
+export type ComparePayload = {
+  eyebrow: string;
+  title: string;
+  description: string;
+  pairs: ComparePair[];
+};
+
 export type HomeSection =
   | { id: string; type: "banner"; enabled: boolean; payload: BannerPayload }
   | { id: string; type: "hero"; enabled: boolean; payload: HeroPayload }
   | { id: string; type: "pillars"; enabled: boolean; payload: PillarsPayload }
   | { id: string; type: "featured"; enabled: boolean; payload: FeaturedPayload }
   | { id: string; type: "glaze"; enabled: boolean; payload: GlazePayload }
+  | { id: string; type: "compare"; enabled: boolean; payload: ComparePayload }
   | { id: string; type: "workshop"; enabled: boolean; payload: WorkshopPayload }
   | { id: string; type: "newsletter"; enabled: boolean; payload: NewsletterPayload };
 
@@ -122,6 +140,7 @@ export const HOME_SECTION_LABELS: Record<HomeSectionType, string> = {
   pillars: "Trzy filary",
   featured: "Bestsellery",
   glaze: "Linie szkliw",
+  compare: "Porównanie zdjęć",
   workshop: "Najbliższy warsztat",
   newsletter: "Newsletter",
 };
@@ -133,6 +152,7 @@ export function defaultHomeLayout(): HomeSection[] {
     { id: "s-pillars", type: "pillars", enabled: true, payload: defaultPillarsPayload() },
     { id: "s-featured", type: "featured", enabled: true, payload: defaultFeaturedPayload() },
     { id: "s-glaze", type: "glaze", enabled: true, payload: defaultGlazePayload() },
+    { id: "s-compare", type: "compare", enabled: false, payload: defaultComparePayload() },
     { id: "s-workshop", type: "workshop", enabled: true, payload: defaultWorkshopPayload() },
     { id: "s-newsletter", type: "newsletter", enabled: true, payload: defaultNewsletterPayload() },
   ];
@@ -286,13 +306,33 @@ export function defaultWorkshopPayload(): WorkshopPayload {
   return { eyebrow: "Najbliższy warsztat", ctaLabel: "Zarezerwuj miejsce" };
 }
 
+export function emptyComparePair(): ComparePair {
+  return {
+    id: `cmp-${crypto.randomUUID().slice(0, 8)}`,
+    title: "Kubek przed i po wypale",
+    before: "",
+    after: "",
+    beforeLabel: "Przed wypałem",
+    afterLabel: "Po wypale",
+  };
+}
+
+export function defaultComparePayload(): ComparePayload {
+  return {
+    eyebrow: "Z pracowni",
+    title: "Skurcz gliny",
+    description: "Ten sam kubek przed i po wypale — przesuń suwak, żeby zobaczyć różnicę.",
+    pairs: [emptyComparePair()],
+  };
+}
+
 export function defaultNewsletterPayload(): NewsletterPayload {
   return {
     eyebrow: "Newsletter",
-    title: "−15% na pierwsze naczynie",
+    title: "{discount} na pierwsze naczynie",
     body: "Kod rabatowy przychodzi mailem. Zero spamu — nowe wypusty, kolekcje i przerwy twórcze.",
     formLabel: "Podaj e-mail",
-    buttonLabel: "Odbierz −15%",
+    buttonLabel: "Odbierz {discount}",
   };
 }
 

@@ -70,7 +70,7 @@ export default async function ShopSettingsPage({
               name="announcementText"
               multiline
               defaultValue={settings.announcementText}
-              tokens={["code", "freeShipping"]}
+              tokens={["code", "freeShipping", "discount"]}
             />
           </AdminField>
         </AdminFormSection>
@@ -106,6 +106,13 @@ export default async function ShopSettingsPage({
         </AdminFormSection>
 
         <AdminFormSection title="Promocje i dostawa">
+          <p className="rounded-lg border border-czarny/8 bg-krem/40 px-4 py-3 text-sm text-czarny/70">
+            Rabat za zapis na listę ({settings.newsletterDiscountPercent}%) edytujesz w{" "}
+            <Link href="/admin/newsletter" className="font-medium text-czerwony underline-offset-2 hover:underline">
+              Newsletterze
+            </Link>
+            .
+          </p>
           <AdminField
             label="Kampanijny kod rabatowy (opcjonalnie)"
             htmlFor="promoCode"

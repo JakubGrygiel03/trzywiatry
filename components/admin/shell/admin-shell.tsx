@@ -10,13 +10,14 @@ import { useAdminBadges } from "@/components/admin/shell/use-admin-badges";
 type AdminShellProps = {
   children: ReactNode;
   maintenanceMode?: boolean;
+  vapidPublicKey?: string;
 };
 
 /**
  * Client shell stays mounted between navigations — only {children} swap.
  * Badges load async so sidebar clicks feel instant.
  */
-export function AdminShell({ children, maintenanceMode = false }: AdminShellProps) {
+export function AdminShell({ children, maintenanceMode = false, vapidPublicKey = "" }: AdminShellProps) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const isAuthPage =
@@ -37,6 +38,7 @@ export function AdminShell({ children, maintenanceMode = false }: AdminShellProp
         <AdminTopbar
           badges={badges}
           maintenanceMode={maintenanceMode}
+          vapidPublicKey={vapidPublicKey}
           onMenuOpen={() => setMenuOpen(true)}
         />
         <main className="flex-1 px-4 py-5 text-[15px] leading-relaxed md:px-6 md:py-6">

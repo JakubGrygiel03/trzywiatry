@@ -8,6 +8,7 @@ import { AdminAlert } from "@/components/admin/ui/admin-alert";
 import { AdminEmptyState } from "@/components/admin/ui/admin-empty-state";
 import { AdminPageHeader } from "@/components/admin/ui/admin-page-header";
 import { PublishBadge } from "@/components/admin/ui/admin-status-badge";
+import { ProductBulkBar } from "@/components/admin/product-bulk-bar";
 import { ProductListFilters } from "@/components/admin/product-list-filters";
 import { DOMAIN_LABELS } from "@/lib/constants";
 import { filterAdminProducts } from "@/lib/data/admin-product-filter";
@@ -23,11 +24,18 @@ export const dynamic = "force-dynamic";
 export default async function AdminProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; kategoria?: string; usunieto?: string; t?: string; blad?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    kategoria?: string;
+    usunieto?: string;
+    t?: string;
+    blad?: string;
+    masowo?: string;
+  }>;
 }) {
   await connection();
   await ensureAtelierHydrated({ force: true });
-  const { q, kategoria, usunieto, t, blad } = await searchParams;
+  const { q, kategoria, usunieto, t, blad, masowo } = await searchParams;
   const catalog = getAllProducts();
   const categories = getProductCategories();
   const products = filterAdminProducts(catalog, { q, category: kategoria }, categories);
@@ -64,7 +72,14 @@ export default async function AdminProductsPage({
       />
 
       {usunieto ? <AdminAlert variant="success">Produkt usunięty z katalogu.</AdminAlert> : null}
-      {blad ? <AdminAlert variant="error">Nie udało się wykonać tej operacji.</AdminAlert> : null}
+      {masowo ? (
+        <AdminAlert variant="success">Zmieniono {masowo} {masowo === "1" ? "produkt" : "produkty"}.</AdminAlert>
+      ) : null}
+      {blad ? (
+        <AdminAlert variant="error">
+          {blad === "1" ? "Nie udało się wykonać tej operacji." : blad}
+        </AdminAlert>
+      ) : null}
       <AdminCacheBust nonce={usunieto ? t ?? "1" : undefined} />
 
       <ProductListFilters
@@ -72,6 +87,14 @@ export default async function AdminProductsPage({
         initialCategory={kategoria ?? ""}
         categoryTree={shopCategoryTreeFrom(categories)}
       />
+
+      {products.length > 0 ? (
+        <ProductBulkBar
+          categoryTree={shopCategoryTreeFrom(categories)}
+          q={q}
+          category={kategoria}
+        />
+      ) : null}
 
       {products.length === 0 ? (
         <div className="rounded-xl border border-czarny/8 bg-bialy">
@@ -118,6 +141,16 @@ export default async function AdminProductsPage({
                 className="overflow-hidden rounded-xl border border-czarny/8 bg-bialy shadow-[0_1px_0_rgb(1_1_1/0.04)]"
               >
                 <div className="flex flex-wrap items-center gap-4 border-b border-czarny/6 px-4 py-3.5">
+                  <label className="flex shrink-0 items-center">
+                    <input
+                      form="bulk-products"
+                      type="checkbox"
+                      name="ids"
+                      value={product.id}
+                      className="h-4 w-4 accent-czerwony"
+                    />
+                    <span className="sr-only">Zaznacz {product.name}</span>
+                  </label>
                   <Link href={`/admin/produkty/${product.id}`} className="shrink-0">
                     <div className="h-14 w-14 overflow-hidden rounded-lg border border-czarny/8 bg-krem">
                       {cover ? (

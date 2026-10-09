@@ -6,7 +6,8 @@ import { getAdminEmail } from "@/lib/admin-auth";
 import { assertAdminSession } from "@/lib/admin-guard";
 import { withCmsTick } from "@/lib/cms-redirect";
 import { ensureAtelierHydrated, flushAtelierSave, markNewsletterListAuthoritative } from "@/lib/data/atelier-persist";
-import { getRuntimeSettings } from "@/lib/data/runtime-store";
+import { getRuntimeSettings, updateRuntimeSettings } from "@/lib/data/runtime-store";
+import { newsletterDiscountPercentSchema } from "@/lib/validations/settings";
 import { newsletterBroadcastHtml } from "@/lib/email/newsletter-broadcast";
 import { rebindNewsletterCouponEmail } from "@/lib/newsletter-coupons";
 import {
@@ -36,6 +37,24 @@ export type SubscriberSaveState = {
 
 function fail(message: string): never {
   redirect(withCmsTick(`/admin/newsletter?blad=${encodeURIComponent(message)}`));
+}
+
+export async function saveNewsletterDiscount(formData: FormData) {
+  await assertAdminSession();
+  await ensureAtelierHydrated({ force: true });
+  const parsed = newsletterDiscountPercentSchema.safeParse(formData.get("newsletterDiscountPercent"));
+  if (!parsed.success) fail(firstZodMessage(parsed.error));
+
+  updateRuntimeSettings({
+    newsletterDiscountPercent: parsed.data,
+    settingsUpdatedAt: new Date().toISOString(),
+  });
+  await flushAtelierSave();
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/newsletter");
+  revalidatePath("/admin/ustawienia-sklepu");
+  revalidatePath("/zamowienie");
+  redirect(withCmsTick("/admin/newsletter?rabat=1"));
 }
 
 export async function deleteNewsletterSubscriber(formData: FormData) {
