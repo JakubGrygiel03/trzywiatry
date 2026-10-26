@@ -1,15 +1,17 @@
 import Link from "next/link";
 import { getPublicNavLinks } from "@/lib/constants";
-import { peekCustomerSession } from "@/lib/customer-session";
 import { getSettings } from "@/lib/data/queries";
 import { CartTrigger } from "@/components/layout/cart-trigger";
 import { Logo } from "@/components/layout/logo";
 import { MobileNav } from "@/components/layout/mobile-nav";
 
-export async function Navbar() {
+/**
+ * No cookies() here — reading the session would force every public page dynamic
+ * and burn Vercel CPU. Guests hitting /konto are redirected to login by proxy.
+ */
+export function Navbar() {
   const settings = getSettings();
   const links = getPublicNavLinks(settings.workshopsEnabled);
-  const customer = await peekCustomerSession();
 
   return (
     <header className="site-chrome__nav border-b border-czarny/8" style={{ backgroundColor: "#ffffff" }}>
@@ -28,13 +30,13 @@ export async function Navbar() {
         </nav>
         <div className="relative z-10 flex shrink-0 items-center gap-2.5 md:gap-4">
           <Link
-            href={customer ? "/konto" : "/konto/logowanie"}
+            href="/konto"
             className="hidden font-heading text-[13px] uppercase tracking-[0.14em] text-szary hover:text-czarny md:inline md:text-[15px] md:tracking-[0.16em]"
           >
-            {customer ? "Konto" : "Zaloguj"}
+            Konto
           </Link>
           <CartTrigger />
-          <MobileNav links={links} accountHref={customer ? "/konto" : "/konto/logowanie"} />
+          <MobileNav links={links} accountHref="/konto" />
         </div>
       </div>
     </header>

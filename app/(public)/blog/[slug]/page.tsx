@@ -5,10 +5,21 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { Container } from "@/components/ui/badge";
 import { SurfaceTile, SurfaceTileBody, SurfaceTileHeader } from "@/components/ui/surface-tile";
 import { SITE } from "@/lib/constants";
-import { getPostBySlug, getPublishedPosts, isAliasedContentSlug, resolveContentSlug } from "@/lib/data/queries";
+import { ensureAtelierHydrated } from "@/lib/data/atelier-persist";
+import {
+  getPostBySlug,
+  getPublishedPosts,
+  isAliasedContentSlug,
+  resolveContentSlug,
+} from "@/lib/data/queries";
 import { breadcrumbJsonLd, noIndexRobots, pageMetadata } from "@/lib/seo";
 import { absoluteUrl } from "@/lib/site-url";
 import type { Metadata } from "next";
+
+export async function generateStaticParams() {
+  await ensureAtelierHydrated();
+  return getPublishedPosts().map((post) => ({ slug: post.slug }));
+}
 
 function formatPostDate(iso: string) {
   return new Intl.DateTimeFormat("pl-PL", {
