@@ -4,15 +4,8 @@ import { BookingForm } from "@/components/workshops/booking-form";
 import { Container } from "@/components/ui/badge";
 import { formatDate, formatPLN, formatTime } from "@/lib/format";
 import { noIndexRobots, pageMetadata } from "@/lib/seo";
-import { ensureAtelierHydrated } from "@/lib/data/atelier-persist";
-import { areWorkshopsEnabled, getWorkshopBySlug, getWorkshops } from "@/lib/data/queries";
+import { areWorkshopsEnabled, getWorkshopBySlug } from "@/lib/data/queries";
 import type { Metadata } from "next";
-
-export async function generateStaticParams() {
-  await ensureAtelierHydrated();
-  if (!areWorkshopsEnabled()) return [];
-  return getWorkshops().map((workshop) => ({ slug: workshop.slug }));
-}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;

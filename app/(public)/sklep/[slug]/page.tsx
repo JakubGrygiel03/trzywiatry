@@ -10,28 +10,19 @@ import { ProductLongCopy } from "@/components/shop/product-long-copy";
 import { JsonLd } from "@/components/seo/json-ld";
 import { Badge, Container } from "@/components/ui/badge";
 import { DOMAIN_LABELS } from "@/lib/constants";
-import { ensureAtelierHydrated } from "@/lib/data/atelier-persist";
-import {
-  getCollections,
-  getProductBySlug,
-  getPublishedProducts,
-  isAliasedProductSlug,
-  resolveProductSlug,
-  variantStockLabel,
-} from "@/lib/data/queries";
+import { getCollections, getProductBySlug, isAliasedProductSlug, resolveProductSlug, variantStockLabel } from "@/lib/data/queries";
 import { getCuratedUpsells, getProductUpsells, getUpsellCopy } from "@/lib/data/recommendations";
 import { getProductPhoto } from "@/lib/media";
 import { splitProductCopy } from "@/lib/product-copy";
 import { breadcrumbJsonLd, noIndexRobots, pageMetadata, productJsonLd } from "@/lib/seo";
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { notFound, permanentRedirect } from "next/navigation";
 
-export async function generateStaticParams() {
-  await ensureAtelierHydrated();
-  return getPublishedProducts().map((product) => ({ slug: product.slug }));
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  await connection();
   const { slug } = await params;
   const product = getProductBySlug(slug);
   if (!product) return { title: "Produkt", robots: noIndexRobots };
@@ -45,6 +36,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
+  await connection();
   const { slug } = await params;
   if (isAliasedProductSlug(slug)) permanentRedirect(`/sklep/${resolveProductSlug(slug)}`);
   const product = getProductBySlug(slug);

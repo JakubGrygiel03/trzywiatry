@@ -1,9 +1,12 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { interpolatePublicStudioCopy } from "@/lib/data/settings";
 import { getSettings } from "@/lib/data/queries";
 import { buildVacationBannerMessage } from "@/lib/vacation-message";
 
 export async function AnnouncementBar() {
+  // Always read live admin settings (vacation toggle must not be baked at build).
+  await connection();
   const settings = getSettings();
 
   if (settings.announcementType === "hidden") return null;

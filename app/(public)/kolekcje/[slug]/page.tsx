@@ -4,20 +4,8 @@ import { ProductCard } from "@/components/shop/product-card";
 import { ScrollCollectionToTop } from "@/components/shop/scroll-collection-to-top";
 import { Container, SectionHeading } from "@/components/ui/badge";
 import { noIndexRobots, pageMetadata } from "@/lib/seo";
-import { ensureAtelierHydrated } from "@/lib/data/atelier-persist";
-import {
-  getCollectionBySlug,
-  getCollections,
-  getProductsByCollection,
-  isAliasedContentSlug,
-  resolveContentSlug,
-} from "@/lib/data/queries";
+import { getCollectionBySlug, getProductsByCollection, isAliasedContentSlug, resolveContentSlug } from "@/lib/data/queries";
 import type { Metadata } from "next";
-
-export async function generateStaticParams() {
-  await ensureAtelierHydrated();
-  return getCollections().map((collection) => ({ slug: collection.slug }));
-}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
