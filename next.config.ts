@@ -38,9 +38,8 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ["lucide-react", "framer-motion"],
   },
   images: {
-    formats: ["image/avif", "image/webp"],
-    minimumCacheTTL: 60 * 60 * 24 * 30,
-    qualities: [60, 75, 80],
+    // Bypass Vercel Image Optimization (CPU + transform quota).
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: "https",

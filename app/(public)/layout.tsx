@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { Suspense } from "react";
-import { connection } from "next/server";
 import { TrafficBeacon } from "@/components/analytics/traffic-beacon";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { SiteSettingsProvider } from "@/components/cms/site-settings-provider";
@@ -11,17 +10,24 @@ import { ScrollToTopOnNavigate } from "@/components/layout/scroll-to-top-on-navi
 import { SiteHeader } from "@/components/layout/site-header";
 import { ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 import { getSettings } from "@/lib/data/queries";
-import { resolvePaymentAccess } from "@/lib/payment-access";
+import { arePaymentsPublic } from "@/lib/payment-access";
 import { studioIdentity } from "@/lib/studio-identity";
 
-export const dynamic = "force-dynamic";
+/** Cached storefront shell; refresh in background every 5 minutes. */
+export const revalidate = 300;
 
 export default async function PublicLayout({ children }: { children: ReactNode }) {
-  await connection();
   await ensureAtelierHydrated({ force: true });
   const settings = getSettings();
   const announcementHidden = settings.announcementType === "hidden";
-  const paymentAccess = await resolvePaymentAccess();
+  // Env-only in layout so cookies() do not force every public page dynamic.
+  // /zamowienie still uses resolvePaymentAccess() for admin-tester bypass.
+  const paymentsPublic = arePaymentsPublic();
+  const paymentAccess = {
+    isPublic: paymentsPublic,
+    canPay: paymentsPublic,
+    isTester: false,
+  };
 
   return (
     <SiteSettingsProvider settings={settings} paymentAccess={paymentAccess}>
