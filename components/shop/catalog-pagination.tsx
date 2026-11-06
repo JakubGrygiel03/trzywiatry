@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
@@ -21,31 +19,30 @@ function scrollShopToTop() {
 export function CatalogPagination({
   page,
   totalPages,
+  hrefFor,
+  onPage,
 }: {
   page: number;
   totalPages: number;
+  hrefFor: (page: number) => string;
+  onPage: (page: number) => void;
 }) {
-  const params = useSearchParams();
-
   if (totalPages <= 1) return null;
-
-  function hrefFor(nextPage: number) {
-    const next = new URLSearchParams(params.toString());
-    if (nextPage <= 1) next.delete("strona");
-    else next.set("strona", String(nextPage));
-    const query = next.toString();
-    return query ? `/sklep?${query}` : "/sklep";
-  }
 
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
 
   return (
     <nav className="mt-8 flex flex-wrap items-center justify-center gap-2" aria-label="Paginacja">
-      <PageLink href={hrefFor(Math.max(1, page - 1))} disabled={page <= 1} label="Poprzednia">
+      <PageLink
+        href={hrefFor(Math.max(1, page - 1))}
+        disabled={page <= 1}
+        label="Poprzednia"
+        onSelect={() => onPage(Math.max(1, page - 1))}
+      >
         &lt;
       </PageLink>
       {pages.map((n) => (
-        <PageLink key={n} href={hrefFor(n)} active={n === page} label={`Strona ${n}`}>
+        <PageLink key={n} href={hrefFor(n)} active={n === page} label={`Strona ${n}`} onSelect={() => onPage(n)}>
           {n}
         </PageLink>
       ))}
@@ -53,6 +50,7 @@ export function CatalogPagination({
         href={hrefFor(Math.min(totalPages, page + 1))}
         disabled={page >= totalPages}
         label="Następna"
+        onSelect={() => onPage(Math.min(totalPages, page + 1))}
       >
         &gt;
       </PageLink>
@@ -66,12 +64,14 @@ function PageLink({
   active,
   disabled,
   label,
+  onSelect,
 }: {
   href: string;
   children: ReactNode;
   active?: boolean;
   disabled?: boolean;
   label: string;
+  onSelect: () => void;
 }) {
   if (disabled) {
     return (
@@ -85,12 +85,13 @@ function PageLink({
   }
 
   return (
-    <Link
+    <a
       href={href}
-      scroll
       aria-label={label}
       aria-current={active ? "page" : undefined}
-      onClick={() => {
+      onClick={(event) => {
+        event.preventDefault();
+        onSelect();
         // Same-route ?strona= often keeps scroll at the pager — force top.
         scrollShopToTop();
         window.setTimeout(scrollShopToTop, 0);
@@ -105,6 +106,6 @@ function PageLink({
       )}
     >
       {children}
-    </Link>
+    </a>
   );
 }

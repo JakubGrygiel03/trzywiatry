@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 const WARM_ROUTES = [
   "/sklep",
   "/koszyk",
-  "/zamowienie",
   "/warsztaty",
   "/kontakt",
   "/blog",

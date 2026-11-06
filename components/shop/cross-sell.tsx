@@ -1,5 +1,7 @@
 import { ProductCard } from "@/components/shop/product-card";
+import { getProductCategories } from "@/lib/data/queries";
 import type { UpsellSuggestion } from "@/lib/data/recommendations";
+import { labelForCategory } from "@/lib/product-categories";
 import type { Product } from "@/lib/types";
 
 export function CrossSell({
@@ -20,6 +22,8 @@ export function CrossSell({
 
   if (items.length === 0) return null;
 
+  const categories = getProductCategories();
+
   return (
     <section className="space-y-8">
       <div className="space-y-2">
@@ -33,7 +37,7 @@ export function CrossSell({
               {reason ?? "\u00a0"}
             </p>
             <div className="flex-1">
-              <ProductCard product={product} />
+              <ProductCard product={product} categoryLabel={labelForCategory(categories, product.category)} />
             </div>
           </div>
         ))}

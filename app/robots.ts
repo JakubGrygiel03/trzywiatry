@@ -1,34 +1,47 @@
 import type { MetadataRoute } from "next";
-import { headers } from "next/headers";
 import { getPublicSiteUrl } from "@/lib/site-url";
 
-export default async function robots(): Promise<MetadataRoute.Robots> {
-  const host = (await headers()).get("host")?.split(":")[0]?.toLowerCase() ?? "";
-  if (host.endsWith(".vercel.app")) {
-    return {
-      rules: { userAgent: "*", disallow: "/" },
-    };
+/**
+ * Static robots — no request headers, so crawlers do not wake a serverless function.
+ * Preview deployments stay closed. Production noindex for *.vercel.app is the
+ * X-Robots-Tag set in proxy.ts (the canonical host is trzywiatry.pl).
+ */
+const PRIVATE = [
+  "/admin",
+  "/konto",
+  "/api/",
+  "/zamowienie",
+  "/koszyk",
+  "/podglad/",
+  "/sklep/w/",
+  "/*pojemnosc=",
+  "/*sortuj=",
+  "/*cena_od=",
+  "/*cena_do=",
+  "/*kategoria=",
+  "/*domena=",
+  "/*strona=",
+  "/*?q=",
+  "/*&q=",
+  "/*token=",
+  "/*sessionId",
+];
+
+export default function robots(): MetadataRoute.Robots {
+  if (process.env.VERCEL_ENV === "preview") {
+    return { rules: { userAgent: "*", disallow: "/" } };
   }
 
   const base = getPublicSiteUrl();
   return {
     rules: [
-      {
-        userAgent: "*",
-        allow: "/",
-        disallow: [
-          "/admin/",
-          "/konto/",
-          "/api/",
-          "/zamowienie",
-          "/koszyk",
-          "/podglad/",
-        ],
-      },
-      {
-        userAgent: "GPTBot",
-        disallow: ["/admin/", "/konto/", "/api/", "/zamowienie", "/koszyk"],
-      },
+      { userAgent: "*", allow: "/", disallow: PRIVATE },
+      { userAgent: "GPTBot", disallow: PRIVATE },
+      { userAgent: "ClaudeBot", disallow: PRIVATE },
+      { userAgent: "Google-Extended", disallow: PRIVATE },
+      { userAgent: "CCBot", disallow: ["/"] },
+      { userAgent: "Bytespider", disallow: ["/"] },
+      { userAgent: "PetalBot", disallow: ["/"] },
     ],
     sitemap: [`${base}/sitemap.xml`, `${base}/mapa.xml`],
     host: new URL(base).hostname,

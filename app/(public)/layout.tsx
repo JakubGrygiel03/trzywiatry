@@ -13,11 +13,15 @@ import { getSettings } from "@/lib/data/queries";
 import { arePaymentsPublic } from "@/lib/payment-access";
 import { studioIdentity } from "@/lib/studio-identity";
 
-/** Cached storefront shell; refresh in background every 5 minutes. */
-export const revalidate = 300;
+/**
+ * Safety-net ISR. Admin saves and paid orders call revalidatePath, so a visit
+ * should not rebuild the shell. One hour covers a missed invalidation.
+ */
+export const revalidate = 3600;
 
 export default async function PublicLayout({ children }: { children: ReactNode }) {
-  await ensureAtelierHydrated({ force: true });
+  // Shared data cache — do not force a Supabase read on every visitor.
+  await ensureAtelierHydrated();
   const settings = getSettings();
   const announcementHidden = settings.announcementType === "hidden";
   // Env-only in layout so cookies() do not force every public page dynamic.

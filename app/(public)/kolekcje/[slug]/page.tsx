@@ -8,10 +8,12 @@ import { ensureAtelierHydrated } from "@/lib/data/atelier-persist";
 import {
   getCollectionBySlug,
   getCollections,
+  getProductCategories,
   getProductsByCollection,
   isAliasedContentSlug,
   resolveContentSlug,
 } from "@/lib/data/queries";
+import { labelForCategory } from "@/lib/product-categories";
 import type { Metadata } from "next";
 
 export async function generateStaticParams() {
@@ -39,6 +41,7 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
   const collection = getCollectionBySlug(slug);
   if (!collection) notFound();
   const products = getProductsByCollection(collection.id);
+  const categories = getProductCategories();
 
   return (
     <div>
@@ -58,7 +61,12 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
           <SectionHeading description={collection.description} title="Naczynia w tym ogniu" />
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
             {products.map((product, index) => (
-              <ProductCard key={product.id} product={product} imagePriority={index < 6} />
+              <ProductCard
+                key={product.id}
+                product={product}
+                imagePriority={index < 6}
+                categoryLabel={labelForCategory(categories, product.category)}
+              />
             ))}
           </div>
         </Container>

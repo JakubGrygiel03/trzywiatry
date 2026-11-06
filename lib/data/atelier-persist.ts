@@ -2,6 +2,7 @@ import "server-only";
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { revalidateTag, unstable_cache, updateTag } from "next/cache";
 import type { ContentOverlayMap } from "@/lib/cms/content-pages";
 import type { HomeSection } from "@/lib/cms/home-layout";
 import {
@@ -56,15 +57,18 @@ export type AtelierSnapshot = {
   slugRedirects?: SlugRedirect[];
   customerNotes?: CustomerNote[];
   pushSubscriptions?: PushSubscriptionRow[];
+  /** Changes on every successful save so warm isolates can skip a full merge. */
+  savedAt?: string;
 };
 
 let hydratePromise: Promise<void> | null = null;
-let hydratedAt = 0;
 let pendingSave: Promise<boolean> | null = null;
 let lastSavedAt = 0;
+let lastAppliedStamp = "";
+/** In-flight public read. Visitors share one cache lookup. */
+let cacheRead: Promise<void> | null = null;
 /** When true, skip merging remote newsletter so deletes are not resurrected. */
 let newsletterListAuthoritative = false;
-const HYDRATE_TTL_MS = 5_000;
 /** After create/update/delete, don't clobber in-memory catalog with a stale remote read. */
 const SKIP_HYDRATE_AFTER_SAVE_MS = 3_000;
 
@@ -162,6 +166,7 @@ function captureSnapshot(remote?: AtelierSnapshot): AtelierSnapshot {
     slugRedirects: runtimeStore.slugRedirects,
     customerNotes: runtimeStore.customerNotes,
     pushSubscriptions: runtimeStore.pushSubscriptions,
+    savedAt: new Date().toISOString(),
   };
 }
 
@@ -175,14 +180,66 @@ function writeDisk(snap: AtelierSnapshot) {
   }
 }
 
-async function hydrate() {
-  const remote = await readAtelierState<AtelierSnapshot>(ATELIER_STATE_KEYS.shop);
+const ATELIER_CACHE_TAG = "atelier";
+
+const readCachedShopSnapshot = unstable_cache(
+  async () => readAtelierState<AtelierSnapshot>(ATELIER_STATE_KEYS.shop),
+  ["atelier-shop-snapshot-v1"],
+  { revalidate: 3600, tags: [ATELIER_CACHE_TAG] },
+);
+
+function snapshotStamp(snap: AtelierSnapshot) {
+  if (snap.savedAt) return `s:${snap.savedAt}`;
+  const catalog = snap.catalog ?? [];
+  let stock = 0;
+  for (const product of catalog) {
+    for (const variant of product.variants ?? []) stock += variant.stockQuantity || 0;
+  }
+  return `l:${snap.settings?.settingsUpdatedAt ?? ""}:${catalog.length}:${stock}:${snap.blogPosts?.length ?? 0}:${snap.workshops?.length ?? 0}`;
+}
+
+function rememberSnapshot(snap: AtelierSnapshot) {
+  const stamp = snapshotStamp(snap);
+  if (stamp === lastAppliedStamp) return;
+  // Clone so a later stock edit cannot mutate the data-cache entry.
+  applySnapshot(structuredClone(snap));
+  lastAppliedStamp = stamp;
+}
+
+function bustAtelierReadCache() {
+  lastAppliedStamp = "";
+  try {
+    updateTag(ATELIER_CACHE_TAG);
+  } catch {
+    /* updateTag is valid inside a Server Action only */
+  }
+  try {
+    revalidateTag(ATELIER_CACHE_TAG, { expire: 0 });
+  } catch {
+    /* cache API can be unavailable outside a request */
+  }
+}
+
+async function readShopSnapshot(force: boolean) {
+  if (!force) {
+    try {
+      return await readCachedShopSnapshot();
+    } catch {
+      /* payload too large or cache unavailable — read through */
+    }
+  }
+  return readAtelierState<AtelierSnapshot>(ATELIER_STATE_KEYS.shop);
+}
+
+async function hydrate(force: boolean) {
+  const remote = await readShopSnapshot(force);
   if (remote && (remote.catalog?.length || remote.settings)) {
-    applySnapshot(remote);
+    rememberSnapshot(remote);
     return;
   }
+  if (lastAppliedStamp) return;
   const disk = loadSnapshot();
-  if (disk) applySnapshot(disk);
+  if (disk) rememberSnapshot(disk);
 }
 
 /** Restore catalog after restart — Supabase on Vercel, `.data` locally. */
@@ -191,21 +248,21 @@ export async function ensureAtelierHydrated(options?: { force?: boolean }) {
   // Same isolate just wrote (create/edit/delete) — keep memory, skip stale remote.
   if (Date.now() - lastSavedAt < SKIP_HYDRATE_AFTER_SAVE_MS) return;
 
-  // Warm isolates keep the first snapshot forever — gift wrap / coupons look “stuck”.
-  const stale = Date.now() - hydratedAt > HYDRATE_TTL_MS;
-  if (options?.force || !hydratePromise || stale) {
-    hydratePromise = hydrate().then(
-      () => {
-        hydratedAt = Date.now();
-      },
-      (error) => {
-        hydratePromise = null;
-        hydratedAt = 0;
-        throw error;
-      },
-    );
+  if (options?.force) {
+    hydratePromise = hydrate(true).catch((error: unknown) => {
+      hydratePromise = null;
+      throw error;
+    });
+    await hydratePromise;
+    return;
   }
-  await hydratePromise;
+
+  if (!cacheRead) {
+    cacheRead = hydrate(false).finally(() => {
+      cacheRead = null;
+    });
+  }
+  await cacheRead;
 }
 
 export async function saveAtelierSnapshot() {
@@ -221,7 +278,7 @@ export async function saveAtelierSnapshot() {
   const disk = writeDisk(snap);
   const wroteRemote = await writeAtelierState(ATELIER_STATE_KEYS.shop, snap);
   lastSavedAt = Date.now();
-  hydratedAt = Date.now();
+  if (wroteRemote) bustAtelierReadCache();
   return wroteRemote || (disk && process.env.VERCEL !== "1");
 }
 

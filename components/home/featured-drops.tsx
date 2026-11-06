@@ -4,10 +4,12 @@ import { Reveal } from "@/components/motion/reveal";
 import { ProductCard } from "@/components/shop/product-card";
 import { Button } from "@/components/ui/button";
 import { defaultFeaturedPayload, type FeaturedPayload } from "@/lib/cms/home-layout";
-import { getFeaturedProducts } from "@/lib/data/queries";
+import { getFeaturedProducts, getProductCategories } from "@/lib/data/queries";
+import { labelForCategory } from "@/lib/product-categories";
 
 export function FeaturedDrops({ payload = defaultFeaturedPayload() }: { payload?: FeaturedPayload }) {
   const products = getFeaturedProducts();
+  const categories = getProductCategories();
 
   return (
     <HomeSection>
@@ -36,6 +38,7 @@ export function FeaturedDrops({ payload = defaultFeaturedPayload() }: { payload?
             framed
             tone="cream"
             imagePriority={index < 4}
+            categoryLabel={labelForCategory(categories, product.category)}
           />
         ))}
       </div>

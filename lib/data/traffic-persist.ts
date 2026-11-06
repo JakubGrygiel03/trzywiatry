@@ -1,6 +1,7 @@
 import "server-only";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { after } from "next/server";
 import { hasSupabaseService, readAtelierState, writeAtelierState } from "@/lib/data/supabase-state";
 import {
   applyTrafficEvent,
@@ -57,12 +58,42 @@ export async function ensureTrafficHydrated() {
   if (!globalStore.__twTraffic) globalStore.__twTraffic = emptyTrafficSnapshot();
 }
 
+const FLUSH_MS = 15_000;
+const FLUSH_EVERY = 8;
+let lastFlushAt = 0;
+let pendingSinceFlush = 0;
+let flushQueued = false;
+let trafficGeneration = 0;
+
+async function flushTraffic(generation: number) {
+  flushQueued = false;
+  pendingSinceFlush = 0;
+  lastFlushAt = Date.now();
+  if (generation !== trafficGeneration) return;
+  const snap = globalStore.__twTraffic;
+  if (!snap || generation !== trafficGeneration) return;
+  writeDisk(snap);
+  if (generation !== trafficGeneration) return;
+  await writeAtelierState(TRAFFIC_STATE_KEY, snap);
+}
+
 export async function recordTrafficEvent(event: { kind: TrafficKind; path?: string; slug?: string }) {
   await ensureTrafficHydrated();
-  const snap = applyTrafficEvent(globalStore.__twTraffic ?? emptyTrafficSnapshot(), event);
-  globalStore.__twTraffic = snap;
-  writeDisk(snap);
-  await writeAtelierState(TRAFFIC_STATE_KEY, snap);
+  globalStore.__twTraffic = applyTrafficEvent(globalStore.__twTraffic ?? emptyTrafficSnapshot(), event);
+  pendingSinceFlush += 1;
+  const due = pendingSinceFlush >= FLUSH_EVERY || Date.now() - lastFlushAt >= FLUSH_MS;
+  if (!due || flushQueued) return;
+  flushQueued = true;
+  const generation = trafficGeneration;
+  const write = () => {
+    void flushTraffic(generation);
+  };
+  try {
+    // Don't hold the beacon request open for a full Supabase upsert.
+    after(write);
+  } catch {
+    await flushTraffic(generation);
+  }
 }
 
 export async function getTrafficSnapshot() {
@@ -71,6 +102,9 @@ export async function getTrafficSnapshot() {
 }
 
 export async function resetTrafficSnapshot() {
+  trafficGeneration += 1;
+  pendingSinceFlush = 0;
+  lastFlushAt = Date.now();
   const snap = emptyTrafficSnapshot();
   globalStore.__twTraffic = snap;
   writeDisk(snap);

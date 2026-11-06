@@ -2,7 +2,6 @@
 
 import { ChevronDown, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import { CatalogFilterFields, type CategoryCounts } from "@/components/shop/catalog-filter-fields";
 import { CatalogFilterRail } from "@/components/shop/catalog-filter-rail";
 import { PriceFilter } from "@/components/shop/price-filter";
@@ -15,29 +14,31 @@ export function CatalogFilters({
   categoryCounts,
   lane,
   categoryTree,
+  capacity,
+  domain,
+  category,
+  minParam,
+  maxParam,
+  onPush,
+  onClear,
 }: {
   priceBounds: { minCents: number; maxCents: number };
   categoryCounts: CategoryCounts;
   lane: ShopLaneId;
   categoryTree: ShopCategoryGroup[];
+  capacity: string | null;
+  domain: string | null;
+  category: string | null;
+  minParam: string | null;
+  maxParam: string | null;
+  onPush: (mutate: (next: URLSearchParams) => void) => void;
+  onClear: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const router = useRouter();
-  const params = useSearchParams();
-
-  const capacity = params.get("pojemnosc");
-  const domain = params.get("domena");
-  const category = params.get("kategoria");
-  const minParam = params.get("cena_od");
-  const maxParam = params.get("cena_do");
   const activeCount = [capacity, domain, category, minParam, maxParam].filter(Boolean).length;
 
   function pushParams(mutate: (next: URLSearchParams) => void) {
-    const next = new URLSearchParams(params.toString());
-    mutate(next);
-    next.delete("strona");
-    next.set("sklep", lane);
-    router.push(`/sklep?${next.toString()}`);
+    onPush(mutate);
   }
 
   const fieldProps = {
@@ -52,7 +53,7 @@ export function CatalogFilters({
     categoryCounts,
     categoryTree,
     hasActive: activeCount > 0,
-    onClear: () => router.push(`/sklep?sklep=${lane}`),
+    onClear,
     onPush: pushParams,
   };
 

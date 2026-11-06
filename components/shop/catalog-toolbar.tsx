@@ -2,7 +2,6 @@
 
 import * as Select from "@radix-ui/react-select";
 import { Check, ChevronDown } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
 import { CATALOG_SORT_OPTIONS, type CatalogSortId } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -10,25 +9,19 @@ export function CatalogToolbar({
   total,
   from,
   to,
+  sort,
+  onSort,
 }: {
   total: number;
   from: number;
   to: number;
+  sort: CatalogSortId;
+  onSort: (value: string) => void;
 }) {
-  const router = useRouter();
-  const params = useSearchParams();
-  const requested = params.get("sortuj") as CatalogSortId | null;
-  const current = CATALOG_SORT_OPTIONS.some((option) => option.id === requested)
-    ? (requested as CatalogSortId)
-    : "domyslne";
+  const current = CATALOG_SORT_OPTIONS.some((option) => option.id === sort) ? sort : "domyslne";
 
   function onSortChange(value: string) {
-    const next = new URLSearchParams(params.toString());
-    if (!value || value === "domyslne") next.delete("sortuj");
-    else next.set("sortuj", value);
-    next.delete("strona");
-    const query = next.toString();
-    router.push(query ? `/sklep?${query}` : "/sklep");
+    onSort(value);
   }
 
   const rangeLabel =

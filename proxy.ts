@@ -33,6 +33,21 @@ function withVercelNoIndex(response: NextResponse, request: NextRequest) {
   return response;
 }
 
+/** One cached lane page for every filter combination. The browser URL stays /sklep?… */
+function rewriteShopLane(request: NextRequest) {
+  if (request.nextUrl.pathname !== "/sklep") return null;
+  const params = request.nextUrl.searchParams;
+  const explicit = params.get("sklep");
+  let lane: "uzytkowa" | "pracownia" | null = null;
+  if (explicit === "uzytkowa" || explicit === "pracownia") lane = explicit;
+  else if (params.get("domena")) lane = params.get("domena") === "formy" ? "pracownia" : "uzytkowa";
+  else if (["kategoria", "pojemnosc", "cena_od", "cena_do"].some((key) => params.has(key))) lane = "uzytkowa";
+  if (!lane) return null;
+  const url = request.nextUrl.clone();
+  url.pathname = `/sklep/w/${lane}`;
+  return NextResponse.rewrite(url);
+}
+
 export async function proxy(request: NextRequest) {
   const alias = redirectVercelProductionAlias(request);
   if (alias) return alias;
@@ -42,6 +57,8 @@ export async function proxy(request: NextRequest) {
   const onKonto = pathname === "/konto" || pathname.startsWith("/konto/");
 
   if (!onAdmin && !onKonto) {
+    const lane = rewriteShopLane(request);
+    if (lane) return withVercelNoIndex(lane, request);
     return withVercelNoIndex(NextResponse.next(), request);
   }
 

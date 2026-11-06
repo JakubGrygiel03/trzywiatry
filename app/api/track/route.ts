@@ -24,7 +24,12 @@ function trusted(request: Request) {
   return host === "trzywiatry.pl" || host === "localhost" || host === "127.0.0.1";
 }
 
+const BOT_UA = /bot|crawler|spider|slurp|facebookexternalhit|embedly|bytespider|petalbot|ahrefs|semrush|gptbot|claudebot|amazonbot|curl|wget/i;
+
 export async function POST(request: Request) {
+  if (BOT_UA.test(request.headers.get("user-agent") ?? "")) {
+    return NextResponse.json({ ok: true });
+  }
   if (!trusted(request)) {
     return NextResponse.json({ ok: false }, { status: 403 });
   }

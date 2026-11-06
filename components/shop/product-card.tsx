@@ -4,13 +4,17 @@ import { ProductNavigateLink } from "@/components/shop/product-navigate-link";
 import { PriceBubble } from "@/components/ui/badge";
 import { categoryFrame } from "@/lib/category-frame";
 import { variantColors } from "@/lib/product-variants";
-import { DOMAIN_LABELS } from "@/lib/constants";
+import { CATEGORY_LABELS, DOMAIN_LABELS } from "@/lib/constants";
 import { formatPLN } from "@/lib/format";
 import { getProductPhoto } from "@/lib/media";
-import { getProductCategories, variantStockLabel } from "@/lib/data/queries";
-import { labelForCategory } from "@/lib/product-categories";
 import type { Product } from "@/lib/types";
 import { cn } from "@/lib/utils";
+
+function stockStatus(stock: number, threshold: number) {
+  if (stock <= 0) return "sold_out" as const;
+  if (stock <= threshold) return "low" as const;
+  return "in_stock" as const;
+}
 
 export function ProductCard({
   product,
@@ -19,19 +23,23 @@ export function ProductCard({
   tone = "paper",
   /** Eager-load above-the-fold photos so the next row is not a blank cream tile. */
   imagePriority = false,
+  /** Admin-renamed category. Falls back to the brand dictionary. */
+  categoryLabel,
 }: {
   product: Product;
   framed?: boolean;
   tone?: "paper" | "cream";
   imagePriority?: boolean;
+  categoryLabel?: string;
 }) {
   const stock = product.variants.reduce((sum, variant) => {
     if (!variant.isAvailable) return sum;
     return sum + variant.stockQuantity;
   }, 0);
-  const status = variantStockLabel(stock, product.lowStockThreshold);
+  const status = stockStatus(stock, product.lowStockThreshold);
   const photo = getProductPhoto(product);
-  const categoryLabel = labelForCategory(getProductCategories(), product.category) || DOMAIN_LABELS[product.domain];
+  const resolvedCategory =
+    categoryLabel || CATEGORY_LABELS[product.category] || DOMAIN_LABELS[product.domain];
   const frame = categoryFrame(product.category);
   const colors = variantColors(product);
   const ground = tone === "cream" ? "bg-krem" : "bg-bialy";
@@ -73,7 +81,7 @@ export function ProductCard({
           ) : null}
         </div>
         <div className="flex flex-1 flex-col space-y-1 px-0.5">
-          <p className="text-xs tracking-wide text-szary">{categoryLabel}</p>
+          <p className="text-xs tracking-wide text-szary">{resolvedCategory}</p>
           <h3 className="line-clamp-2 min-h-[2.5rem] font-heading text-sm uppercase tracking-[0.08em] text-czarny">
             {product.name}
           </h3>
